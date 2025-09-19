@@ -18,7 +18,8 @@ import {
   Clock,
   Edit,
   Filter,
-  Search
+  Search,
+  Eye
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -91,8 +92,10 @@ export default function ApprovalDashboard() {
   const [pendingMovies, setPendingMovies] = useState<PendingMovie[]>([]);
   const [pagination, setPagination] = useState<any>(null);
   const [approvedMovies, setApprovedMovies] = useState<Set<number>>(new Set());
+  const [removedMovies, setRemovedMovies] = useState<Set<number>>(new Set());
   const [approvalStats, setApprovalStats] = useState<ApprovalStats | null>(null);
   const [approvingMovie, setApprovingMovie] = useState<number | null>(null);
+  const [removingMovie, setRemovingMovie] = useState<number | null>(null);
   const [fixingMovieId, setFixingMovieId] = useState<number | null>(null);
   const [fixingMovie, setFixingMovie] = useState<PendingMovie | null>(null);
   const [migrationStats, setMigrationStats] = useState<any>(null);
@@ -167,6 +170,30 @@ export default function ApprovalDashboard() {
       alert('Failed to approve movie');
     } finally {
       setApprovingMovie(null);
+    }
+  };
+
+  const removeMovie = async (movieId: number) => {
+    setRemovingMovie(movieId);
+    try {
+      const response = await fetch(`/api/movies/${movieId}/remove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ removed_by: 'Ben', reason: 'Not wanted in collection' })
+      });
+
+      if (response.ok) {
+        setRemovedMovies(prev => new Set(prev).add(movieId));
+        fetchApprovalStats(); // Refresh stats
+      } else {
+        const data = await response.json();
+        alert(`Failed to remove movie: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error removing movie:', error);
+      alert('Failed to remove movie');
+    } finally {
+      setRemovingMovie(null);
     }
   };
 
@@ -309,69 +336,6 @@ export default function ApprovalDashboard() {
               </div>
             )}
 
-            {/* Migration Status */}
-            {migrationStats && migrationStats.needsMigration > 0 && (
-              <div className="bg-card/50 rounded-xl border border-orange-500/50 p-6 mb-6">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-orange-400">
-                  <Clock className="w-5 h-5" />
-                  Approval Migration Required
-                </h2>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-500">{migrationStats.needsMigration}</div>
-                    <div className="text-sm text-muted-foreground">Need Migration</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-500">{migrationStats.total}</div>
-                    <div className="text-sm text-muted-foreground">Total Movies</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-500">{migrationStats.approved}</div>
-                    <div className="text-sm text-muted-foreground">Already Approved</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-yellow-500">{migrationStats.pending}</div>
-                    <div className="text-sm text-muted-foreground">Already Pending</div>
-                  </div>
-                </div>
-
-                <div className="bg-orange-500/10 rounded p-3 mb-4">
-                  <p className="text-sm text-orange-400">
-                    <strong>⚠️ Important:</strong> {migrationStats.needsMigration} movies need to be migrated to the approval system.
-                    This will set them to "pending" status so Ben can approve them individually.
-                  </p>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => runMigration(true)}
-                    disabled={migrating}
-                    className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-muted/50 transition-colors disabled:opacity-50"
-                  >
-                    {migrating ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                    Preview Migration
-                  </button>
-
-                  <button
-                    onClick={() => runMigration(false)}
-                    disabled={migrating}
-                    className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
-                  >
-                    {migrating ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <UserCheck className="w-4 h-4" />
-                    )}
-                    Migrate All to Pending
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Filtering Options */}
             <div className="bg-card/50 rounded-xl border border-border/50 p-6">
@@ -433,7 +397,9 @@ export default function ApprovalDashboard() {
 
               {filteredMovies.map((movie) => {
                 const isApproved = approvedMovies.has(movie.movieId);
+                const isRemoved = removedMovies.has(movie.movieId);
                 const isApproving = approvingMovie === movie.movieId;
+                const isRemoving = removingMovie === movie.movieId;
 
                 const posterUrl = movie.posterPath
                   ? `https://image.tmdb.org/t/p/w200${movie.posterPath}`
@@ -446,7 +412,8 @@ export default function ApprovalDashboard() {
                       "bg-card/50 rounded-lg border p-4 transition-all duration-200",
                       movie.severity === 'high' ? "border-red-500/40" :
                       movie.severity === 'medium' ? "border-orange-500/40" : "border-green-500/40",
-                      isApproved && "opacity-75"
+                      isApproved && "opacity-75",
+                      isRemoved && "opacity-50 bg-red-500/5 border-red-500/30"
                     )}
                   >
                     <div className="flex gap-4">
@@ -505,7 +472,7 @@ export default function ApprovalDashboard() {
 
                           {/* Action Buttons */}
                           <div className="flex items-center gap-2">
-                            {!isApproved && (
+                            {!isApproved && !isRemoved && (
                               <>
                                 <button
                                   onClick={() => {
@@ -530,6 +497,19 @@ export default function ApprovalDashboard() {
                                   )}
                                   Ben Approves
                                 </button>
+
+                                <button
+                                  onClick={() => removeMovie(movie.movieId)}
+                                  disabled={isRemoving}
+                                  className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors disabled:opacity-50"
+                                >
+                                  {isRemoving ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <XCircle className="w-3 h-3" />
+                                  )}
+                                  Remove
+                                </button>
                               </>
                             )}
 
@@ -537,6 +517,13 @@ export default function ApprovalDashboard() {
                               <div className="flex items-center gap-1 text-green-500 text-sm">
                                 <UserCheck className="w-4 h-4" />
                                 Ben's Approved
+                              </div>
+                            )}
+
+                            {isRemoved && (
+                              <div className="flex items-center gap-1 text-red-500 text-sm">
+                                <XCircle className="w-4 h-4" />
+                                Removed
                               </div>
                             )}
                           </div>

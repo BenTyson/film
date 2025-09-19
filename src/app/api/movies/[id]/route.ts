@@ -7,7 +7,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const movieId = parseInt(params.id);
+    const { id } = await params;
+    const movieId = parseInt(id);
 
     if (isNaN(movieId)) {
       return NextResponse.json({
@@ -74,12 +75,52 @@ export async function GET(
       // Continue without trailer data
     }
 
+    // Convert BigInt fields to strings for JSON serialization
+    const serializedMovie = {
+      ...movie,
+      id: Number(movie.id),
+      budget: movie.budget ? Number(movie.budget) : null,
+      revenue: movie.revenue ? Number(movie.revenue) : null,
+      created_at: movie.created_at?.toISOString(),
+      updated_at: movie.updated_at?.toISOString(),
+      approved_at: movie.approved_at?.toISOString(),
+      release_date: movie.release_date?.toISOString(),
+      user_movies: movie.user_movies.map(um => ({
+        ...um,
+        id: Number(um.id),
+        movie_id: Number(um.movie_id),
+        user_id: Number(um.user_id),
+        date_watched: um.date_watched?.toISOString(),
+        created_at: um.created_at?.toISOString(),
+        updated_at: um.updated_at?.toISOString()
+      })),
+      oscar_data: movie.oscar_data.map(od => ({
+        ...od,
+        id: Number(od.id),
+        movie_id: Number(od.movie_id),
+        created_at: od.created_at?.toISOString(),
+        updated_at: od.updated_at?.toISOString()
+      })),
+      movie_tags: movie.movie_tags.map(mt => ({
+        ...mt,
+        id: Number(mt.id),
+        movie_id: Number(mt.movie_id),
+        tag_id: Number(mt.tag_id),
+        created_at: mt.created_at?.toISOString(),
+        updated_at: mt.updated_at?.toISOString(),
+        tag: {
+          ...mt.tag,
+          id: Number(mt.tag.id),
+          created_at: mt.tag.created_at?.toISOString(),
+          updated_at: mt.tag.updated_at?.toISOString()
+        }
+      })),
+      trailer: trailerData
+    };
+
     return NextResponse.json({
       success: true,
-      data: {
-        ...movie,
-        trailer: trailerData
-      }
+      data: serializedMovie
     });
 
   } catch (error) {
@@ -96,7 +137,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const movieId = parseInt(params.id);
+    const { id } = await params;
+    const movieId = parseInt(id);
     const body = await request.json();
 
     if (isNaN(movieId)) {

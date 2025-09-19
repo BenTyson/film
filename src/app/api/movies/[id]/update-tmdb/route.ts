@@ -10,7 +10,12 @@ export async function PUT(
     const { id } = await params;
     const movieId = parseInt(id);
     const body = await request.json();
-    const { newTmdbId, reason = 'Manual update' } = body;
+    const { newTmdbId, tmdb_id, reason = 'Manual update' } = body;
+
+    // Handle both newTmdbId (from Fix modal) and tmdb_id (from other sources)
+    const targetTmdbId = newTmdbId || tmdb_id;
+
+    console.log('Update TMDB request:', { movieId, newTmdbId, tmdb_id, targetTmdbId, reason, body });
 
     if (isNaN(movieId)) {
       return NextResponse.json(
@@ -19,7 +24,8 @@ export async function PUT(
       );
     }
 
-    if (!newTmdbId || isNaN(parseInt(newTmdbId))) {
+    const tmdbIdNumber = parseInt(targetTmdbId);
+    if (!targetTmdbId || isNaN(tmdbIdNumber) || tmdbIdNumber <= 0) {
       return NextResponse.json(
         { success: false, error: 'Valid TMDB ID is required' },
         { status: 400 }
@@ -36,7 +42,8 @@ export async function PUT(
         csv_title: true,
         csv_director: true,
         csv_year: true,
-        csv_row_number: true
+        csv_row_number: true,
+        approval_status: true  // Get current approval status
       }
     });
 
@@ -49,7 +56,7 @@ export async function PUT(
 
     // Check if new TMDB ID is already in use
     const duplicateMovie = await prisma.movie.findUnique({
-      where: { tmdb_id: parseInt(newTmdbId) }
+      where: { tmdb_id: tmdbIdNumber }
     });
 
     if (duplicateMovie && duplicateMovie.id !== movieId) {
@@ -60,8 +67,8 @@ export async function PUT(
     }
 
     // Get new movie details from TMDB
-    const movieDetails = await tmdb.getMovieDetails(parseInt(newTmdbId));
-    const credits = await tmdb.getMovieCredits(parseInt(newTmdbId));
+    const movieDetails = await tmdb.getMovieDetails(tmdbIdNumber);
+    const credits = await tmdb.getMovieCredits(tmdbIdNumber);
     const director = tmdb.findDirector(credits);
 
     // Use transaction to update movie and create/update match analysis
@@ -70,7 +77,7 @@ export async function PUT(
       const updated = await tx.movie.update({
         where: { id: movieId },
         data: {
-          tmdb_id: parseInt(newTmdbId),
+          tmdb_id: tmdbIdNumber,
           title: movieDetails.title,
           original_title: movieDetails.original_title,
           release_date: movieDetails.release_date ? new Date(movieDetails.release_date) : null,
@@ -86,7 +93,8 @@ export async function PUT(
           budget: movieDetails.budget,
           revenue: movieDetails.revenue,
           tagline: movieDetails.tagline,
-          approval_status: 'pending', // Reset to pending after fix
+          // Keep existing approval status - don't reset if already approved
+          approval_status: existingMovie.approval_status === 'approved' ? 'approved' : 'pending',
           updated_at: new Date()
         }
       });

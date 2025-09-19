@@ -121,6 +121,7 @@ export function FixMovieModal({
   };
 
   const handleSelectMovie = async (tmdbMovie: any) => {
+    console.log('Fixing movie with:', { currentMovieId: currentMovie.id, tmdbMovieId: tmdbMovie.id, tmdbMovie });
     setFixingMovie(tmdbMovie.id);
     try {
       // Call the API to update the movie with new TMDB association
