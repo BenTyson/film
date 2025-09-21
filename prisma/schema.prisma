@@ -120,3 +120,63 @@ model MovieMatchAnalysis {
 
   @@map("movie_match_analysis")
 }
+
+model BestPictureNominee {
+  id            Int      @id @default(autoincrement())
+  tmdb_id       Int?     // TMDB ID if available
+  ceremony_year Int      // Academy Awards ceremony year
+  movie_title   String   // Movie title
+  release_year  Int?     // Movie release year
+  director      String?  // Director name for enhanced matching
+  is_winner     Boolean  @default(false) // true if winner, false if just nominee
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@unique([ceremony_year, movie_title])
+  @@map("best_picture_nominees")
+}
+
+model OscarCategory {
+  id             Int      @id @default(autoincrement())
+  name           String   @unique
+  category_group String?  // Group like "Acting", "Technical", "Writing", etc.
+  is_active      Boolean  @default(true) // Some categories were discontinued
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  nominations OscarNomination[]
+
+  @@map("oscar_categories")
+}
+
+model OscarMovie {
+  id         Int      @id @default(autoincrement())
+  tmdb_id    Int?     @unique
+  imdb_id    String?  @unique
+  title      String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  nominations OscarNomination[]
+
+  @@map("oscar_movies")
+}
+
+model OscarNomination {
+  id            Int      @id @default(autoincrement())
+  ceremony_year Int      // Academy Awards ceremony year
+  category_id   Int      // Foreign key to OscarCategory
+  movie_id      Int?     // Foreign key to OscarMovie (nullable for person-only nominations)
+  nominee_name  String?  // Individual nominee name (actor, director, etc.)
+  is_winner     Boolean  @default(false)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  category OscarCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  movie    OscarMovie?   @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+
+  @@index([ceremony_year])
+  @@index([category_id])
+  @@index([movie_id])
+  @@map("oscar_nominations")
+}

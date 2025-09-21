@@ -1,0 +1,1042 @@
+[
+  {
+    "ceremony_year": 2025,
+    "movie_title": "Emilia Pérez",
+    "release_year": 2024,
+    "is_winner": true,
+    "tmdb_id": 1287717,
+    "director": "Jacques Audiard"
+  },
+  {
+    "ceremony_year": 2025,
+    "movie_title": "The Brutalist",
+    "release_year": 2024,
+    "is_winner": false,
+    "tmdb_id": 1064213,
+    "director": "Brady Corbet"
+  },
+  {
+    "ceremony_year": 2025,
+    "movie_title": "Anora",
+    "release_year": 2024,
+    "is_winner": false,
+    "tmdb_id": 1064028,
+    "director": "Sean Baker"
+  },
+  {
+    "ceremony_year": 2025,
+    "movie_title": "The Substance",
+    "release_year": 2024,
+    "is_winner": false,
+    "tmdb_id": 933260,
+    "director": "Coralie Fargeat"
+  },
+  {
+    "ceremony_year": 2025,
+    "movie_title": "Conclave",
+    "release_year": 2024,
+    "is_winner": false,
+    "tmdb_id": 1084736,
+    "director": "Edward Berger"
+  },
+  {
+    "ceremony_year": 2024,
+    "movie_title": "Oppenheimer",
+    "release_year": 2023,
+    "is_winner": true,
+    "tmdb_id": 872585
+  },
+  {
+    "ceremony_year": 2024,
+    "movie_title": "American Fiction",
+    "release_year": 2023,
+    "is_winner": false,
+    "tmdb_id": 1024773
+  },
+  {
+    "ceremony_year": 2024,
+    "movie_title": "Anatomy of a Fall",
+    "release_year": 2023,
+    "is_winner": false,
+    "tmdb_id": 1062807
+  },
+  {
+    "ceremony_year": 2024,
+    "movie_title": "Barbie",
+    "release_year": 2023,
+    "is_winner": false,
+    "tmdb_id": 346698
+  },
+  {
+    "ceremony_year": 2024,
+    "movie_title": "The Holdovers",
+    "release_year": 2023,
+    "is_winner": false,
+    "tmdb_id": 840326
+  },
+  {
+    "ceremony_year": 2024,
+    "movie_title": "Killers of the Flower Moon",
+    "release_year": 2023,
+    "is_winner": false,
+    "tmdb_id": 466420
+  },
+  {
+    "ceremony_year": 2024,
+    "movie_title": "Maestro",
+    "release_year": 2023,
+    "is_winner": false,
+    "tmdb_id": 800158
+  },
+  {
+    "ceremony_year": 2024,
+    "movie_title": "Past Lives",
+    "release_year": 2023,
+    "is_winner": false,
+    "tmdb_id": 758323
+  },
+  {
+    "ceremony_year": 2024,
+    "movie_title": "Poor Things",
+    "release_year": 2023,
+    "is_winner": false,
+    "tmdb_id": 792307
+  },
+  {
+    "ceremony_year": 2024,
+    "movie_title": "The Zone of Interest",
+    "release_year": 2023,
+    "is_winner": false,
+    "tmdb_id": 1001218
+  },
+  {
+    "ceremony_year": 2023,
+    "movie_title": "Everything Everywhere All at Once",
+    "release_year": 2022,
+    "is_winner": true,
+    "tmdb_id": 545611
+  },
+  {
+    "ceremony_year": 2023,
+    "movie_title": "All Quiet on the Western Front",
+    "release_year": 2022,
+    "is_winner": false,
+    "tmdb_id": 49046
+  },
+  {
+    "ceremony_year": 2023,
+    "movie_title": "Avatar: The Way of Water",
+    "release_year": 2022,
+    "is_winner": false,
+    "tmdb_id": 76600
+  },
+  {
+    "ceremony_year": 2023,
+    "movie_title": "The Banshees of Inisherin",
+    "release_year": 2022,
+    "is_winner": false,
+    "tmdb_id": 674324
+  },
+  {
+    "ceremony_year": 2023,
+    "movie_title": "Elvis",
+    "release_year": 2022,
+    "is_winner": false,
+    "tmdb_id": 614934
+  },
+  {
+    "ceremony_year": 2023,
+    "movie_title": "The Fabelmans",
+    "release_year": 2022,
+    "is_winner": false,
+    "tmdb_id": 926393
+  },
+  {
+    "ceremony_year": 2023,
+    "movie_title": "Tár",
+    "release_year": 2022,
+    "is_winner": false,
+    "tmdb_id": 793723
+  },
+  {
+    "ceremony_year": 2023,
+    "movie_title": "Top Gun: Maverick",
+    "release_year": 2022,
+    "is_winner": false,
+    "tmdb_id": 361743
+  },
+  {
+    "ceremony_year": 2023,
+    "movie_title": "Triangle of Sadness",
+    "release_year": 2022,
+    "is_winner": false,
+    "tmdb_id": 497828
+  },
+  {
+    "ceremony_year": 2023,
+    "movie_title": "Women Talking",
+    "release_year": 2022,
+    "is_winner": false,
+    "tmdb_id": 777245,
+    "director": "Sarah Polley"
+  },
+  {
+    "ceremony_year": 2022,
+    "movie_title": "CODA",
+    "release_year": 2021,
+    "is_winner": true,
+    "tmdb_id": 776503
+  },
+  {
+    "ceremony_year": 2022,
+    "movie_title": "Belfast",
+    "release_year": 2021,
+    "is_winner": false,
+    "tmdb_id": 777270
+  },
+  {
+    "ceremony_year": 2022,
+    "movie_title": "Don't Look Up",
+    "release_year": 2021,
+    "is_winner": false,
+    "tmdb_id": 646380
+  },
+  {
+    "ceremony_year": 2022,
+    "movie_title": "Drive My Car",
+    "release_year": 2021,
+    "is_winner": false,
+    "tmdb_id": 635302
+  },
+  {
+    "ceremony_year": 2022,
+    "movie_title": "Dune",
+    "release_year": 2021,
+    "is_winner": false,
+    "tmdb_id": 438631
+  },
+  {
+    "ceremony_year": 2022,
+    "movie_title": "King Richard",
+    "release_year": 2021,
+    "is_winner": false,
+    "tmdb_id": 578701
+  },
+  {
+    "ceremony_year": 2022,
+    "movie_title": "Licorice Pizza",
+    "release_year": 2021,
+    "is_winner": false,
+    "tmdb_id": 718032,
+    "director": "Paul Thomas Anderson"
+  },
+  {
+    "ceremony_year": 2022,
+    "movie_title": "Nightmare Alley",
+    "release_year": 2021,
+    "is_winner": false,
+    "tmdb_id": 546554
+  },
+  {
+    "ceremony_year": 2022,
+    "movie_title": "The Power of the Dog",
+    "release_year": 2021,
+    "is_winner": false,
+    "tmdb_id": 522016
+  },
+  {
+    "ceremony_year": 2022,
+    "movie_title": "West Side Story",
+    "release_year": 2021,
+    "is_winner": false,
+    "tmdb_id": 588804
+  },
+  {
+    "ceremony_year": 2021,
+    "movie_title": "Nomadland",
+    "release_year": 2020,
+    "is_winner": true,
+    "tmdb_id": 581734
+  },
+  {
+    "ceremony_year": 2021,
+    "movie_title": "The Father",
+    "release_year": 2020,
+    "is_winner": false,
+    "tmdb_id": 600354,
+    "director": "Florian Zeller"
+  },
+  {
+    "ceremony_year": 2021,
+    "movie_title": "Judas and the Black Messiah",
+    "release_year": 2021,
+    "is_winner": false,
+    "tmdb_id": 583406,
+    "director": "Shaka King"
+  },
+  {
+    "ceremony_year": 2021,
+    "movie_title": "Mank",
+    "release_year": 2020,
+    "is_winner": false,
+    "tmdb_id": 618344
+  },
+  {
+    "ceremony_year": 2021,
+    "movie_title": "Minari",
+    "release_year": 2020,
+    "is_winner": false,
+    "tmdb_id": 615643,
+    "director": "Lee Isaac Chung"
+  },
+  {
+    "ceremony_year": 2021,
+    "movie_title": "Promising Young Woman",
+    "release_year": 2020,
+    "is_winner": false,
+    "tmdb_id": 634649
+  },
+  {
+    "ceremony_year": 2021,
+    "movie_title": "Sound of Metal",
+    "release_year": 2019,
+    "is_winner": false,
+    "tmdb_id": 520946
+  },
+  {
+    "ceremony_year": 2021,
+    "movie_title": "The Trial of the Chicago 7",
+    "release_year": 2020,
+    "is_winner": false,
+    "tmdb_id": 556984,
+    "director": "Aaron Sorkin"
+  },
+  {
+    "ceremony_year": 2020,
+    "movie_title": "Parasite",
+    "release_year": 2019,
+    "is_winner": true,
+    "tmdb_id": 496243
+  },
+  {
+    "ceremony_year": 2020,
+    "movie_title": "Ford v Ferrari",
+    "release_year": 2019,
+    "is_winner": false,
+    "tmdb_id": 359724
+  },
+  {
+    "ceremony_year": 2020,
+    "movie_title": "The Irishman",
+    "release_year": 2019,
+    "is_winner": false,
+    "tmdb_id": 398978
+  },
+  {
+    "ceremony_year": 2020,
+    "movie_title": "Jojo Rabbit",
+    "release_year": 2019,
+    "is_winner": false,
+    "tmdb_id": 515001
+  },
+  {
+    "ceremony_year": 2020,
+    "movie_title": "Joker",
+    "release_year": 2019,
+    "is_winner": false,
+    "tmdb_id": 475557
+  },
+  {
+    "ceremony_year": 2020,
+    "movie_title": "Little Women",
+    "release_year": 2019,
+    "is_winner": false,
+    "tmdb_id": 331482
+  },
+  {
+    "ceremony_year": 2020,
+    "movie_title": "Marriage Story",
+    "release_year": 2019,
+    "is_winner": false,
+    "tmdb_id": 492188
+  },
+  {
+    "ceremony_year": 2020,
+    "movie_title": "1917",
+    "release_year": 2019,
+    "is_winner": false,
+    "tmdb_id": 530915
+  },
+  {
+    "ceremony_year": 2020,
+    "movie_title": "Once Upon a Time in Hollywood",
+    "release_year": 2019,
+    "is_winner": false,
+    "tmdb_id": 466272
+  },
+  {
+    "ceremony_year": 2019,
+    "movie_title": "Green Book",
+    "release_year": 2018,
+    "is_winner": true,
+    "tmdb_id": 490132
+  },
+  {
+    "ceremony_year": 2019,
+    "movie_title": "BlacKkKlansman",
+    "release_year": 2018,
+    "is_winner": false,
+    "tmdb_id": 487297
+  },
+  {
+    "ceremony_year": 2019,
+    "movie_title": "Black Panther",
+    "release_year": 2018,
+    "is_winner": false,
+    "tmdb_id": 284054
+  },
+  {
+    "ceremony_year": 2019,
+    "movie_title": "Bohemian Rhapsody",
+    "release_year": 2018,
+    "is_winner": false,
+    "tmdb_id": 424694
+  },
+  {
+    "ceremony_year": 2019,
+    "movie_title": "The Favourite",
+    "release_year": 2018,
+    "is_winner": false,
+    "tmdb_id": 445651
+  },
+  {
+    "ceremony_year": 2019,
+    "movie_title": "Roma",
+    "release_year": 2018,
+    "is_winner": false,
+    "tmdb_id": 426426,
+    "director": "Alfonso Cuarón"
+  },
+  {
+    "ceremony_year": 2019,
+    "movie_title": "A Star Is Born",
+    "release_year": 2018,
+    "is_winner": false,
+    "tmdb_id": 332562
+  },
+  {
+    "ceremony_year": 2019,
+    "movie_title": "Vice",
+    "release_year": 2018,
+    "is_winner": false,
+    "tmdb_id": 297802
+  },
+  {
+    "ceremony_year": 2018,
+    "movie_title": "The Shape of Water",
+    "release_year": 2017,
+    "is_winner": true,
+    "tmdb_id": 399055
+  },
+  {
+    "ceremony_year": 2018,
+    "movie_title": "Call Me by Your Name",
+    "release_year": 2017,
+    "is_winner": false,
+    "tmdb_id": 398818,
+    "director": "Luca Guadagnino"
+  },
+  {
+    "ceremony_year": 2018,
+    "movie_title": "Darkest Hour",
+    "release_year": 2017,
+    "is_winner": false,
+    "tmdb_id": 374218
+  },
+  {
+    "ceremony_year": 2018,
+    "movie_title": "Dunkirk",
+    "release_year": 2017,
+    "is_winner": false,
+    "tmdb_id": 374720
+  },
+  {
+    "ceremony_year": 2018,
+    "movie_title": "Get Out",
+    "release_year": 2017,
+    "is_winner": false,
+    "tmdb_id": 419704
+  },
+  {
+    "ceremony_year": 2018,
+    "movie_title": "Lady Bird",
+    "release_year": 2017,
+    "is_winner": false,
+    "tmdb_id": 391713
+  },
+  {
+    "ceremony_year": 2018,
+    "movie_title": "Phantom Thread",
+    "release_year": 2017,
+    "is_winner": false,
+    "tmdb_id": 400617,
+    "director": "Paul Thomas Anderson"
+  },
+  {
+    "ceremony_year": 2018,
+    "movie_title": "The Post",
+    "release_year": 2017,
+    "is_winner": false,
+    "tmdb_id": 446354
+  },
+  {
+    "ceremony_year": 2018,
+    "movie_title": "Three Billboards Outside Ebbing, Missouri",
+    "release_year": 2017,
+    "is_winner": false,
+    "tmdb_id": 395834
+  },
+  {
+    "ceremony_year": 2017,
+    "movie_title": "Moonlight",
+    "release_year": 2016,
+    "is_winner": true,
+    "tmdb_id": 376867
+  },
+  {
+    "ceremony_year": 2017,
+    "movie_title": "Arrival",
+    "release_year": 2016,
+    "is_winner": false,
+    "tmdb_id": 329865
+  },
+  {
+    "ceremony_year": 2017,
+    "movie_title": "Fences",
+    "release_year": 2016,
+    "is_winner": false,
+    "tmdb_id": 360814
+  },
+  {
+    "ceremony_year": 2017,
+    "movie_title": "Hacksaw Ridge",
+    "release_year": 2016,
+    "is_winner": false,
+    "tmdb_id": 324786
+  },
+  {
+    "ceremony_year": 2017,
+    "movie_title": "Hell or High Water",
+    "release_year": 2016,
+    "is_winner": false,
+    "tmdb_id": 314314
+  },
+  {
+    "ceremony_year": 2017,
+    "movie_title": "Hidden Figures",
+    "release_year": 2016,
+    "is_winner": false,
+    "tmdb_id": 381284
+  },
+  {
+    "ceremony_year": 2017,
+    "movie_title": "La La Land",
+    "release_year": 2016,
+    "is_winner": false,
+    "tmdb_id": 313369
+  },
+  {
+    "ceremony_year": 2017,
+    "movie_title": "Lion",
+    "release_year": 2016,
+    "is_winner": false,
+    "tmdb_id": 334533
+  },
+  {
+    "ceremony_year": 2017,
+    "movie_title": "Manchester by the Sea",
+    "release_year": 2016,
+    "is_winner": false,
+    "tmdb_id": 334541
+  },
+  {
+    "ceremony_year": 2016,
+    "movie_title": "Spotlight",
+    "release_year": 2015,
+    "is_winner": true,
+    "tmdb_id": 359940
+  },
+  {
+    "ceremony_year": 2016,
+    "movie_title": "The Big Short",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 318846
+  },
+  {
+    "ceremony_year": 2016,
+    "movie_title": "Bridge of Spies",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 296098
+  },
+  {
+    "ceremony_year": 2016,
+    "movie_title": "Brooklyn",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 258480
+  },
+  {
+    "ceremony_year": 2016,
+    "movie_title": "Mad Max: Fury Road",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 76341
+  },
+  {
+    "ceremony_year": 2016,
+    "movie_title": "The Martian",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 286217
+  },
+  {
+    "ceremony_year": 2016,
+    "movie_title": "The Revenant",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 281957
+  },
+  {
+    "ceremony_year": 2016,
+    "movie_title": "Room",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 264644
+  },
+  {
+    "ceremony_year": 2015,
+    "movie_title": "Spotlight",
+    "release_year": 2015,
+    "is_winner": true,
+    "tmdb_id": 314365,
+    "director": "Tom McCarthy"
+  },
+  {
+    "ceremony_year": 2015,
+    "movie_title": "Bridge of Spies",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 296098,
+    "director": "Steven Spielberg"
+  },
+  {
+    "ceremony_year": 2015,
+    "movie_title": "Brooklyn",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 167073,
+    "director": "John Crowley"
+  },
+  {
+    "ceremony_year": 2015,
+    "movie_title": "The Big Short",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 318846,
+    "director": "Adam McKay"
+  },
+  {
+    "ceremony_year": 2015,
+    "movie_title": "Mad Max: Fury Road",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 76341,
+    "director": "George Miller"
+  },
+  {
+    "ceremony_year": 2015,
+    "movie_title": "The Martian",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 286217,
+    "director": "Ridley Scott"
+  },
+  {
+    "ceremony_year": 2015,
+    "movie_title": "The Revenant",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 281957,
+    "director": "Alejandro G. Iñárritu"
+  },
+  {
+    "ceremony_year": 2015,
+    "movie_title": "Room",
+    "release_year": 2015,
+    "is_winner": false,
+    "tmdb_id": 264644,
+    "director": "Lenny Abrahamson"
+  },
+  {
+    "ceremony_year": 2014,
+    "movie_title": "Birdman or (The Unexpected Virtue of Ignorance)",
+    "release_year": 2014,
+    "is_winner": true,
+    "tmdb_id": 194662,
+    "director": "Alejandro G. Iñárritu"
+  },
+  {
+    "ceremony_year": 2014,
+    "movie_title": "American Sniper",
+    "release_year": 2014,
+    "is_winner": false,
+    "tmdb_id": 190859,
+    "director": "Clint Eastwood"
+  },
+  {
+    "ceremony_year": 2014,
+    "movie_title": "Boyhood",
+    "release_year": 2014,
+    "is_winner": false,
+    "tmdb_id": 85350,
+    "director": "Richard Linklater"
+  },
+  {
+    "ceremony_year": 2014,
+    "movie_title": "The Grand Budapest Hotel",
+    "release_year": 2014,
+    "is_winner": false,
+    "tmdb_id": 120467,
+    "director": "Wes Anderson"
+  },
+  {
+    "ceremony_year": 2014,
+    "movie_title": "The Imitation Game",
+    "release_year": 2014,
+    "is_winner": false,
+    "tmdb_id": 205596,
+    "director": "Morten Tyldum"
+  },
+  {
+    "ceremony_year": 2014,
+    "movie_title": "Selma",
+    "release_year": 2014,
+    "is_winner": false,
+    "tmdb_id": 273895,
+    "director": "Ava DuVernay"
+  },
+  {
+    "ceremony_year": 2014,
+    "movie_title": "The Theory of Everything",
+    "release_year": 2014,
+    "is_winner": false,
+    "tmdb_id": 266856,
+    "director": "James Marsh"
+  },
+  {
+    "ceremony_year": 2014,
+    "movie_title": "Whiplash",
+    "release_year": 2014,
+    "is_winner": false,
+    "tmdb_id": 244786,
+    "director": "Damien Chazelle"
+  },
+  {
+    "ceremony_year": 2013,
+    "movie_title": "12 Years a Slave",
+    "release_year": 2013,
+    "is_winner": true,
+    "tmdb_id": 76203,
+    "director": "Steve McQueen"
+  },
+  {
+    "ceremony_year": 2013,
+    "movie_title": "American Hustle",
+    "release_year": 2013,
+    "is_winner": false,
+    "tmdb_id": 168672,
+    "director": "David O. Russell"
+  },
+  {
+    "ceremony_year": 2013,
+    "movie_title": "Captain Phillips",
+    "release_year": 2013,
+    "is_winner": false,
+    "tmdb_id": 109424,
+    "director": "Paul Greengrass"
+  },
+  {
+    "ceremony_year": 2013,
+    "movie_title": "Dallas Buyers Club",
+    "release_year": 2013,
+    "is_winner": false,
+    "tmdb_id": 152532,
+    "director": "Jean-Marc Vallée"
+  },
+  {
+    "ceremony_year": 2013,
+    "movie_title": "Gravity",
+    "release_year": 2013,
+    "is_winner": false,
+    "tmdb_id": 49047,
+    "director": "Alfonso Cuarón"
+  },
+  {
+    "ceremony_year": 2013,
+    "movie_title": "Her",
+    "release_year": 2013,
+    "is_winner": false,
+    "tmdb_id": 152601,
+    "director": "Spike Jonze"
+  },
+  {
+    "ceremony_year": 2013,
+    "movie_title": "Nebraska",
+    "release_year": 2013,
+    "is_winner": false,
+    "tmdb_id": 129670,
+    "director": "Alexander Payne"
+  },
+  {
+    "ceremony_year": 2013,
+    "movie_title": "Philomena",
+    "release_year": 2013,
+    "is_winner": false,
+    "tmdb_id": 205220,
+    "director": "Stephen Frears"
+  },
+  {
+    "ceremony_year": 2013,
+    "movie_title": "The Wolf of Wall Street",
+    "release_year": 2013,
+    "is_winner": false,
+    "tmdb_id": 106646,
+    "director": "Martin Scorsese"
+  },
+  {
+    "ceremony_year": 2012,
+    "movie_title": "Argo",
+    "release_year": 2012,
+    "is_winner": true,
+    "tmdb_id": 68734,
+    "director": "Ben Affleck"
+  },
+  {
+    "ceremony_year": 2012,
+    "movie_title": "Amour",
+    "release_year": 2012,
+    "is_winner": false,
+    "tmdb_id": 86837,
+    "director": "Michael Haneke"
+  },
+  {
+    "ceremony_year": 2012,
+    "movie_title": "Beasts of the Southern Wild",
+    "release_year": 2012,
+    "is_winner": false,
+    "tmdb_id": 84175,
+    "director": "Benh Zeitlin"
+  },
+  {
+    "ceremony_year": 2012,
+    "movie_title": "Django Unchained",
+    "release_year": 2012,
+    "is_winner": false,
+    "tmdb_id": 68718,
+    "director": "Quentin Tarantino"
+  },
+  {
+    "ceremony_year": 2012,
+    "movie_title": "Les Misérables",
+    "release_year": 2012,
+    "is_winner": false,
+    "tmdb_id": 82695,
+    "director": "Tom Hooper"
+  },
+  {
+    "ceremony_year": 2012,
+    "movie_title": "Life of Pi",
+    "release_year": 2012,
+    "is_winner": false,
+    "tmdb_id": 87827,
+    "director": "Ang Lee"
+  },
+  {
+    "ceremony_year": 2012,
+    "movie_title": "Lincoln",
+    "release_year": 2012,
+    "is_winner": false,
+    "tmdb_id": 72976,
+    "director": "Steven Spielberg"
+  },
+  {
+    "ceremony_year": 2012,
+    "movie_title": "Silver Linings Playbook",
+    "release_year": 2012,
+    "is_winner": false,
+    "tmdb_id": 82693,
+    "director": "David O. Russell"
+  },
+  {
+    "ceremony_year": 2012,
+    "movie_title": "Zero Dark Thirty",
+    "release_year": 2012,
+    "is_winner": false,
+    "tmdb_id": 97630,
+    "director": "Kathryn Bigelow"
+  },
+  {
+    "ceremony_year": 2011,
+    "movie_title": "The Artist",
+    "release_year": 2011,
+    "is_winner": true,
+    "tmdb_id": 74643,
+    "director": "Michel Hazanavicius"
+  },
+  {
+    "ceremony_year": 2011,
+    "movie_title": "The Descendants",
+    "release_year": 2011,
+    "is_winner": false,
+    "tmdb_id": 65057,
+    "director": "Alexander Payne"
+  },
+  {
+    "ceremony_year": 2011,
+    "movie_title": "Extremely Loud & Incredibly Close",
+    "release_year": 2011,
+    "is_winner": false,
+    "tmdb_id": 64685,
+    "director": "Stephen Daldry"
+  },
+  {
+    "ceremony_year": 2011,
+    "movie_title": "The Help",
+    "release_year": 2011,
+    "is_winner": false,
+    "tmdb_id": 50014,
+    "director": "Tate Taylor"
+  },
+  {
+    "ceremony_year": 2011,
+    "movie_title": "Hugo",
+    "release_year": 2011,
+    "is_winner": false,
+    "tmdb_id": 44826,
+    "director": "Martin Scorsese"
+  },
+  {
+    "ceremony_year": 2011,
+    "movie_title": "Midnight in Paris",
+    "release_year": 2011,
+    "is_winner": false,
+    "tmdb_id": 59436,
+    "director": "Woody Allen"
+  },
+  {
+    "ceremony_year": 2011,
+    "movie_title": "Moneyball",
+    "release_year": 2011,
+    "is_winner": false,
+    "tmdb_id": 60308,
+    "director": "Bennett Miller"
+  },
+  {
+    "ceremony_year": 2011,
+    "movie_title": "The Tree of Life",
+    "release_year": 2011,
+    "is_winner": false,
+    "tmdb_id": 8967,
+    "director": "Terrence Malick"
+  },
+  {
+    "ceremony_year": 2011,
+    "movie_title": "War Horse",
+    "release_year": 2011,
+    "is_winner": false,
+    "tmdb_id": 57212,
+    "director": "Steven Spielberg"
+  },
+  {
+    "ceremony_year": 2010,
+    "movie_title": "The King's Speech",
+    "release_year": 2010,
+    "is_winner": true,
+    "tmdb_id": 45269,
+    "director": "Tom Hooper"
+  },
+  {
+    "ceremony_year": 2010,
+    "movie_title": "127 Hours",
+    "release_year": 2010,
+    "is_winner": false,
+    "tmdb_id": 44115,
+    "director": "Danny Boyle"
+  },
+  {
+    "ceremony_year": 2010,
+    "movie_title": "Black Swan",
+    "release_year": 2010,
+    "is_winner": false,
+    "tmdb_id": 44214,
+    "director": "Darren Aronofsky"
+  },
+  {
+    "ceremony_year": 2010,
+    "movie_title": "The Fighter",
+    "release_year": 2010,
+    "is_winner": false,
+    "tmdb_id": 45317,
+    "director": "David O. Russell"
+  },
+  {
+    "ceremony_year": 2010,
+    "movie_title": "Inception",
+    "release_year": 2010,
+    "is_winner": false,
+    "tmdb_id": 27205,
+    "director": "Christopher Nolan"
+  },
+  {
+    "ceremony_year": 2010,
+    "movie_title": "The Kids Are All Right",
+    "release_year": 2010,
+    "is_winner": false,
+    "tmdb_id": 39781,
+    "director": "Lisa Cholodenko"
+  },
+  {
+    "ceremony_year": 2010,
+    "movie_title": "The Social Network",
+    "release_year": 2010,
+    "is_winner": false,
+    "tmdb_id": 37799,
+    "director": "David Fincher"
+  },
+  {
+    "ceremony_year": 2010,
+    "movie_title": "Toy Story 3",
+    "release_year": 2010,
+    "is_winner": false,
+    "tmdb_id": 10193,
+    "director": "Lee Unkrich"
+  },
+  {
+    "ceremony_year": 2010,
+    "movie_title": "True Grit",
+    "release_year": 2010,
+    "is_winner": false,
+    "tmdb_id": 44264,
+    "director": "Joel Coen"
+  },
+  {
+    "ceremony_year": 2010,
+    "movie_title": "Winter's Bone",
+    "release_year": 2010,
+    "is_winner": false,
+    "tmdb_id": 39013,
+    "director": "Debra Granik"
+  }
+]
