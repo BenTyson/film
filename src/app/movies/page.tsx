@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, Grid, List, Star, Calendar, Award, Users, Plus, AlertTriangle, Grid3X3, LayoutGrid, Grip } from 'lucide-react';
+import { Search, Filter, Grid, List, Star, Calendar, Award, Users, Plus, AlertTriangle, Grid3X3, LayoutGrid, Grip, ChevronUp, ChevronDown, ArrowUp, ArrowDown } from 'lucide-react';
 import Link from 'next/link';
 import { MovieGrid } from '@/components/movie/MovieGrid';
 import { MovieList } from '@/components/movie/MovieList';
@@ -34,6 +34,9 @@ export default function MoviesPage() {
   const [hasNextPage, setHasNextPage] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date_watched');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [selectedYear, setSelectedYear] = useState('');
+  const [yearCounts, setYearCounts] = useState<Record<string, number>>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [gridColumns, setGridColumns] = useState<4 | 5 | 6>(6);
   const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
@@ -63,8 +66,9 @@ export default function MoviesPage() {
         page: page.toString(),
         limit: '20',
         ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
+        ...(selectedYear && { year: selectedYear }),
         sortBy,
-        sortOrder: 'desc',
+        sortOrder,
       });
 
       const response = await fetch(`/api/movies?${params}`);
@@ -94,7 +98,12 @@ export default function MoviesPage() {
 
   useEffect(() => {
     fetchMovies();
-  }, [debouncedSearchQuery, sortBy]);
+  }, [debouncedSearchQuery, selectedYear, sortBy, sortOrder]);
+
+  // Fetch year counts on component mount
+  useEffect(() => {
+    fetchYearCounts();
+  }, []);
 
   // Infinite scroll detection
   useEffect(() => {
@@ -132,6 +141,23 @@ export default function MoviesPage() {
     fetchMovies();
   };
 
+  const fetchYearCounts = async () => {
+    try {
+      const response = await fetch('/api/movies/years');
+      const data = await response.json();
+
+      if (data.success) {
+        const counts: Record<string, number> = {};
+        data.data.forEach((item: { year: string; count: number }) => {
+          counts[item.year] = item.count;
+        });
+        setYearCounts(counts);
+      }
+    } catch (error) {
+      console.error('Error fetching year counts:', error);
+    }
+  };
+
 
   const sortOptions = [
     { label: 'Date Watched', value: 'date_watched' },
@@ -162,11 +188,51 @@ export default function MoviesPage() {
               {/* Movie Count */}
               <span className="text-gray-400 text-sm font-medium px-3 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
                 {loading ? 'Loading...' :
-                  searchQuery ?
+                  searchQuery || selectedYear ?
                     `${movies.length} of ${totalMovies} found` :
                     `${movies.length} of ${totalMovies} movies`
                 }
               </span>
+
+              {/* Year Filter */}
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="hidden sm:block px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500/50 font-medium text-white min-w-[140px]"
+              >
+                <option value="" className="bg-gray-800 text-white">All Years</option>
+                {(() => {
+                  const currentYear = new Date().getFullYear();
+                  const years = [];
+                  for (let year = currentYear; year >= 1950; year--) {
+                    years.push(year);
+                  }
+
+                  // Always sort years newest first (desc)
+                  const sortedYears = years.sort((a, b) => b - a);
+
+                  return sortedYears.map(year => {
+                    const count = yearCounts[year.toString()] || 0;
+                    // Only show years that have movies or are recent years (last 5 years)
+                    if (count > 0 || year >= currentYear - 4) {
+                      const formatCount = (num: number) => {
+                        // Convert regular numbers to smaller Unicode subscript numbers
+                        return num.toString().split('').map(digit => {
+                          const subscripts = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
+                          return subscripts[parseInt(digit)];
+                        }).join('');
+                      };
+
+                      return (
+                        <option key={year} value={year.toString()} className="bg-gray-800 text-white">
+                          {year}{count > 0 ? ` · ${formatCount(count)}` : ''}
+                        </option>
+                      );
+                    }
+                    return null;
+                  }).filter(Boolean);
+                })()}
+              </select>
 
               {/* Sort */}
               <select
@@ -180,6 +246,24 @@ export default function MoviesPage() {
                   </option>
                 ))}
               </select>
+
+              {/* Sort Order Toggle */}
+              <div className="flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
+                <button
+                  onClick={() => setSortOrder('asc')}
+                  className={`p-3 transition-all ${sortOrder === 'asc' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                  title="Oldest first"
+                >
+                  <ArrowUp className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setSortOrder('desc')}
+                  className={`p-3 transition-all ${sortOrder === 'desc' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                  title="Newest first"
+                >
+                  <ArrowDown className="w-5 h-5" />
+                </button>
+              </div>
 
               {/* View Mode Toggle */}
               <div className="flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
