@@ -65,16 +65,20 @@ model UserMovie {
 }
 
 model OscarData {
-  id              Int    @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   movie_id        Int
   ceremony_year   Int
   category        String
-  nomination_type String // 'nominated' or 'won'
+  is_winner       Boolean  @default(false)
   nominee_name    String?
   created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
 
   movie Movie @relation(fields: [movie_id], references: [id], onDelete: Cascade)
 
+  @@index([movie_id])
+  @@index([ceremony_year])
+  @@unique([movie_id, ceremony_year, category])
   @@map("oscar_data")
 }
 
