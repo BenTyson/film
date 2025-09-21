@@ -287,7 +287,9 @@ export async function POST(request: NextRequest) {
         runtime: movieDetails.runtime,
         budget: movieDetails.budget,
         revenue: movieDetails.revenue,
-        tagline: movieDetails.tagline
+        tagline: movieDetails.tagline,
+        approval_status: "approved",
+        approved_at: new Date()
       }
     });
 

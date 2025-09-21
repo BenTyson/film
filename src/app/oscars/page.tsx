@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Award, Trophy, Star, Calendar, TrendingUp, Film, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { Award, Trophy, Star, Calendar, TrendingUp, Film, Search, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OscarOverview {
@@ -81,12 +80,12 @@ interface MovieWithOscars {
 
 export default function OscarsPage() {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [overviewData, setOverviewData] = useState<OscarOverview | null>(null);
   const [nominations, setNominations] = useState<OscarNomination[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedDecade, setSelectedDecade] = useState<string | null>(null);
-  const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
   const [searchYear, setSearchYear] = useState('');
   const [movieData, setMovieData] = useState<Record<number, MovieWithOscars>>({});
 
@@ -111,6 +110,24 @@ export default function OscarsPage() {
       fetchAllNominations();
     }
   }, [selectedCategory, selectedYear, selectedDecade]);
+
+  // Auto-refresh on page visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && Object.keys(movieData).length > 0) {
+        // Only refresh if we have data and page becomes visible
+        const moviesToCheck = Object.values(movieData).filter(movie => !movie.in_collection);
+        if (moviesToCheck.length > 0) {
+          refreshCollectionStatus();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [movieData]);
 
   const fetchOscarData = async () => {
     try {
@@ -162,7 +179,7 @@ export default function OscarsPage() {
                   release_date: '',
                   nominations: [],
                   in_collection: false,
-                  watched: false
+                  watched: true // Default to true (not grayed) for movies not in collection
                 };
               }
               movies[movieId].nominations.push(nom);
@@ -211,7 +228,7 @@ export default function OscarsPage() {
                 release_date: '',
                 nominations: [],
                 in_collection: false,
-                watched: false
+                watched: true // Default to true (not grayed) for movies not in collection
               };
             }
             movies[movieId].nominations.push(nom);
@@ -261,7 +278,7 @@ export default function OscarsPage() {
                   release_date: '',
                   nominations: [],
                   in_collection: false,
-                  watched: false
+                  watched: true // Default to true (not grayed) for movies not in collection
                 };
               }
               movies[movieId].nominations.push(nom);
@@ -284,34 +301,78 @@ export default function OscarsPage() {
     // Check if movies are in collection and if they've been watched
     for (const movie of movies) {
       try {
-        const response = await fetch(`/api/movies?search=${encodeURIComponent(movie.title)}&limit=1`);
+        const response = await fetch(`/api/movies?search=${encodeURIComponent(movie.title)}&limit=5`);
         const data = await response.json();
 
         if (data.success && data.data.movies.length > 0) {
-          const collectionMovie = data.data.movies.find((m: any) => m.tmdb_id === movie.tmdb_id);
+          // First try exact TMDB ID match
+          let collectionMovie = data.data.movies.find((m: any) => m.tmdb_id === movie.tmdb_id);
+
+          // Fallback: try title-based matching if TMDB ID match fails
+          if (!collectionMovie) {
+            collectionMovie = data.data.movies.find((m: any) =>
+              m.title.toLowerCase().trim() === movie.title.toLowerCase().trim()
+            );
+          }
+
           if (collectionMovie) {
             movie.in_collection = true;
-            movie.watched = collectionMovie.date_watched !== null;
+            movie.watched = true; // All movies in collection are watched
             movie.poster_path = collectionMovie.poster_path;
             movie.release_date = collectionMovie.release_date;
+          } else {
+            // Movie not in collection - fetch TMDB poster
+            movie.watched = false; // Not in collection = not watched
+            await fetchTMDBPoster(movie);
           }
+        } else {
+          // Movie not in collection - fetch TMDB poster
+          movie.watched = false; // Not in collection = not watched
+          await fetchTMDBPoster(movie);
         }
       } catch (error) {
         console.error('Error checking collection status:', error);
+        // If API call fails, try to fetch TMDB poster
+        await fetchTMDBPoster(movie);
       }
     }
   };
 
-  const toggleYear = (year: number) => {
-    setExpandedYears(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(year)) {
-        newSet.delete(year);
-      } else {
-        newSet.add(year);
+  const fetchTMDBPoster = async (movie: MovieWithOscars) => {
+    try {
+      // Use the TMDB API endpoint
+      const tmdbResponse = await fetch(`/api/tmdb/movie/${movie.tmdb_id}`);
+      if (tmdbResponse.ok) {
+        const response = await tmdbResponse.json();
+        if (response.success && response.data) {
+          if (response.data.poster_path) {
+            movie.poster_path = response.data.poster_path;
+          }
+          if (response.data.release_date) {
+            movie.release_date = response.data.release_date;
+          }
+        }
       }
-      return newSet;
-    });
+    } catch (error) {
+      console.error(`Error fetching TMDB data for ${movie.title}:`, error);
+    }
+  };
+
+  const refreshCollectionStatus = async () => {
+    setRefreshing(true);
+    try {
+      // Only refresh movies that are currently marked as not in collection
+      const moviesToCheck = Object.values(movieData).filter(movie => !movie.in_collection);
+      if (moviesToCheck.length > 0) {
+        await checkCollectionStatus(moviesToCheck);
+        // Update the movie data state with refreshed status
+        setMovieData(prevData => ({ ...prevData }));
+      }
+    } catch (error) {
+      console.error('Error refreshing collection status:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleYearSearch = (e: React.FormEvent) => {
@@ -344,13 +405,9 @@ export default function OscarsPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-yellow-600/10 via-transparent to-transparent" />
 
         <div className="relative z-10 h-full flex flex-col justify-center items-center text-center px-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mb-4"
-          >
+          <div className="mb-4">
             <Trophy className="w-20 h-20 text-yellow-500 mx-auto mb-4" />
-          </motion.div>
+          </div>
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent">
             Academy Awards Collection
           </h1>
@@ -367,7 +424,7 @@ export default function OscarsPage() {
       {/* Category Tabs */}
       <div className="sticky top-0 z-30 bg-gray-900/95 backdrop-blur-lg border-b border-yellow-900/30">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-wrap gap-2 justify-center">
+          <div className="flex flex-wrap gap-2 justify-center items-center">
             {categories.map((cat) => (
               <button
                 key={cat.id}
@@ -386,6 +443,22 @@ export default function OscarsPage() {
                 {cat.name}
               </button>
             ))}
+
+            {/* Refresh Button */}
+            <button
+              onClick={refreshCollectionStatus}
+              disabled={refreshing}
+              className={cn(
+                "px-4 py-2 rounded-full transition-all flex items-center gap-2 ml-4",
+                refreshing
+                  ? "bg-gray-700 text-gray-500 cursor-not-allowed"
+                  : "bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white"
+              )}
+              title="Refresh collection status"
+            >
+              <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
           </div>
         </div>
       </div>
@@ -509,53 +582,23 @@ export default function OscarsPage() {
                       release_date: '',
                       nominations: [],
                       in_collection: false,
-                      watched: false
+                      watched: true // Default to true (not grayed) for movies not in collection
                     });
                   }
                 }
               });
 
               const winners = yearNoms.filter(n => n.is_winner);
-              const isExpanded = expandedYears.has(year);
 
               return (
                 <div key={year} className="border border-gray-800 rounded-xl overflow-hidden">
                   {/* Year Header */}
-                  <button
-                    onClick={() => toggleYear(year)}
-                    className="w-full px-6 py-4 bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 transition-all flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-4">
-                      <span className="text-2xl font-bold text-yellow-500">{year}</span>
-                      <div className="flex gap-2">
-                        <span className="px-2 py-1 bg-yellow-600/20 text-yellow-400 rounded-lg text-sm">
-                          {yearNoms.length} Nominations
-                        </span>
-                        {winners.length > 0 && (
-                          <span className="px-2 py-1 bg-green-600/20 text-green-400 rounded-lg text-sm">
-                            {winners.length} Wins
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {isExpanded ? (
-                      <ChevronUp className="w-5 h-5 text-gray-400" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
-                    )}
-                  </button>
+                  <div className="px-6 py-4 bg-gradient-to-r from-gray-800 to-gray-900">
+                    <span className="text-2xl font-bold text-yellow-500">{year}</span>
+                  </div>
 
                   {/* Year Content */}
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div
-                        initial={{ height: 0 }}
-                        animate={{ height: 'auto' }}
-                        exit={{ height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="p-6 bg-gray-900/50">
+                  <div className="p-6 bg-gray-900/50">
                           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                             {Array.from(yearMovies.values()).map((movie) => {
                               const wins = movie.nominations.filter(n => n.is_winner);
@@ -585,16 +628,10 @@ export default function OscarsPage() {
                                         fill
                                         className={cn(
                                           "object-cover",
-                                          !movie.watched && movie.in_collection && "grayscale opacity-70"
+                                          !movie.in_collection && "grayscale opacity-70"
                                         )}
                                       />
 
-                                      {/* Overlay for unwatched */}
-                                      {!movie.watched && movie.in_collection && (
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-end justify-center pb-4">
-                                          <span className="text-xs text-gray-400">Not Watched</span>
-                                        </div>
-                                      )}
 
                                       {/* Oscar Badges */}
                                       <div className="absolute top-2 right-2 flex flex-col gap-1">
@@ -605,19 +642,11 @@ export default function OscarsPage() {
                                         )}
                                         {movie.nominations.length > wins.length && (
                                           <div className="bg-gray-700 text-white text-xs px-2 py-1 rounded-full">
-                                            {movie.nominations.length - wins.length} nom
+                                            {movie.nominations.length - wins.length}
                                           </div>
                                         )}
                                       </div>
 
-                                      {/* Collection Status */}
-                                      {!movie.in_collection && (
-                                        <div className="absolute top-2 left-2">
-                                          <div className="bg-red-600 text-white text-xs px-2 py-1 rounded-full">
-                                            Not in Collection
-                                          </div>
-                                        </div>
-                                      )}
                                     </div>
 
                                     {/* Title */}
@@ -634,10 +663,7 @@ export default function OscarsPage() {
                               );
                             })}
                           </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  </div>
                 </div>
               );
             })}
