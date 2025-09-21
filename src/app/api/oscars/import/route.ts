@@ -52,9 +52,10 @@ function categorizeCategory(category: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { dryRun = false } = await request.json();
+    const { dryRun = false, categories = ['Best Picture', 'Best Actor', 'Best Actress', 'Best Director'] } = await request.json();
 
     console.log('Starting Oscar nominations import...');
+    console.log(`Target categories: ${categories.join(', ')}`);
 
     // Load the Oscar nominations data
     const dataPath = path.join(process.cwd(), 'src', 'data', 'oscar-nominations.json');
@@ -65,8 +66,12 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    const oscarData: OscarNominationData[] = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-    console.log(`Loaded ${oscarData.length} nominations from JSON file`);
+    const allOscarData: OscarNominationData[] = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+
+    // Filter to only target categories
+    const oscarData = allOscarData.filter(nomination => categories.includes(nomination.category));
+
+    console.log(`Loaded ${allOscarData.length} total nominations, filtered to ${oscarData.length} for target categories`);
 
     if (dryRun) {
       // Analyze data without importing
@@ -102,28 +107,41 @@ export async function POST(request: NextRequest) {
       processed: 0
     };
 
-    // Create categories
+    // Create categories in batch
     console.log('Creating categories...');
     const categoryMap = new Map<string, number>();
     const uniqueCategories = [...new Set(oscarData.map(n => n.category))];
 
-    for (const categoryName of uniqueCategories) {
-      try {
-        const category = await prisma.oscarCategory.create({
-          data: {
-            name: categoryName,
-            category_group: categorizeCategory(categoryName)
-          }
-        });
-        categoryMap.set(categoryName, category.id);
-        stats.categories_created++;
-      } catch (error) {
-        console.error(`Error creating category ${categoryName}:`, error);
-        stats.errors++;
-      }
+    // Use createMany for categories
+    const categoryData = uniqueCategories.map(categoryName => ({
+      name: categoryName,
+      category_group: categorizeCategory(categoryName)
+    }));
+
+    try {
+      await prisma.oscarCategory.createMany({
+        data: categoryData
+      });
+
+      // Get the created categories to build the map
+      const createdCategories = await prisma.oscarCategory.findMany({
+        where: {
+          name: { in: uniqueCategories }
+        }
+      });
+
+      createdCategories.forEach(category => {
+        categoryMap.set(category.name, category.id);
+      });
+
+      stats.categories_created = uniqueCategories.length;
+      console.log(`Created ${stats.categories_created} categories`);
+    } catch (error) {
+      console.error('Error creating categories:', error);
+      stats.errors++;
     }
 
-    // Create movies
+    // Create movies in batch
     console.log('Creating movies...');
     const movieMap = new Map<string, number>();
     const uniqueMovies = new Map<string, { title: string; tmdb_id?: number; imdb_id?: string }>();
@@ -137,32 +155,50 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    for (const [key, movie] of uniqueMovies) {
-      try {
-        const oscarMovie = await prisma.oscarMovie.create({
-          data: {
+    // Use createMany for movies
+    const movieData = Array.from(uniqueMovies.values()).map(movie => ({
+      title: movie.title,
+      tmdb_id: movie.tmdb_id,
+      imdb_id: movie.imdb_id
+    }));
+
+    try {
+      await prisma.oscarMovie.createMany({
+        data: movieData,
+        skipDuplicates: true // Handle potential TMDB ID conflicts
+      });
+
+      // Get the created movies to build the map
+      const createdMovies = await prisma.oscarMovie.findMany({
+        where: {
+          OR: Array.from(uniqueMovies.values()).map(movie => ({
             title: movie.title,
-            tmdb_id: movie.tmdb_id,
-            imdb_id: movie.imdb_id
-          }
-        });
-        movieMap.set(key, oscarMovie.id);
-        stats.movies_created++;
-      } catch (error) {
-        console.error(`Error creating movie ${movie.title}:`, error);
-        stats.errors++;
-      }
+            tmdb_id: movie.tmdb_id
+          }))
+        }
+      });
+
+      createdMovies.forEach(movie => {
+        const key = `${movie.title}-${movie.tmdb_id || 'no-tmdb'}`;
+        movieMap.set(key, movie.id);
+      });
+
+      stats.movies_created = createdMovies.length;
+      console.log(`Created ${stats.movies_created} movies`);
+    } catch (error) {
+      console.error('Error creating movies:', error);
+      stats.errors++;
     }
 
     // Create nominations in batches
     console.log('Creating nominations...');
-    const BATCH_SIZE = 100;
+    const BATCH_SIZE = 500; // Increased batch size
     const nominationData = [];
 
     for (const nomination of oscarData) {
       stats.processed++;
 
-      if (stats.processed % 1000 === 0) {
+      if (stats.processed % 100 === 0) {
         console.log(`Processed ${stats.processed}/${oscarData.length} nominations...`);
       }
 

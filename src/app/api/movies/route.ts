@@ -241,7 +241,8 @@ export async function POST(request: NextRequest) {
       date_watched,
       is_favorite,
       buddy_watched_with,
-      tags
+      tags,
+      notes
     } = body;
 
     if (!tmdb_id) {
@@ -291,7 +292,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Create user movie record if personal data provided
-    if (personal_rating || date_watched || is_favorite || buddy_watched_with) {
+    if (personal_rating || date_watched || is_favorite || buddy_watched_with || notes) {
       await prisma.userMovie.create({
         data: {
           movie_id: movie.id,
@@ -299,7 +300,8 @@ export async function POST(request: NextRequest) {
           personal_rating: personal_rating ? parseInt(personal_rating) : null,
           date_watched: date_watched ? new Date(date_watched) : null,
           is_favorite: is_favorite || false,
-          buddy_watched_with: buddy_watched_with || null
+          buddy_watched_with: buddy_watched_with || null,
+          notes: notes || null
         }
       });
     }

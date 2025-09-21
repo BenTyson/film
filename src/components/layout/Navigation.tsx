@@ -11,7 +11,7 @@ const navItems = [
   { href: '/movies', label: 'Movies', icon: Grid },
   { href: '/oscars', label: 'Oscars', icon: Award },
   { href: '/buddy/calen', label: 'Calen', icon: Users },
-  { href: '/add-movie', label: 'Add Movie', icon: Plus },
+  { href: '/add', label: 'Add Movie', icon: Plus },
 ];
 
 export function Navigation() {
