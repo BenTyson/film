@@ -41,6 +41,7 @@ export async function GET(
     // Transform nominations
     const transformedNominations = nominations.map(nomination => ({
       id: nomination.id,
+      ceremony_year: nomination.ceremony_year,
       category: nomination.category.name,
       category_group: nomination.category.category_group,
       nominee_name: nomination.nominee_name,
