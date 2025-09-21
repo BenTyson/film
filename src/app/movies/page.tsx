@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Filter, Grid, List, Star, Calendar, Award, Users, Plus, AlertTriangle } from 'lucide-react';
+import { Search, Filter, Grid, List, Star, Calendar, Award, Users, Plus, AlertTriangle, Grid3X3, LayoutGrid, Grip } from 'lucide-react';
 import Link from 'next/link';
 import { MovieGrid } from '@/components/movie/MovieGrid';
+import { MovieList } from '@/components/movie/MovieList';
 import { MovieDetailsModal } from '@/components/movie/MovieDetailsModal';
 import { motion } from 'framer-motion';
 import type { MovieGridItem } from '@/types/movie';
@@ -32,9 +33,9 @@ export default function MoviesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTag, setSelectedTag] = useState('');
   const [sortBy, setSortBy] = useState('date_watched');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [gridColumns, setGridColumns] = useState<4 | 5 | 6>(6);
   const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
@@ -62,7 +63,6 @@ export default function MoviesPage() {
         page: page.toString(),
         limit: '20',
         ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
-        ...(selectedTag && { tag: selectedTag }),
         sortBy,
         sortOrder: 'desc',
       });
@@ -94,7 +94,7 @@ export default function MoviesPage() {
 
   useEffect(() => {
     fetchMovies();
-  }, [debouncedSearchQuery, selectedTag, sortBy]);
+  }, [debouncedSearchQuery, sortBy]);
 
   // Infinite scroll detection
   useEffect(() => {
@@ -132,14 +132,6 @@ export default function MoviesPage() {
     fetchMovies();
   };
 
-  const quickFilters = [
-    { label: 'All Movies', value: '', icon: Grid },
-    { label: 'Favorites', value: 'favorites', icon: Star },
-    { label: 'Calen Movies', value: 'Calen', icon: Users },
-    { label: 'Oscar Winners', value: 'oscar-winners', icon: Award },
-    { label: 'Recent', value: 'recent', icon: Calendar },
-    { label: 'Low Confidence', value: 'low-confidence', icon: AlertTriangle },
-  ];
 
   const sortOptions = [
     { label: 'Date Watched', value: 'date_watched' },
@@ -151,113 +143,109 @@ export default function MoviesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-cinema-black via-cinema-dark to-cinema-gray">
       {/* Header */}
-      <div className="border-b border-border/50 bg-card/20 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            {/* Title and Stats */}
-            <div className="flex items-center justify-between w-full lg:w-auto">
-              <div>
-                <h1 className="text-3xl font-heading font-bold mb-2">My Movies</h1>
-                <p className="text-muted-foreground">
-                  {loading ? 'Loading...' :
-                    searchQuery || selectedTag ?
-                      `Showing ${movies.length} of ${totalMovies} movies found` :
-                      `Showing ${movies.length} of ${totalMovies} movies in your collection`
-                  }
-                </p>
-              </div>
-
-              <div className="flex gap-2">
-                <Link
-                  href="/add"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-cinema-gold text-black rounded-lg hover:bg-cinema-gold/90 transition-colors font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Movie
-                </Link>
-              </div>
+      <div className="border-b border-gray-800/50 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search movies..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/50 transition-all text-white placeholder-gray-400"
+              />
             </div>
 
-            {/* Search and Controls */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search movies..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-background/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 min-w-[300px]"
-                />
-              </div>
+            <div className="flex gap-3 items-center">
+              {/* Movie Count */}
+              <span className="text-gray-400 text-sm font-medium px-3 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                {loading ? 'Loading...' :
+                  searchQuery ?
+                    `${movies.length} of ${totalMovies} found` :
+                    `${movies.length} of ${totalMovies} movies`
+                }
+              </span>
 
               {/* Sort */}
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2 bg-background/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500/50 font-medium text-white min-w-[140px]"
               >
                 {sortOptions.map(option => (
-                  <option key={option.value} value={option.value}>
+                  <option key={option.value} value={option.value} className="bg-gray-800 text-white">
                     {option.label}
                   </option>
                 ))}
               </select>
 
               {/* View Mode Toggle */}
-              <div className="flex border border-border rounded-lg overflow-hidden">
+              <div className="flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'bg-background/50'}`}
+                  className={`p-3 transition-all ${viewMode === 'grid' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                 >
-                  <Grid className="w-4 h-4" />
+                  <Grid className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-background/50'}`}
+                  className={`p-3 transition-all ${viewMode === 'list' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                 >
-                  <List className="w-4 h-4" />
+                  <List className="w-5 h-5" />
                 </button>
               </div>
+
+              {/* Grid Density Toggle - Only show when in grid mode */}
+              {viewMode === 'grid' && (
+                <div className="hidden md:flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
+                  <button
+                    onClick={() => setGridColumns(4)}
+                    className={`p-3 transition-all ${gridColumns === 4 ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                    title="4 columns"
+                  >
+                    <LayoutGrid className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setGridColumns(5)}
+                    className={`p-3 transition-all ${gridColumns === 5 ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                    title="5 columns"
+                  >
+                    <Grid3X3 className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setGridColumns(6)}
+                    className={`p-3 transition-all ${gridColumns === 6 ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                    title="6 columns"
+                  >
+                    <Grip className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Quick Filters */}
+      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-wrap gap-2 mb-6">
-          {quickFilters.map((filter) => {
-            const IconComponent = filter.icon;
-            const isActive = selectedTag === filter.value;
 
-            return (
-              <motion.button
-                key={filter.value}
-                onClick={() => setSelectedTag(filter.value)}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground shadow-lg'
-                    : 'bg-card/50 text-foreground hover:bg-card/80 border border-border/50'
-                }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <IconComponent className="w-4 h-4" />
-                {filter.label}
-              </motion.button>
-            );
-          })}
-        </div>
-
-        {/* Movie Grid */}
-        <MovieGrid
-          movies={movies}
-          onMovieSelect={handleMovieSelect}
-          loading={loading}
-          columns={6}
-        />
+        {/* Movie Grid/List */}
+        {viewMode === 'grid' ? (
+          <MovieGrid
+            movies={movies}
+            onMovieSelect={handleMovieSelect}
+            loading={loading}
+            columns={gridColumns}
+          />
+        ) : (
+          <MovieList
+            movies={movies}
+            onMovieSelect={handleMovieSelect}
+            loading={loading}
+          />
+        )}
 
         {/* Load More Section */}
         {!loading && movies.length > 0 && (
@@ -280,7 +268,7 @@ export default function MoviesPage() {
 
             {!hasNextPage && movies.length > 0 && (
               <p className="text-muted-foreground">
-                You've reached the end of your collection
+                You&apos;ve reached the end of your collection
               </p>
             )}
           </div>

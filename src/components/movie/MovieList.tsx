@@ -1,29 +1,34 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { MovieCard } from './MovieCard';
+import { MovieListItem } from './MovieListItem';
 import { cn } from '@/lib/utils';
 import type { MovieGridItem } from '@/types/movie';
 
-interface MovieGridProps {
+interface MovieListProps {
   movies: MovieGridItem[];
   onMovieSelect?: (movie: MovieGridItem) => void;
   loading?: boolean;
   className?: string;
-  columns?: 2 | 3 | 4 | 5 | 6;
 }
 
 const LoadingSkeleton = () => (
-  <div className="space-y-4">
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-      {Array.from({ length: 12 }).map((_, i) => (
-        <div key={i} className="animate-pulse">
-          <div className="bg-muted rounded-lg aspect-[2/3] mb-3" />
-          <div className="bg-muted h-4 rounded mb-2" />
-          <div className="bg-muted h-3 rounded w-1/2" />
+  <div className="space-y-3">
+    {Array.from({ length: 8 }).map((_, i) => (
+      <div key={i} className="animate-pulse">
+        <div className="flex items-center gap-4 p-4 bg-card rounded-lg border border-border/50">
+          <div className="w-12 h-18 bg-muted rounded flex-shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-5 bg-muted rounded w-1/3" />
+            <div className="h-4 bg-muted rounded w-1/4" />
+          </div>
+          <div className="flex gap-4">
+            <div className="h-4 w-16 bg-muted rounded" />
+            <div className="h-4 w-20 bg-muted rounded" />
+          </div>
         </div>
-      ))}
-    </div>
+      </div>
+    ))}
   </div>
 );
 
@@ -34,26 +39,17 @@ const EmptyState = () => (
     </div>
     <h3 className="text-xl font-semibold mb-2">No movies found</h3>
     <p className="text-muted-foreground max-w-md">
-      Try adjusting your search criteria or filters to find the movies you're looking for.
+      Try adjusting your search criteria or filters to find the movies you&apos;re looking for.
     </p>
   </div>
 );
 
-export function MovieGrid({
+export function MovieList({
   movies,
   onMovieSelect,
   loading = false,
-  className,
-  columns = 6
-}: MovieGridProps) {
-  const gridColsClass = {
-    2: 'grid-cols-2',
-    3: 'grid-cols-2 md:grid-cols-3',
-    4: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
-    5: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
-    6: 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6',
-  };
-
+  className
+}: MovieListProps) {
   if (loading) {
     return <LoadingSkeleton />;
   }
@@ -65,10 +61,7 @@ export function MovieGrid({
   return (
     <div className={cn("w-full", className)}>
       <motion.div
-        className={cn(
-          "grid gap-4 auto-rows-max",
-          gridColsClass[columns]
-        )}
+        className="space-y-3"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
@@ -80,11 +73,11 @@ export function MovieGrid({
             animate={{ opacity: 1, y: 0 }}
             transition={{
               duration: 0.4,
-              delay: index * 0.05,
+              delay: index * 0.03,
               ease: "easeOut"
             }}
           >
-            <MovieCard
+            <MovieListItem
               movie={movie}
               onSelect={onMovieSelect}
             />
