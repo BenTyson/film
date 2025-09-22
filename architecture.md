@@ -121,7 +121,62 @@ CREATE INDEX idx_movie_tags_tag_id ON movie_tags(tag_id);
 
 ## Component Architecture
 
-### Frontend Component Hierarchy
+### Recent UI Enhancements (2024-09-21)
+
+### Advanced Filtering & Sorting System
+
+The main movie page has been enhanced with a comprehensive filtering and sorting system designed for optimal user experience:
+
+#### Year Filter with Movie Counts
+- **Dropdown Selection**: Shows years from 1950 to current year
+- **Movie Counts**: Displays subscript numbers showing movie count per year (e.g., "2024 · ₄₅")
+- **Smart Display**: Only shows years with movies or recent years (last 5 years)
+- **Performance**: Dedicated `/api/movies/years` endpoint for efficient count queries
+
+#### Standalone Sort Controls
+- **Sort Field Selection**: Date Watched, Title, Release Date, Personal Rating
+- **Independent Sort Order**: Standalone toggle buttons (ArrowUp ↑ / ArrowDown ↓)
+- **Visual Clarity**: Yellow active state, clear tooltips ("Oldest first" / "Newest first")
+- **UI Separation**: Sort dropdown and order controls are visually independent
+
+#### Search & Filtering Integration
+- **Debounced Search**: 300ms delay to prevent excessive API calls
+- **Combined Filters**: Search, year, and sort work together seamlessly
+- **Real-time Updates**: Immediate re-fetch when any filter changes
+- **State Persistence**: Filter states maintained during session
+
+#### Performance Optimizations
+- **Efficient Queries**: Prisma optimized queries with proper indexing
+- **Pagination**: 20 items per page with infinite scroll
+- **Caching**: Year counts cached on component mount
+- **Responsive Design**: Mobile-first approach with hidden controls on small screens
+
+### Technical Implementation Details
+
+```typescript
+// State Management Pattern
+const [sortBy, setSortBy] = useState('date_watched');
+const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+const [selectedYear, setSelectedYear] = useState('');
+const [yearCounts, setYearCounts] = useState<Record<string, number>>({});
+
+// API Integration
+useEffect(() => {
+  fetchMovies();
+}, [debouncedSearchQuery, selectedYear, sortBy, sortOrder]);
+
+// Dynamic Query Building
+const params = new URLSearchParams({
+  page: page.toString(),
+  limit: '20',
+  ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
+  ...(selectedYear && { year: selectedYear }),
+  sortBy,
+  sortOrder,
+});
+```
+
+## Frontend Component Hierarchy
 
 ```
 App Layout (src/app/layout.tsx)
@@ -141,9 +196,13 @@ App Layout (src/app/layout.tsx)
 │   │       ├── Personal Notes
 │   │       ├── Oscar Information
 │   │       └── Edit Actions
-│   ├── Filter Sidebar
-│   │   ├── Search Input
-│   │   ├── Date Range
+│   ├── Filter & Sort Controls
+│   │   ├── Search Input (with debouncing)
+│   │   ├── Year Filter Dropdown (with movie counts)
+│   │   ├── Sort Field Dropdown (date watched, title, release date, rating)
+│   │   ├── Sort Order Toggle (oldest first ↑ / newest first ↓)
+│   │   ├── View Mode Toggle (grid/list)
+│   │   ├── Grid Density Control (4/5/6 columns)
 │   │   ├── Rating Filter
 │   │   ├── Genre Filter
 │   │   ├── Oscar Filter
@@ -181,11 +240,12 @@ App Layout (src/app/layout.tsx)
 ```
 /api
 ├── /movies
-│   ├── GET /           # List movies with filters
+│   ├── GET /           # List movies with filters & sorting
 │   ├── POST /          # Add new movie
 │   ├── GET /[id]       # Get specific movie
 │   ├── PUT /[id]       # Update movie data
-│   └── DELETE /[id]    # Remove movie
+│   ├── DELETE /[id]    # Remove movie
+│   └── GET /years      # Get movie counts by release year
 ├── /tmdb
 │   ├── GET /search     # Search TMDB for movies
 │   ├── GET /movie/[id] # Get TMDB movie details

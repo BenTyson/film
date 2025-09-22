@@ -83,19 +83,6 @@ export function MovieCard({ movie, onSelect, className }: MovieCardProps) {
         {/* Hover Overlay Content */}
         <div className="absolute inset-0 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <div className="text-white">
-            <h3 className="font-semibold text-lg mb-1 line-clamp-2">{movie.title}</h3>
-
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="w-4 h-4" />
-              <span className="text-sm">{formatYear(movie.release_date)}</span>
-              {movie.director && (
-                <>
-                  <span className="text-muted-foreground">•</span>
-                  <span className="text-sm truncate">{movie.director}</span>
-                </>
-              )}
-            </div>
-
             {movie.personal_rating && (
               <div className="flex items-center gap-2 mb-2">
                 <Star className="w-4 h-4 fill-current text-accent" />
@@ -122,7 +109,7 @@ export function MovieCard({ movie, onSelect, className }: MovieCardProps) {
 
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs text-muted-foreground">
-            {formatYear(movie.release_date)}
+            {formatYear(movie.release_date)}{movie.director ? ` | ${movie.director}` : ''}
           </span>
           {movie.personal_rating && (
             <div className="flex items-center gap-1">

@@ -200,7 +200,7 @@ export default function ImportPage() {
       console.log(`Processing ${moviesToImport.length} movies in ${batches.length} batches of ${batchSize}`);
 
       let allResults: ImportResult[] = [];
-      let totalStats = {
+      const totalStats = {
         total: 0,
         successful: 0,
         skipped: 0,

@@ -1,7 +1,11 @@
-import { prisma } from '@/lib/prisma';
+import { prisma, checkDatabaseHealth } from '@/lib/prisma';
 import { tmdb } from '@/lib/tmdb';
 import { NextRequest, NextResponse } from 'next/server';
 import type { MovieGridItem } from '@/types/movie';
+
+// Request timeout configuration
+const REQUEST_TIMEOUT = 30000; // 30 seconds
+const MAX_RETRIES = 3;
 
 function isLowConfidenceMatch(movie: any): boolean {
   if (!movie.csv_row_number || !movie.csv_title) return false;
@@ -41,6 +45,40 @@ function isLowConfidenceMatch(movie: any): boolean {
   return false;
 }
 
+// Database operation wrapper with timeout and retry logic
+async function withDatabaseRetry<T>(operation: () => Promise<T>, retries = MAX_RETRIES): Promise<T> {
+  let lastError;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      // Check database health before operation
+      const health = await checkDatabaseHealth();
+      if (!health.healthy && attempt === 1) {
+        console.warn('Database health check failed, proceeding with operation');
+      }
+
+      // Wrap operation with timeout
+      return await Promise.race([
+        operation(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Database operation timeout')), REQUEST_TIMEOUT)
+        )
+      ]);
+    } catch (error) {
+      lastError = error;
+      console.error(`Database operation attempt ${attempt} failed:`, error);
+
+      if (attempt < retries) {
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = Math.pow(2, attempt - 1) * 1000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -48,6 +86,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const search = searchParams.get('search') || '';
     const tag = searchParams.get('tag') || '';
+    const year = searchParams.get('year') || '';
     const sortBy = searchParams.get('sortBy') || 'date_watched';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
@@ -112,6 +151,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    if (year) {
+      const yearInt = parseInt(year);
+      where.release_date = {
+        gte: new Date(`${yearInt}-01-01`),
+        lt: new Date(`${yearInt + 1}-01-01`)
+      };
+    }
+
     // Build orderBy clause
     let orderBy: any = {};
     switch (sortBy) {
@@ -122,35 +169,40 @@ export async function GET(request: NextRequest) {
         orderBy = { release_date: sortOrder };
         break;
       case 'personal_rating':
-      case 'date_watched':
-        // For user-specific fields, we'll sort in JS after fetching
-        // Use created_at as default for now
+        // For personal rating, use created_at as base sort for DB, then JS sort
         orderBy = { created_at: sortOrder };
+        break;
+      case 'date_watched':
+        // For date_watched, we need JS sorting since it's user-specific
+        // Use release_date as database sort to get a reasonable order first
+        orderBy = { release_date: sortOrder };
         break;
       default:
         orderBy = { created_at: sortOrder };
         break;
     }
 
-    const [movies, total, grandTotal] = await Promise.all([
-      prisma.movie.findMany({
-        where,
-        include: {
-          user_movies: true,
-          oscar_data: true,
-          movie_tags: {
-            include: {
-              tag: true
+    const [movies, total, grandTotal] = await withDatabaseRetry(() =>
+      Promise.all([
+        prisma.movie.findMany({
+          where,
+          include: {
+            user_movies: true,
+            oscar_data: true,
+            movie_tags: {
+              include: {
+                tag: true
+              }
             }
-          }
-        },
-        orderBy,
-        skip,
-        take: limit,
-      }),
-      prisma.movie.count({ where }),
-      prisma.movie.count({ where: { approval_status: 'approved' } }) // Only count approved movies
-    ]);
+          },
+          orderBy,
+          skip,
+          take: limit,
+        }),
+        prisma.movie.count({ where }),
+        prisma.movie.count({ where: { approval_status: 'approved' } }) // Only count approved movies
+      ])
+    );
 
     // Filter low-confidence matches if requested
     let filteredMovies = movies;
@@ -159,7 +211,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform to MovieGridItem format
-    let movieGridItems: MovieGridItem[] = filteredMovies.map(movie => {
+    const movieGridItems: MovieGridItem[] = filteredMovies.map(movie => {
       const userMovie = movie.user_movies[0]; // Assuming one user for now
       const oscarWins = movie.oscar_data.filter(o => o.nomination_type === 'won').length;
       const oscarNominations = movie.oscar_data.length;
@@ -199,7 +251,20 @@ export async function GET(request: NextRequest) {
       movieGridItems.sort((a, b) => {
         const aDate = a.date_watched ? new Date(a.date_watched).getTime() : 0;
         const bDate = b.date_watched ? new Date(b.date_watched).getTime() : 0;
-        return sortOrder === 'desc' ? bDate - aDate : aDate - bDate;
+
+        // If both have watch dates, sort by watch date
+        if (aDate && bDate) {
+          return sortOrder === 'desc' ? bDate - aDate : aDate - bDate;
+        }
+
+        // If one has watch date and other doesn't, prioritize the one with watch date
+        if (aDate && !bDate) return sortOrder === 'desc' ? -1 : 1;
+        if (!aDate && bDate) return sortOrder === 'desc' ? 1 : -1;
+
+        // If neither has watch date, sort by release date as fallback
+        const aRelease = a.release_date ? new Date(a.release_date).getTime() : 0;
+        const bRelease = b.release_date ? new Date(b.release_date).getTime() : 0;
+        return sortOrder === 'desc' ? bRelease - aRelease : aRelease - bRelease;
       });
     }
 
@@ -225,10 +290,29 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error fetching movies:', error);
+
+    // Provide more specific error messages based on error type
+    let errorMessage = 'Failed to fetch movies';
+    let statusCode = 500;
+
+    if (error instanceof Error) {
+      if (error.message.includes('timeout')) {
+        errorMessage = 'Request timeout - the server is taking too long to respond';
+        statusCode = 408;
+      } else if (error.message.includes('connection')) {
+        errorMessage = 'Database connection error - please try again';
+        statusCode = 503;
+      } else if (error.message.includes('SQLITE_BUSY')) {
+        errorMessage = 'Database is busy - please try again in a moment';
+        statusCode = 503;
+      }
+    }
+
     return NextResponse.json({
       success: false,
-      error: 'Failed to fetch movies'
-    }, { status: 500 });
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    }, { status: statusCode });
   }
 }
 
@@ -253,9 +337,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if movie already exists
-    const existingMovie = await prisma.movie.findUnique({
-      where: { tmdb_id: parseInt(tmdb_id) }
-    });
+    const existingMovie = await withDatabaseRetry(() =>
+      prisma.movie.findUnique({
+        where: { tmdb_id: parseInt(tmdb_id) }
+      })
+    );
 
     if (existingMovie) {
       return NextResponse.json(
@@ -270,7 +356,8 @@ export async function POST(request: NextRequest) {
     const director = tmdb.findDirector(credits);
 
     // Create movie record
-    const movie = await prisma.movie.create({
+    const movie = await withDatabaseRetry(() =>
+      prisma.movie.create({
       data: {
         tmdb_id: parseInt(tmdb_id),
         title: movieDetails.title,
@@ -291,7 +378,8 @@ export async function POST(request: NextRequest) {
         approval_status: "approved",
         approved_at: new Date()
       }
-    });
+    })
+  );
 
     // Create user movie record if personal data provided
     if (personal_rating || date_watched || is_favorite || buddy_watched_with || notes) {
@@ -348,9 +436,31 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error adding movie:', error);
+
+    // Provide more specific error messages based on error type
+    let errorMessage = 'Failed to add movie to collection';
+    let statusCode = 500;
+
+    if (error instanceof Error) {
+      if (error.message.includes('timeout')) {
+        errorMessage = 'Request timeout - the server is taking too long to respond';
+        statusCode = 408;
+      } else if (error.message.includes('connection')) {
+        errorMessage = 'Database connection error - please try again';
+        statusCode = 503;
+      } else if (error.message.includes('SQLITE_BUSY')) {
+        errorMessage = 'Database is busy - please try again in a moment';
+        statusCode = 503;
+      } else if (error.message.includes('UNIQUE constraint')) {
+        errorMessage = 'Movie already exists in collection';
+        statusCode = 409;
+      }
+    }
+
     return NextResponse.json({
       success: false,
-      error: 'Failed to add movie to collection'
-    }, { status: 500 });
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    }, { status: statusCode });
   }
 }

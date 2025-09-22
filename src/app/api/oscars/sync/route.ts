@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
       ]
     });
 
-    let syncResults = {
+    const syncResults = {
       processed: 0,
       synced: 0,
       notInCollection: 0,
