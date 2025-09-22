@@ -215,16 +215,19 @@ App Layout (src/app/layout.tsx)
 
 ```
 /oscars
-├── Year Selector
-├── Category Tabs
-├── Nominated Movies Grid
-└── Won Movies Grid
+├── Streamlined Header (matches main collection design)
+├── Year Filter & Category Tabs
+├── Lazy Loading (initial 3 years)
+├── Infinite Scroll Oscar Movies
+└── Performance Optimized Grid
 
-/buddy/calen
-├── Buddy Header
-├── Watch Statistics
-├── Shared Movies Grid
-└── Timeline View
+/buddy/calen (Tag-Based Collection System)
+├── Exact Main Page Layout Replica
+├── "Add to Calen" Button & Modal
+├── Search Existing Collection Movies
+├── Tag-Based Movie Filtering
+├── Real-time Tagging Workflow
+└── Empty State with Call-to-Action
 
 /add-movie
 ├── Search Input (TMDB)
@@ -245,7 +248,10 @@ App Layout (src/app/layout.tsx)
 │   ├── GET /[id]       # Get specific movie
 │   ├── PUT /[id]       # Update movie data
 │   ├── DELETE /[id]    # Remove movie
-│   └── GET /years      # Get movie counts by release year
+│   ├── GET /years      # Get movie counts by release year (supports tag filtering)
+│   └── /[id]/tags
+│       ├── POST /      # Add tags to existing movie
+│       └── DELETE /    # Remove tags from movie
 ├── /tmdb
 │   ├── GET /search     # Search TMDB for movies
 │   ├── GET /movie/[id] # Get TMDB movie details
@@ -405,6 +411,87 @@ Deploy to Production
 └── Health checks
 ```
 
+## Tag-Based Collection System (December 2025)
+
+### Architecture Overview
+The application now features a sophisticated tag-based collection system that allows users to create curated movie lists using tags like "Calen" for buddy-watched movies.
+
+### Technical Implementation
+
+#### Tag System Components
+```typescript
+// Database Models
+model Tag {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  color      String?  // Hex color (#8B5CF6 for Calen)
+  icon       String?  // Lucide icon name (Users for Calen)
+  created_at DateTime @default(now())
+  movie_tags MovieTag[]
+}
+
+model MovieTag {
+  id         Int      @id @default(autoincrement())
+  movie_id   Int
+  tag_id     Int
+  created_at DateTime @default(now())
+  movie Movie @relation(fields: [movie_id], references: [id])
+  tag   Tag   @relation(fields: [tag_id], references: [id])
+  @@unique([movie_id, tag_id])
+}
+```
+
+#### API Endpoints for Tagging
+```typescript
+// POST /api/movies/[id]/tags
+{
+  "tags": ["Calen"]
+}
+// Response: Updated movie with new tags
+
+// DELETE /api/movies/[id]/tags
+{
+  "tags": ["Calen"]
+}
+// Response: Movie with specified tags removed
+```
+
+#### Calen Page Features
+- **Exact Layout Replication**: Mirrors main collection page design
+- **Tag-Filtered API Calls**: `GET /api/movies?tag=Calen`
+- **Add to Calen Modal**: Search existing collection and tag movies
+- **Real-time Updates**: Immediate reflection of tagged movies
+- **Empty State Handling**: Helpful onboarding for new collections
+
+### Workflow Architecture
+```
+User clicks "Add to Calen"
+     │
+     ▼
+AddToCalenModal opens
+     │
+     ▼
+Search existing collection (/api/movies?search=query)
+     │
+     ▼
+User selects movie to tag
+     │
+     ▼
+POST /api/movies/[id]/tags { tags: ["Calen"] }
+     │
+     ▼
+Modal updates to show success
+     │
+     ▼
+Parent page refreshes to show newly tagged movie
+```
+
+### Performance Considerations
+- **Efficient Filtering**: Tag-based WHERE clauses in Prisma queries
+- **Year Count Support**: `/api/movies/years?tag=Calen` for filtered year statistics
+- **Lazy Loading**: Modal only searches when user types
+- **State Management**: Optimized re-renders with proper dependency arrays
+
 ## Monitoring & Analytics
 
 ### Application Monitoring
@@ -415,6 +502,6 @@ Deploy to Production
 
 ### User Analytics
 - **Usage Patterns**: Movie viewing trends
-- **Feature Adoption**: Filter usage analytics
+- **Feature Adoption**: Filter usage analytics, tag system usage
 - **Performance**: Page load times
 - **Errors**: Client-side error tracking

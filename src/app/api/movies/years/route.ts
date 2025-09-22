@@ -1,16 +1,33 @@
 import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const tag = searchParams.get('tag') || '';
+
+    // Build where clause for filtering
+    const where: any = {
+      approval_status: 'approved',
+      release_date: {
+        not: null
+      }
+    };
+
+    // Add tag filtering if specified
+    if (tag) {
+      where.movie_tags = {
+        some: {
+          tag: {
+            name: { equals: tag }
+          }
+        }
+      };
+    }
+
     // Get all approved movies with their release dates
     const movies = await prisma.movie.findMany({
-      where: {
-        approval_status: 'approved',
-        release_date: {
-          not: null
-        }
-      },
+      where,
       select: {
         release_date: true
       }
