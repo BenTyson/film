@@ -422,224 +422,150 @@ export default function OscarsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cinema-black via-cinema-dark to-cinema-gray">
-      {/* Compact Navigation + Controls Header */}
+      {/* Streamlined Single-Row Header */}
       <div className={`border-b border-gray-800/50 bg-black/60 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-lg' : 'border-white/10'}`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <motion.div
+            className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 py-3 sm:py-4"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          >
+            {/* Left: Navigation + Categories */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
+              {/* Navigation */}
+              <div className="flex items-center gap-1 sm:gap-2">
+                {navItems.map((item) => {
+                  const IconComponent = item.icon;
+                  const isActive = pathname === item.href;
 
-          {/* Normal State: Two Rows - Clean and Efficient */}
-          {!isScrolled && (
-            <div className="space-y-3 py-3 sm:py-4">
+                  return (
+                    <Link key={item.href} href={item.href}>
+                      <motion.div
+                        className={cn(
+                          "relative flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 min-h-[44px]",
+                          isActive
+                            ? "text-black"
+                            : "text-white/70 hover:text-white"
+                        )}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        {isActive && (
+                          <motion.div
+                            className="absolute inset-0 bg-yellow-500 rounded-xl shadow-lg"
+                            layoutId="activeNav"
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                          />
+                        )}
+                        <IconComponent className="w-4 h-4 relative z-10" />
+                        <span className="relative z-10 hidden sm:inline">{item.label}</span>
+                      </motion.div>
+                    </Link>
+                  );
+                })}
+              </div>
 
-              {/* Row 1: Navigation + Oscar Count */}
-              <motion.div
-                className="flex flex-col sm:flex-row items-center justify-between gap-3"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-              >
-                {/* Navigation */}
-                <div className="flex items-center gap-1 sm:gap-2">
-                  {navItems.map((item) => {
-                    const IconComponent = item.icon;
-                    const isActive = pathname === item.href;
-
-                    return (
-                      <Link key={item.href} href={item.href}>
-                        <motion.div
-                          className={cn(
-                            "relative flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm font-medium transition-all duration-300 min-h-[44px]",
-                            isActive
-                              ? "text-black"
-                              : "text-white/70 hover:text-white"
-                          )}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          {isActive && (
-                            <motion.div
-                              className="absolute inset-0 bg-yellow-500 rounded-xl shadow-lg"
-                              layoutId="activeNav"
-                              transition={{ duration: 0.3, ease: "easeOut" }}
-                            />
-                          )}
-                          <IconComponent className="w-4 h-4 relative z-10" />
-                          <span className="relative z-10 hidden sm:inline">{item.label}</span>
-                        </motion.div>
-                      </Link>
-                    );
-                  })}
-                </div>
-
-                {/* Oscar Count */}
-                <span className="hidden sm:block text-gray-400 text-sm font-medium px-3 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50 whitespace-nowrap">
-                  {loading ? 'Loading...' :
-                    overviewData ? `${overviewData.overview.movies_in_collection_with_oscars} Oscar Movies in Collection` :
-                    'Oscar Collection'
-                  }
-                </span>
-              </motion.div>
-
-              {/* Row 2: Category Filters + Controls */}
-              <motion.div
-                className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3"
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
-              >
-                {/* Category Filters */}
-                <div className="flex flex-wrap gap-2 items-center">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => {
-                        setSelectedCategory(cat.id);
-                        setSelectedYear(null);
-                      }}
-                      className={cn(
-                        "px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px]",
-                        selectedCategory === cat.id
-                          ? "bg-yellow-500 text-black shadow-lg"
-                          : "bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white"
-                      )}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
-
-                  {/* Refresh Button */}
+              {/* Category Filters */}
+              <div className="flex flex-wrap gap-2 items-center">
+                {categories.map((cat) => (
                   <button
-                    onClick={refreshCollectionStatus}
-                    disabled={refreshing}
+                    key={cat.id}
+                    onClick={() => {
+                      setSelectedCategory(cat.id);
+                      setSelectedYear(null);
+                      setSelectedDecade(null);
+                    }}
                     className={cn(
-                      "px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 min-h-[44px]",
-                      refreshing
-                        ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+                      "px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px]",
+                      selectedCategory === cat.id
+                        ? "bg-yellow-500 text-black shadow-lg"
                         : "bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white"
                     )}
-                    title="Refresh collection status"
                   >
-                    <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
-                    <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+                    {cat.name}
                   </button>
-                </div>
+                ))}
+              </div>
+            </div>
 
-                {/* Decade Filters + Year Search */}
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Decade Quick Filters - Hidden on mobile */}
-                  <div className="hidden md:flex gap-1">
-                    {overviewData?.decades.slice(0, 6).map((decade) => (
-                      <button
-                        key={decade.decade}
-                        onClick={() => {
-                          setSelectedDecade(decade.decade);
-                          setSelectedYear(null);
-                        }}
-                        className={cn(
-                          "px-2 py-1 rounded-md text-xs transition-all",
-                          selectedDecade === decade.decade
-                            ? "bg-yellow-500 text-black font-semibold"
-                            : "bg-gray-800/50 text-gray-400 hover:bg-gray-700/50"
-                        )}
-                      >
-                        {decade.decade}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Year Search */}
-                  <form onSubmit={handleYearSearch} className="flex gap-2">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                      <input
-                        type="number"
-                        min="1928"
-                        max="2023"
-                        value={searchYear}
-                        onChange={(e) => setSearchYear(e.target.value)}
-                        placeholder="Year..."
-                        className="pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-sm focus:outline-none focus:border-yellow-500/50 w-24 sm:w-32"
-                      />
-                    </div>
+            {/* Right: Year Controls + Actions */}
+            <div className="flex items-center gap-3">
+              {/* Year Range Selector */}
+              <div className="flex items-center gap-2">
+                {/* Quick Year Jumps */}
+                <div className="hidden sm:flex items-center gap-1">
+                  {[2023, 2020, 2010, 2000, 1990].map((year) => (
                     <button
-                      type="submit"
-                      className="px-3 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 transition-colors text-sm"
+                      key={year}
+                      onClick={() => {
+                        setSelectedYear(year);
+                        setSelectedDecade(null);
+                      }}
+                      className={cn(
+                        "px-2 py-1 rounded-md text-xs font-medium transition-all",
+                        selectedYear === year
+                          ? "bg-yellow-500 text-black"
+                          : "text-gray-400 hover:text-white hover:bg-gray-700/50"
+                      )}
                     >
-                      Go
+                      {year}
                     </button>
-                  </form>
+                  ))}
                 </div>
-              </motion.div>
 
-              {/* Clear Filters - Only show when filters are active */}
+                {/* Year Search */}
+                <form onSubmit={handleYearSearch} className="flex gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="number"
+                      min="1928"
+                      max="2023"
+                      value={searchYear}
+                      onChange={(e) => setSearchYear(e.target.value)}
+                      placeholder="Year..."
+                      className="pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-sm focus:outline-none focus:border-yellow-500/50 w-24 sm:w-28"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-3 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 transition-colors text-sm"
+                  >
+                    Go
+                  </button>
+                </form>
+              </div>
+
+              {/* Clear Filters */}
               {(selectedYear || selectedDecade) && (
-                <motion.button
+                <button
                   onClick={() => {
                     setSelectedYear(null);
                     setSelectedDecade(null);
                   }}
-                  className="text-sm text-gray-400 hover:text-white transition-colors px-4 py-2 bg-gray-800/30 rounded-lg hover:bg-gray-700/30"
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
+                  className="text-xs text-gray-400 hover:text-white transition-colors px-3 py-2 bg-gray-800/30 rounded-lg hover:bg-gray-700/30"
                 >
-                  Clear Filters • Show Recent Years
-                </motion.button>
-              )}
-            </div>
-          )}
-
-          {/* Compact State: Single Row */}
-          {isScrolled && (
-            <motion.div
-              className="flex items-center justify-between gap-3 py-3"
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-            >
-              {/* Navigation + Category */}
-              <div className="flex items-center gap-3">
-                {/* Home Link */}
-                <Link href="/" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Collection
-                </Link>
-                <span className="text-gray-500">/</span>
-                <span className="text-yellow-500 font-medium text-sm">Oscars</span>
-
-                {/* Active Category Indicator */}
-                {selectedCategory !== 'all' && (
-                  <>
-                    <span className="text-gray-500">•</span>
-                    <span className="text-gray-300 text-sm">{categories.find(c => c.id === selectedCategory)?.name}</span>
-                  </>
-                )}
-              </div>
-
-              {/* Quick Controls */}
-              <div className="flex items-center gap-2">
-                {/* Year Display */}
-                {(selectedYear || selectedDecade) && (
-                  <span className="text-yellow-500 text-sm font-medium px-2 py-1 bg-yellow-500/10 rounded">
-                    {selectedYear || selectedDecade}
-                  </span>
-                )}
-
-                {/* Refresh Button */}
-                <button
-                  onClick={refreshCollectionStatus}
-                  disabled={refreshing}
-                  className={cn(
-                    "p-2 rounded-lg transition-all",
-                    refreshing
-                      ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
-                      : "bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white"
-                  )}
-                  title="Refresh collection status"
-                >
-                  <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+                  Clear
                 </button>
-              </div>
-            </motion.div>
-          )}
+              )}
+
+              {/* Refresh Button */}
+              <button
+                onClick={refreshCollectionStatus}
+                disabled={refreshing}
+                className={cn(
+                  "p-2 rounded-lg transition-all",
+                  refreshing
+                    ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+                    : "bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white"
+                )}
+                title="Refresh collection status"
+              >
+                <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+              </button>
+            </div>
+          </motion.div>
         </div>
       </div>
 
@@ -651,35 +577,6 @@ export default function OscarsPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Stats Overview */}
-            {overviewData && !selectedYear && !selectedDecade && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-                  <div className="text-2xl font-bold text-yellow-500">
-                    {overviewData.overview.movies_in_collection_with_oscars}
-                  </div>
-                  <div className="text-sm text-gray-400">Oscar Movies in Collection</div>
-                </div>
-                <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-                  <div className="text-2xl font-bold text-yellow-500">
-                    {overviewData.overview.collection_coverage.percentage}%
-                  </div>
-                  <div className="text-sm text-gray-400">Collection Coverage</div>
-                </div>
-                <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-                  <div className="text-2xl font-bold text-yellow-500">
-                    {overviewData.overview.total_nominations}
-                  </div>
-                  <div className="text-sm text-gray-400">Total Nominations</div>
-                </div>
-                <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-                  <div className="text-2xl font-bold text-yellow-500">
-                    {overviewData.overview.year_range.end - overviewData.overview.year_range.start + 1}
-                  </div>
-                  <div className="text-sm text-gray-400">Years of History</div>
-                </div>
-              </div>
-            )}
 
             {/* Nominations by Year */}
             {sortedYears.map((year) => {
@@ -711,9 +608,57 @@ export default function OscarsPage() {
 
               return (
                 <div key={year} className="border border-gray-800 rounded-xl overflow-hidden">
-                  {/* Year Header */}
-                  <div className="px-6 py-4 bg-gradient-to-r from-gray-800 to-gray-900">
-                    <span className="text-2xl font-bold text-yellow-500">{year}</span>
+                  {/* Enhanced Year Header */}
+                  <div className="px-6 py-4 bg-gradient-to-r from-gray-800 to-gray-900 border-b border-gray-700/50">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      {/* Year + Stats */}
+                      <div className="flex items-center gap-4">
+                        <span className="text-2xl font-bold text-yellow-500">{year}</span>
+                        <div className="flex items-center gap-3 text-sm text-gray-400">
+                          <span>{yearNoms.length} nominations</span>
+                          <span>•</span>
+                          <span>{winners.length} wins</span>
+                          <span>•</span>
+                          <span>{Array.from(yearMovies.values()).filter(m => m.in_collection).length} in collection</span>
+                        </div>
+                      </div>
+
+                      {/* Quick Year Navigation */}
+                      <div className="flex items-center gap-2">
+                        {/* Previous Year */}
+                        {sortedYears.indexOf(year) > 0 && (
+                          <button
+                            onClick={() => {
+                              setSelectedYear(sortedYears[sortedYears.indexOf(year) - 1]);
+                              setSelectedDecade(null);
+                            }}
+                            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all"
+                            title={`Go to ${sortedYears[sortedYears.indexOf(year) - 1]}`}
+                          >
+                            ←
+                          </button>
+                        )}
+
+                        {/* Current Year Indicator */}
+                        <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-lg text-xs font-medium">
+                          {year}
+                        </span>
+
+                        {/* Next Year */}
+                        {sortedYears.indexOf(year) < sortedYears.length - 1 && (
+                          <button
+                            onClick={() => {
+                              setSelectedYear(sortedYears[sortedYears.indexOf(year) + 1]);
+                              setSelectedDecade(null);
+                            }}
+                            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all"
+                            title={`Go to ${sortedYears[sortedYears.indexOf(year) + 1]}`}
+                          >
+                            →
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Year Content */}
