@@ -99,6 +99,17 @@ export default function OscarsPage() {
   const [searchYear, setSearchYear] = useState('');
   const [movieData, setMovieData] = useState<Record<number, MovieWithOscars>>({});
   const [isScrolled, setIsScrolled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const categories = [
     { id: 'all', name: 'All Categories' },
@@ -422,150 +433,220 @@ export default function OscarsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cinema-black via-cinema-dark to-cinema-gray">
-      {/* Streamlined Single-Row Header */}
+      {/* Header - Exact Main Page Layout */}
       <div className={`border-b border-gray-800/50 bg-black/60 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-lg' : 'border-white/10'}`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-          <motion.div
-            className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 py-3 sm:py-4"
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-          >
-            {/* Left: Navigation + Categories */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
-              {/* Navigation */}
-              <div className="flex items-center gap-1 sm:gap-2">
-                {navItems.map((item) => {
-                  const IconComponent = item.icon;
-                  const isActive = pathname === item.href;
 
-                  return (
-                    <Link key={item.href} href={item.href}>
-                      <motion.div
-                        className={cn(
-                          "relative flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-300 min-h-[44px]",
-                          isActive
-                            ? "text-black"
-                            : "text-white/70 hover:text-white"
-                        )}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        {isActive && (
-                          <motion.div
-                            className="absolute inset-0 bg-yellow-500 rounded-xl shadow-lg"
-                            layoutId="activeNav"
-                            transition={{ duration: 0.3, ease: "easeOut" }}
-                          />
-                        )}
-                        <IconComponent className="w-4 h-4 relative z-10" />
-                        <span className="relative z-10 hidden sm:inline">{item.label}</span>
-                      </motion.div>
-                    </Link>
-                  );
-                })}
-              </div>
+          {/* Normal State: Two Rows - Clean and Efficient */}
+          {!isScrolled && (
+            <div className="space-y-3 py-3 sm:py-4">
 
-              {/* Category Filters */}
-              <div className="flex flex-wrap gap-2 items-center">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => {
-                      setSelectedCategory(cat.id);
+              {/* Row 1: Navigation + Oscar Count */}
+              <motion.div
+                className="flex flex-col sm:flex-row items-center justify-between gap-3"
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              >
+                {/* Navigation */}
+                <div className="flex items-center gap-1 sm:gap-2">
+                  {navItems.map((item) => {
+                    const IconComponent = item.icon;
+                    const isActive = pathname === item.href;
+
+                    return (
+                      <Link key={item.href} href={item.href}>
+                        <motion.div
+                          className={cn(
+                            "relative flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm font-medium transition-all duration-300 min-h-[44px]",
+                            isActive
+                              ? "text-black"
+                              : "text-white/70 hover:text-white"
+                          )}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {isActive && (
+                            <motion.div
+                              className="absolute inset-0 bg-white rounded-xl shadow-lg"
+                              layoutId="activeNav"
+                              transition={{ duration: 0.3, ease: "easeOut" }}
+                            />
+                          )}
+                          <IconComponent className="w-4 h-4 relative z-10" />
+                          <span className="relative z-10 hidden sm:inline">{item.label}</span>
+                        </motion.div>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {/* Oscar Count */}
+                <span className="hidden sm:block text-gray-400 text-sm font-medium px-3 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50 whitespace-nowrap">
+                  {loading ? 'Loading...' :
+                    overviewData ? `${overviewData.overview.movies_in_collection_with_oscars} Oscar Movies in Collection` :
+                    'Oscar Collection'
+                  }
+                </span>
+              </motion.div>
+
+              {/* Row 2: Search + All Controls */}
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+
+                {/* Search */}
+                <div className="relative flex-1 max-w-full sm:max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search Oscar movies..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/50 transition-all text-white placeholder-gray-400 min-h-[44px]"
+                  />
+                </div>
+
+                {/* Controls - Responsive Layout */}
+                <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-start sm:justify-end">
+
+                  {/* Category Filter */}
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => {
+                      setSelectedCategory(e.target.value);
                       setSelectedYear(null);
                       setSelectedDecade(null);
                     }}
-                    className={cn(
-                      "px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px]",
-                      selectedCategory === cat.id
-                        ? "bg-yellow-500 text-black shadow-lg"
-                        : "bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white"
-                    )}
+                    className="px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500/50 font-medium text-white text-sm sm:text-base min-w-[140px] min-h-[44px]"
                   >
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    {categories.map(category => (
+                      <option key={category.id} value={category.id} className="bg-gray-800 text-white">
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
 
-            {/* Right: Year Controls + Actions */}
-            <div className="flex items-center gap-3">
-              {/* Year Range Selector */}
-              <div className="flex items-center gap-2">
-                {/* Quick Year Jumps */}
-                <div className="hidden sm:flex items-center gap-1">
-                  {[2023, 2020, 2010, 2000, 1990].map((year) => (
-                    <button
-                      key={year}
-                      onClick={() => {
-                        setSelectedYear(year);
+                  {/* Year Filter */}
+                  <select
+                    value={selectedYear || ''}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        setSelectedYear(parseInt(e.target.value));
                         setSelectedDecade(null);
-                      }}
-                      className={cn(
-                        "px-2 py-1 rounded-md text-xs font-medium transition-all",
-                        selectedYear === year
-                          ? "bg-yellow-500 text-black"
-                          : "text-gray-400 hover:text-white hover:bg-gray-700/50"
-                      )}
-                    >
-                      {year}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Year Search */}
-                <form onSubmit={handleYearSearch} className="flex gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="number"
-                      min="1928"
-                      max="2023"
-                      value={searchYear}
-                      onChange={(e) => setSearchYear(e.target.value)}
-                      placeholder="Year..."
-                      className="pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-sm focus:outline-none focus:border-yellow-500/50 w-24 sm:w-28"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="px-3 py-2 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 transition-colors text-sm"
+                      } else {
+                        setSelectedYear(null);
+                        setSelectedDecade(null);
+                      }
+                    }}
+                    className="px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500/50 font-medium text-white text-sm sm:text-base min-w-[120px] min-h-[44px]"
                   >
-                    Go
-                  </button>
-                </form>
+                    <option value="" className="bg-gray-800 text-white">All Years</option>
+                    {(() => {
+                      const currentYear = new Date().getFullYear();
+                      const years = [];
+                      for (let year = currentYear; year >= 1928; year--) {
+                        years.push(year);
+                      }
+                      return years.map(year => (
+                        <option key={year} value={year.toString()} className="bg-gray-800 text-white">
+                          {year}
+                        </option>
+                      ));
+                    })()}
+                  </select>
+
+                  {/* Year Search */}
+                  <form onSubmit={handleYearSearch} className="flex gap-2">
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="1928"
+                        max="2023"
+                        value={searchYear}
+                        onChange={(e) => setSearchYear(e.target.value)}
+                        placeholder="Jump..."
+                        className="pl-3 pr-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500/50 text-white text-sm sm:text-base w-20 sm:w-24 min-h-[44px]"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="px-3 py-2 sm:py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 transition-colors text-sm sm:text-base min-h-[44px]"
+                    >
+                      Go
+                    </button>
+                  </form>
+
+                  {/* Refresh Button */}
+                  <div className="flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
+                    <button
+                      onClick={refreshCollectionStatus}
+                      disabled={refreshing}
+                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${
+                        refreshing
+                          ? 'text-gray-500 cursor-not-allowed'
+                          : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                      }`}
+                      title="Refresh collection status"
+                    >
+                      <RefreshCw className={cn("w-5 h-5", refreshing && "animate-spin")} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Compact State: Single Row */}
+          {isScrolled && (
+            <motion.div
+              className="flex items-center justify-between gap-3 py-3"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              {/* Navigation + Category */}
+              <div className="flex items-center gap-3">
+                {/* Home Link */}
+                <Link href="/" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Collection
+                </Link>
+                <span className="text-gray-500">/</span>
+                <span className="text-yellow-500 font-medium text-sm">Oscars</span>
+
+                {/* Active Category Indicator */}
+                {selectedCategory !== 'all' && (
+                  <>
+                    <span className="text-gray-500">•</span>
+                    <span className="text-gray-300 text-sm">{categories.find(c => c.id === selectedCategory)?.name}</span>
+                  </>
+                )}
               </div>
 
-              {/* Clear Filters */}
-              {(selectedYear || selectedDecade) && (
-                <button
-                  onClick={() => {
-                    setSelectedYear(null);
-                    setSelectedDecade(null);
-                  }}
-                  className="text-xs text-gray-400 hover:text-white transition-colors px-3 py-2 bg-gray-800/30 rounded-lg hover:bg-gray-700/30"
-                >
-                  Clear
-                </button>
-              )}
-
-              {/* Refresh Button */}
-              <button
-                onClick={refreshCollectionStatus}
-                disabled={refreshing}
-                className={cn(
-                  "p-2 rounded-lg transition-all",
-                  refreshing
-                    ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
-                    : "bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white"
+              {/* Quick Controls */}
+              <div className="flex items-center gap-2">
+                {/* Year Display */}
+                {(selectedYear || selectedDecade) && (
+                  <span className="text-yellow-500 text-sm font-medium px-2 py-1 bg-yellow-500/10 rounded">
+                    {selectedYear || selectedDecade}
+                  </span>
                 )}
-                title="Refresh collection status"
-              >
-                <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
-              </button>
-            </div>
-          </motion.div>
+
+                {/* Refresh Button */}
+                <button
+                  onClick={refreshCollectionStatus}
+                  disabled={refreshing}
+                  className={cn(
+                    "p-2 rounded-lg transition-all",
+                    refreshing
+                      ? "bg-gray-700/50 text-gray-500 cursor-not-allowed"
+                      : "bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 hover:text-white"
+                  )}
+                  title="Refresh collection status"
+                >
+                  <RefreshCw className={cn("w-4 h-4", refreshing && "animate-spin")} />
+                </button>
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
 
