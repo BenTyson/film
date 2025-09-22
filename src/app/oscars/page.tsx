@@ -98,6 +98,9 @@ export default function OscarsPage() {
   const [selectedDecade, setSelectedDecade] = useState<string | null>(null);
   const [searchYear, setSearchYear] = useState('');
   const [movieData, setMovieData] = useState<Record<number, MovieWithOscars>>({});
+  const [loadedYears, setLoadedYears] = useState<number[]>([]);
+  const [hasMoreYears, setHasMoreYears] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
@@ -178,59 +181,99 @@ export default function OscarsPage() {
   const fetchAllNominations = async () => {
     setLoading(true);
     try {
-      // Fetch recent years for initial display
-      const recentYears = [];
-      const currentYear = new Date().getFullYear();
-      for (let year = 2023; year >= 2014; year--) {
-        recentYears.push(year);
-      }
+      // Load only recent years initially for better performance
+      const initialYears = [2023, 2022, 2021];
+      await loadYearsData(initialYears, false);
+      setLoadedYears(initialYears);
 
-      const allNominations: OscarNomination[] = [];
-      const movies: Record<number, MovieWithOscars> = {};
-
-      for (const year of recentYears) {
-        const url = selectedCategory === 'all'
-          ? `/api/oscars/years/${year}`
-          : `/api/oscars/nominations?year=${year}&category=${selectedCategory}`;
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.success) {
-          const yearNominations = data.data.nominations || data.data;
-          allNominations.push(...yearNominations);
-
-          // Process movies for this year
-          yearNominations.forEach((nom: OscarNomination) => {
-            if (nom.movie) {
-              const movieId = nom.movie.tmdb_id;
-              if (!movies[movieId]) {
-                movies[movieId] = {
-                  id: nom.movie.id,
-                  tmdb_id: nom.movie.tmdb_id,
-                  title: nom.movie.title,
-                  poster_path: null,
-                  release_date: '',
-                  nominations: [],
-                  in_collection: false,
-                  watched: true // Default to true (not grayed) for movies not in collection
-                };
-              }
-              movies[movieId].nominations.push(nom);
-            }
-          });
-        }
-      }
-
-      // Check collection status for movies
-      await checkCollectionStatus(Object.values(movies));
-
-      setNominations(allNominations);
-      setMovieData(movies);
+      // Check if there are more years to load
+      setHasMoreYears(true);
     } catch (error) {
       console.error('Error fetching nominations:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadYearsData = async (years: number[], append = true) => {
+    const allNominations: OscarNomination[] = append ? [...nominations] : [];
+    const movies: Record<number, MovieWithOscars> = append ? { ...movieData } : {};
+
+    for (const year of years) {
+      const url = selectedCategory === 'all'
+        ? `/api/oscars/years/${year}`
+        : `/api/oscars/nominations?year=${year}&category=${selectedCategory}`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.success) {
+        const yearNominations = data.data.nominations || data.data;
+        allNominations.push(...yearNominations);
+
+        // Process movies for this year
+        yearNominations.forEach((nom: OscarNomination) => {
+          if (nom.movie) {
+            const movieId = nom.movie.tmdb_id;
+            if (!movies[movieId]) {
+              movies[movieId] = {
+                id: nom.movie.id,
+                tmdb_id: nom.movie.tmdb_id,
+                title: nom.movie.title,
+                poster_path: null,
+                release_date: '',
+                nominations: [],
+                in_collection: false,
+                watched: true
+              };
+            }
+            movies[movieId].nominations.push(nom);
+          }
+        });
+      }
+    }
+
+    // Check collection status for new movies
+    const newMovies = Object.values(movies).filter(m => !movieData[m.tmdb_id]);
+    if (newMovies.length > 0) {
+      await checkCollectionStatus(newMovies);
+    }
+
+    setNominations(allNominations);
+    setMovieData(movies);
+  };
+
+  const loadMoreYears = async () => {
+    if (loadingMore || !hasMoreYears) return;
+
+    setLoadingMore(true);
+    try {
+      // Determine next years to load
+      const oldestLoadedYear = Math.min(...loadedYears);
+      const nextYears = [];
+      const startYear = oldestLoadedYear - 1;
+
+      // Load 3 more years at a time
+      for (let year = startYear; year >= Math.max(startYear - 2, 1928); year--) {
+        nextYears.push(year);
+      }
+
+      if (nextYears.length === 0 || startYear < 1928) {
+        setHasMoreYears(false);
+        return;
+      }
+
+      await loadYearsData(nextYears, true);
+      setLoadedYears([...loadedYears, ...nextYears]);
+
+      // Check if we've reached the beginning of Oscar history
+      if (startYear - 2 < 1928) {
+        setHasMoreYears(false);
+      }
+    } catch (error) {
+      console.error('Error loading more years:', error);
+    } finally {
+      setLoadingMore(false);
     }
   };
 
@@ -689,57 +732,9 @@ export default function OscarsPage() {
 
               return (
                 <div key={year} className="border border-gray-800 rounded-xl overflow-hidden">
-                  {/* Enhanced Year Header */}
-                  <div className="px-6 py-4 bg-gradient-to-r from-gray-800 to-gray-900 border-b border-gray-700/50">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                      {/* Year + Stats */}
-                      <div className="flex items-center gap-4">
-                        <span className="text-2xl font-bold text-yellow-500">{year}</span>
-                        <div className="flex items-center gap-3 text-sm text-gray-400">
-                          <span>{yearNoms.length} nominations</span>
-                          <span>•</span>
-                          <span>{winners.length} wins</span>
-                          <span>•</span>
-                          <span>{Array.from(yearMovies.values()).filter(m => m.in_collection).length} in collection</span>
-                        </div>
-                      </div>
-
-                      {/* Quick Year Navigation */}
-                      <div className="flex items-center gap-2">
-                        {/* Previous Year */}
-                        {sortedYears.indexOf(year) > 0 && (
-                          <button
-                            onClick={() => {
-                              setSelectedYear(sortedYears[sortedYears.indexOf(year) - 1]);
-                              setSelectedDecade(null);
-                            }}
-                            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all"
-                            title={`Go to ${sortedYears[sortedYears.indexOf(year) - 1]}`}
-                          >
-                            ←
-                          </button>
-                        )}
-
-                        {/* Current Year Indicator */}
-                        <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-lg text-xs font-medium">
-                          {year}
-                        </span>
-
-                        {/* Next Year */}
-                        {sortedYears.indexOf(year) < sortedYears.length - 1 && (
-                          <button
-                            onClick={() => {
-                              setSelectedYear(sortedYears[sortedYears.indexOf(year) + 1]);
-                              setSelectedDecade(null);
-                            }}
-                            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-all"
-                            title={`Go to ${sortedYears[sortedYears.indexOf(year) + 1]}`}
-                          >
-                            →
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                  {/* Simple Year Header */}
+                  <div className="px-6 py-3 bg-gradient-to-r from-gray-800 to-gray-900">
+                    <span className="text-xl font-bold text-yellow-500">{year}</span>
                   </div>
 
                   {/* Year Content */}
@@ -775,6 +770,10 @@ export default function OscarsPage() {
                                           "object-cover",
                                           !movie.in_collection && "grayscale opacity-70"
                                         )}
+                                        loading="lazy"
+                                        placeholder="blur"
+                                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkrHB/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAhEQACAQIHAQAAAAAAAAAAAAABAgADBBEFITFRkbHB/9oADAMBAAIRAxEAPwCdwLjXeriXKEfVZP8AqgNbvmrYhOnBKyRSjJZW9n8iuFuOGcRIZmHvOwzmz3aKRRq"
+                                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 16vw"
                                       />
 
 
@@ -812,6 +811,33 @@ export default function OscarsPage() {
                 </div>
               );
             })}
+
+            {/* Load More Button / Loading Indicator */}
+            {hasMoreYears && (
+              <div className="text-center py-8">
+                {loadingMore ? (
+                  <div className="flex justify-center items-center gap-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+                    <span className="text-gray-400">Loading more years...</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={loadMoreYears}
+                    className="px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors border border-gray-700 hover:border-gray-600"
+                  >
+                    Load More Years
+                  </button>
+                )}
+              </div>
+            )}
+
+            {!hasMoreYears && loadedYears.length > 3 && (
+              <div className="text-center py-8">
+                <span className="text-gray-500 text-sm">
+                  All Oscar years loaded ({loadedYears.length} years)
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>
