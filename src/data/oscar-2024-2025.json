@@ -1,0 +1,262 @@
+[
+  {
+    "category": "Best Picture",
+    "year": "2024",
+    "nominees": ["Oppenheimer"],
+    "movies": [
+      {
+        "title": "Oppenheimer",
+        "tmdb_id": 872585,
+        "imdb_id": "tt15398776"
+      }
+    ],
+    "won": true
+  },
+  {
+    "category": "Best Picture",
+    "year": "2024",
+    "nominees": ["American Fiction"],
+    "movies": [
+      {
+        "title": "American Fiction",
+        "tmdb_id": 1056360,
+        "imdb_id": "tt23561236"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2024",
+    "nominees": ["Anatomy of a Fall"],
+    "movies": [
+      {
+        "title": "Anatomy of a Fall",
+        "tmdb_id": 915935,
+        "imdb_id": "tt17009710"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2024",
+    "nominees": ["Barbie"],
+    "movies": [
+      {
+        "title": "Barbie",
+        "tmdb_id": 346698,
+        "imdb_id": "tt1517268"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2024",
+    "nominees": ["The Holdovers"],
+    "movies": [
+      {
+        "title": "The Holdovers",
+        "tmdb_id": 840430,
+        "imdb_id": "tt14849194"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2024",
+    "nominees": ["Killers of the Flower Moon"],
+    "movies": [
+      {
+        "title": "Killers of the Flower Moon",
+        "tmdb_id": 466420,
+        "imdb_id": "tt5537002"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2024",
+    "nominees": ["Maestro"],
+    "movies": [
+      {
+        "title": "Maestro",
+        "tmdb_id": 523607,
+        "imdb_id": "tt5535276"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2024",
+    "nominees": ["Past Lives"],
+    "movies": [
+      {
+        "title": "Past Lives",
+        "tmdb_id": 666277,
+        "imdb_id": "tt13238346"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2024",
+    "nominees": ["Poor Things"],
+    "movies": [
+      {
+        "title": "Poor Things",
+        "tmdb_id": 792307,
+        "imdb_id": "tt14230458"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2024",
+    "nominees": ["The Zone of Interest"],
+    "movies": [
+      {
+        "title": "The Zone of Interest",
+        "tmdb_id": 467244,
+        "imdb_id": "tt7160372"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2025",
+    "nominees": ["Anora"],
+    "movies": [
+      {
+        "title": "Anora",
+        "tmdb_id": 1064213,
+        "imdb_id": "tt28607951"
+      }
+    ],
+    "won": true
+  },
+  {
+    "category": "Best Picture",
+    "year": "2025",
+    "nominees": ["The Brutalist"],
+    "movies": [
+      {
+        "title": "The Brutalist",
+        "tmdb_id": 974453,
+        "imdb_id": "tt28583869"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2025",
+    "nominees": ["Wicked"],
+    "movies": [
+      {
+        "title": "Wicked",
+        "tmdb_id": 402431,
+        "imdb_id": "tt1262426"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2025",
+    "nominees": ["Dune: Part Two"],
+    "movies": [
+      {
+        "title": "Dune: Part Two",
+        "tmdb_id": 693134,
+        "imdb_id": "tt15239678"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2025",
+    "nominees": ["A Complete Unknown"],
+    "movies": [
+      {
+        "title": "A Complete Unknown",
+        "tmdb_id": 661539,
+        "imdb_id": "tt9185066"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2025",
+    "nominees": ["Conclave"],
+    "movies": [
+      {
+        "title": "Conclave",
+        "tmdb_id": 974576,
+        "imdb_id": "tt20215234"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2025",
+    "nominees": ["The Substance"],
+    "movies": [
+      {
+        "title": "The Substance",
+        "tmdb_id": 933260,
+        "imdb_id": "tt17526714"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2025",
+    "nominees": ["Nickel Boys"],
+    "movies": [
+      {
+        "title": "Nickel Boys",
+        "tmdb_id": 1028196,
+        "imdb_id": "tt28106044"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2025",
+    "nominees": ["I'm Still Here"],
+    "movies": [
+      {
+        "title": "I'm Still Here",
+        "tmdb_id": 43939,
+        "imdb_id": "tt29623480"
+      }
+    ],
+    "won": false
+  },
+  {
+    "category": "Best Picture",
+    "year": "2025",
+    "nominees": ["Emilia Pérez"],
+    "movies": [
+      {
+        "title": "Emilia Pérez",
+        "tmdb_id": 974950,
+        "imdb_id": "tt28623513"
+      }
+    ],
+    "won": false
+  }
+]

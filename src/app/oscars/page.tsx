@@ -93,7 +93,7 @@ export default function OscarsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [overviewData, setOverviewData] = useState<OscarOverview | null>(null);
   const [nominations, setNominations] = useState<OscarNomination[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Best Picture');
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedDecade, setSelectedDecade] = useState<string | null>(null);
   const [searchYear, setSearchYear] = useState('');
@@ -115,11 +115,11 @@ export default function OscarsPage() {
   }, [searchQuery]);
 
   const categories = [
-    { id: 'all', name: 'All Categories' },
     { id: 'Best Picture', name: 'Best Picture' },
     { id: 'Best Director', name: 'Best Director' },
     { id: 'Best Actor', name: 'Best Actor' },
-    { id: 'Best Actress', name: 'Best Actress' }
+    { id: 'Best Actress', name: 'Best Actress' },
+    { id: 'all', name: 'All Categories' }
   ];
 
   // Scroll detection for sticky header behavior
@@ -182,7 +182,7 @@ export default function OscarsPage() {
     setLoading(true);
     try {
       // Load only recent years initially for better performance
-      const initialYears = [2023, 2022, 2021];
+      const initialYears = [2025, 2024, 2023];
       await loadYearsData(initialYears, false);
       setLoadedYears(initialYears);
 
@@ -200,16 +200,18 @@ export default function OscarsPage() {
     const movies: Record<number, MovieWithOscars> = append ? { ...movieData } : {};
 
     for (const year of years) {
+      // For 'all' use the years endpoint, for specific categories use nominations endpoint
       const url = selectedCategory === 'all'
         ? `/api/oscars/years/${year}`
-        : `/api/oscars/nominations?year=${year}&category=${selectedCategory}`;
+        : `/api/oscars/nominations?year=${year}&category=${encodeURIComponent(selectedCategory)}`;
 
-      const response = await fetch(url);
-      const data = await response.json();
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
 
-      if (data.success) {
-        const yearNominations = data.data.nominations || data.data;
-        allNominations.push(...yearNominations);
+        if (data.success) {
+          const yearNominations = data.data.nominations || data.data;
+          allNominations.push(...yearNominations);
 
         // Process movies for this year
         yearNominations.forEach((nom: OscarNomination) => {
@@ -220,23 +222,22 @@ export default function OscarsPage() {
                 id: nom.movie.id,
                 tmdb_id: nom.movie.tmdb_id,
                 title: nom.movie.title,
-                poster_path: null,
+                poster_path: nom.movie.poster_path || null,
                 release_date: '',
                 nominations: [],
-                in_collection: false,
-                watched: true
+                in_collection: nom.movie.in_collection || false,
+                watched: nom.movie.in_collection || false
               };
             }
             movies[movieId].nominations.push(nom);
           }
         });
+        } else {
+          console.error(`Failed to load year ${year}:`, data.error);
+        }
+      } catch (error) {
+        console.error(`Error loading year ${year}:`, error);
       }
-    }
-
-    // Check collection status for new movies
-    const newMovies = Object.values(movies).filter(m => !movieData[m.tmdb_id]);
-    if (newMovies.length > 0) {
-      await checkCollectionStatus(newMovies);
     }
 
     setNominations(allNominations);
@@ -248,10 +249,16 @@ export default function OscarsPage() {
 
     setLoadingMore(true);
     try {
-      // Determine next years to load
-      const oldestLoadedYear = Math.min(...loadedYears);
+      // Get the actual years that are currently displayed
+      const displayedYears = Object.keys(nominationsByYear).map(Number).sort((a, b) => b - a);
+
+      // Find the oldest year currently displayed
+      const oldestDisplayedYear = displayedYears.length > 0
+        ? Math.min(...displayedYears)
+        : 2025; // fallback to most recent year
+
       const nextYears = [];
-      const startYear = oldestLoadedYear - 1;
+      const startYear = oldestDisplayedYear - 1;
 
       // Load 3 more years at a time
       for (let year = startYear; year >= Math.max(startYear - 2, 1928); year--) {
@@ -291,7 +298,7 @@ export default function OscarsPage() {
         const yearNominations = data.data.nominations || data.data;
         setNominations(yearNominations);
 
-        // Process movies
+        // Process movies with collection status from API
         const movies: Record<number, MovieWithOscars> = {};
         yearNominations.forEach((nom: OscarNomination) => {
           if (nom.movie) {
@@ -301,18 +308,17 @@ export default function OscarsPage() {
                 id: nom.movie.id,
                 tmdb_id: nom.movie.tmdb_id,
                 title: nom.movie.title,
-                poster_path: null,
+                poster_path: nom.movie.poster_path || null,
                 release_date: '',
                 nominations: [],
-                in_collection: false,
-                watched: true // Default to true (not grayed) for movies not in collection
+                in_collection: nom.movie.in_collection || false,
+                watched: nom.movie.in_collection || false
               };
             }
             movies[movieId].nominations.push(nom);
           }
         });
 
-        await checkCollectionStatus(Object.values(movies));
         setMovieData(movies);
       }
     } catch (error) {
@@ -351,11 +357,11 @@ export default function OscarsPage() {
                   id: nom.movie.id,
                   tmdb_id: nom.movie.tmdb_id,
                   title: nom.movie.title,
-                  poster_path: null,
+                  poster_path: nom.movie.poster_path || null,
                   release_date: '',
                   nominations: [],
-                  in_collection: false,
-                  watched: true // Default to true (not grayed) for movies not in collection
+                  in_collection: nom.movie.in_collection || false,
+                  watched: nom.movie.in_collection || false
                 };
               }
               movies[movieId].nominations.push(nom);
@@ -364,7 +370,6 @@ export default function OscarsPage() {
         }
       }
 
-      await checkCollectionStatus(Object.values(movies));
       setNominations(allNominations);
       setMovieData(movies);
     } catch (error) {
@@ -374,76 +379,18 @@ export default function OscarsPage() {
     }
   };
 
-  const checkCollectionStatus = async (movies: MovieWithOscars[]) => {
-    // Check if movies are in collection and if they've been watched
-    for (const movie of movies) {
-      try {
-        const response = await fetch(`/api/movies?search=${encodeURIComponent(movie.title)}&limit=5`);
-        const data = await response.json();
 
-        if (data.success && data.data.movies.length > 0) {
-          // First try exact TMDB ID match
-          let collectionMovie = data.data.movies.find((m: any) => m.tmdb_id === movie.tmdb_id);
-
-          // Fallback: try title-based matching if TMDB ID match fails
-          if (!collectionMovie) {
-            collectionMovie = data.data.movies.find((m: any) =>
-              m.title.toLowerCase().trim() === movie.title.toLowerCase().trim()
-            );
-          }
-
-          if (collectionMovie) {
-            movie.in_collection = true;
-            movie.watched = true; // All movies in collection are watched
-            movie.poster_path = collectionMovie.poster_path;
-            movie.release_date = collectionMovie.release_date;
-          } else {
-            // Movie not in collection - fetch TMDB poster
-            movie.watched = false; // Not in collection = not watched
-            await fetchTMDBPoster(movie);
-          }
-        } else {
-          // Movie not in collection - fetch TMDB poster
-          movie.watched = false; // Not in collection = not watched
-          await fetchTMDBPoster(movie);
-        }
-      } catch (error) {
-        console.error('Error checking collection status:', error);
-        // If API call fails, try to fetch TMDB poster
-        await fetchTMDBPoster(movie);
-      }
-    }
-  };
-
-  const fetchTMDBPoster = async (movie: MovieWithOscars) => {
-    try {
-      // Use the TMDB API endpoint
-      const tmdbResponse = await fetch(`/api/tmdb/movie/${movie.tmdb_id}`);
-      if (tmdbResponse.ok) {
-        const response = await tmdbResponse.json();
-        if (response.success && response.data) {
-          if (response.data.poster_path) {
-            movie.poster_path = response.data.poster_path;
-          }
-          if (response.data.release_date) {
-            movie.release_date = response.data.release_date;
-          }
-        }
-      }
-    } catch (error) {
-      console.error(`Error fetching TMDB data for ${movie.title}:`, error);
-    }
-  };
 
   const refreshCollectionStatus = async () => {
     setRefreshing(true);
     try {
-      // Only refresh movies that are currently marked as not in collection
-      const moviesToCheck = Object.values(movieData).filter(movie => !movie.in_collection);
-      if (moviesToCheck.length > 0) {
-        await checkCollectionStatus(moviesToCheck);
-        // Update the movie data state with refreshed status
-        setMovieData(prevData => ({ ...prevData }));
+      // Reload current data to get updated collection status
+      if (selectedYear) {
+        await fetchYearNominations(selectedYear);
+      } else if (selectedDecade) {
+        await fetchDecadeNominations(selectedDecade);
+      } else {
+        await fetchAllNominations();
       }
     } catch (error) {
       console.error('Error refreshing collection status:', error);
@@ -455,7 +402,7 @@ export default function OscarsPage() {
   const handleYearSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const year = parseInt(searchYear);
-    if (year >= 1928 && year <= 2023) {
+    if (year >= 1928 && year <= 2025) {
       setSelectedYear(year);
       setSelectedDecade(null);
     }
@@ -475,7 +422,7 @@ export default function OscarsPage() {
     .sort((a, b) => b - a);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cinema-black via-cinema-dark to-cinema-gray">
+    <div className="min-h-screen animated-gradient relative gradient-pulse">
       {/* Header - Exact Main Page Layout */}
       <div className={`border-b border-gray-800/50 bg-black/60 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-lg' : 'border-white/10'}`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
@@ -603,7 +550,7 @@ export default function OscarsPage() {
                       <input
                         type="number"
                         min="1928"
-                        max="2023"
+                        max="2025"
                         value={searchYear}
                         onChange={(e) => setSearchYear(e.target.value)}
                         placeholder="Jump..."
@@ -612,7 +559,7 @@ export default function OscarsPage() {
                     </div>
                     <button
                       type="submit"
-                      className="px-3 py-2 sm:py-3 bg-yellow-500 text-black font-semibold rounded-lg hover:bg-yellow-400 transition-colors text-sm sm:text-base min-h-[44px]"
+                      className="px-3 py-2 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 transition-colors text-sm sm:text-base min-h-[44px]"
                     >
                       Go
                     </button>
@@ -653,7 +600,7 @@ export default function OscarsPage() {
                   Collection
                 </Link>
                 <span className="text-gray-500">/</span>
-                <span className="text-yellow-500 font-medium text-sm">Oscars</span>
+                <span className="text-purple-400 font-medium text-sm">Oscars</span>
 
                 {/* Active Category Indicator */}
                 {selectedCategory !== 'all' && (
@@ -668,7 +615,7 @@ export default function OscarsPage() {
               <div className="flex items-center gap-2">
                 {/* Year Display */}
                 {(selectedYear || selectedDecade) && (
-                  <span className="text-yellow-500 text-sm font-medium px-2 py-1 bg-yellow-500/10 rounded">
+                  <span className="text-purple-400 text-sm font-medium px-2 py-1 bg-purple-500/10 rounded">
                     {selectedYear || selectedDecade}
                   </span>
                 )}
@@ -700,7 +647,7 @@ export default function OscarsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-8 mt-8">
 
             {/* Nominations by Year */}
             {sortedYears.map((year) => {
@@ -711,19 +658,27 @@ export default function OscarsPage() {
 
               // Group by movie
               yearNoms.forEach(nom => {
-                if (nom.movie) {
-                  const tmdbId = nom.movie.tmdb_id;
-                  if (!yearMovies.has(tmdbId)) {
-                    yearMovies.set(tmdbId, movieData[tmdbId] || {
-                      id: nom.movie.id,
-                      tmdb_id: tmdbId,
-                      title: nom.movie.title,
-                      poster_path: null,
-                      release_date: '',
-                      nominations: [],
-                      in_collection: false,
-                      watched: true // Default to true (not grayed) for movies not in collection
-                    });
+                // Handle both nominations with and without movies
+                const movieId = nom.movie?.tmdb_id || nom.id; // Use nomination ID as fallback
+                const movieTitle = nom.movie?.title || nom.nominee_name || 'Unknown Film';
+
+                if (!yearMovies.has(movieId)) {
+                  // Get movie data but DON'T include old nominations
+                  const existingMovieData = movieData[movieId];
+                  yearMovies.set(movieId, {
+                    id: nom.movie?.id || nom.id,
+                    tmdb_id: nom.movie?.tmdb_id || 0,
+                    title: movieTitle,
+                    poster_path: existingMovieData?.poster_path || null,
+                    release_date: existingMovieData?.release_date || '',
+                    nominations: [nom], // Only this year's nominations
+                    in_collection: existingMovieData?.in_collection || false,
+                    watched: existingMovieData?.watched || false
+                  });
+                } else {
+                  const existing = yearMovies.get(movieId);
+                  if (existing) {
+                    existing.nominations.push(nom);
                   }
                 }
               });
@@ -734,7 +689,7 @@ export default function OscarsPage() {
                 <div key={year} className="border border-gray-800 rounded-xl overflow-hidden">
                   {/* Simple Year Header */}
                   <div className="px-6 py-3 bg-gradient-to-r from-gray-800 to-gray-900">
-                    <span className="text-xl font-bold text-yellow-500">{year}</span>
+                    <span className="text-xl font-bold text-purple-400">{year}</span>
                   </div>
 
                   {/* Year Content */}
@@ -780,7 +735,7 @@ export default function OscarsPage() {
                                       {/* Oscar Badges */}
                                       <div className="absolute top-2 right-2 flex flex-col gap-1">
                                         {wins.length > 0 && (
-                                          <div className="bg-yellow-500 text-black text-xs font-bold px-2 py-1 rounded-full">
+                                          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold px-2 py-1 rounded-full">
                                             🏆 {wins.length}
                                           </div>
                                         )}

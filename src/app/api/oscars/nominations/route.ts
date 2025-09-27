@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Build where clause
+    // Build where clause for unified oscar_nominations table
     const where: any = {};
     if (year) {
       where.ceremony_year = parseInt(year);
@@ -24,12 +24,12 @@ export async function GET(request: NextRequest) {
       where.is_winner = true;
     }
 
-    // Get nominations with related data
+    // Get nominations with related data from unified table
     const nominations = await prisma.oscarNomination.findMany({
       where,
       include: {
-        category: true,
-        movie: true
+        movie: true,
+        category: true
       },
       orderBy: [
         { ceremony_year: 'desc' },
@@ -43,20 +43,58 @@ export async function GET(request: NextRequest) {
     // Get total count for pagination
     const totalCount = await prisma.oscarNomination.count({ where });
 
-    // Transform the data for better client consumption
-    const transformedNominations = nominations.map(nomination => ({
-      id: nomination.id,
-      ceremony_year: nomination.ceremony_year,
-      category: nomination.category.name,
-      category_group: nomination.category.category_group,
-      nominee_name: nomination.nominee_name,
-      is_winner: nomination.is_winner,
-      movie: nomination.movie ? {
-        id: nomination.movie.id,
-        title: nomination.movie.title,
-        tmdb_id: nomination.movie.tmdb_id,
-        imdb_id: nomination.movie.imdb_id
-      } : null
+    // Get user's movie collection for TMDB ID matching
+    const userMovies = await prisma.movie.findMany({
+      where: { approval_status: 'approved' },
+      select: { tmdb_id: true, id: true, title: true, poster_path: true }
+    });
+
+    // Create lookup map for fast TMDB ID matching
+    const userMovieMap = new Map(userMovies.map(m => [m.tmdb_id, m]));
+
+    // Transform the data for better client consumption with collection status and fetch TMDB posters if needed
+    const transformedNominations = await Promise.all(nominations.map(async nomination => {
+      const collectionMovie = nomination.movie?.tmdb_id
+        ? userMovieMap.get(nomination.movie.tmdb_id)
+        : null;
+
+      let posterPath = collectionMovie?.poster_path || null;
+
+      // If not in collection and no poster, try to fetch from internal TMDB API
+      if (!collectionMovie && nomination.movie?.tmdb_id && !posterPath) {
+        try {
+          const baseUrl = process.env.NODE_ENV === 'production'
+            ? 'https://yourdomain.com'
+            : 'http://localhost:3002';
+          const tmdbResponse = await fetch(`${baseUrl}/api/tmdb/movie/${nomination.movie.tmdb_id}`);
+          if (tmdbResponse.ok) {
+            const tmdbData = await tmdbResponse.json();
+            if (tmdbData.success && tmdbData.data?.poster_path) {
+              posterPath = tmdbData.data.poster_path;
+            }
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch TMDB poster for ${nomination.movie.title}:`, error);
+        }
+      }
+
+      return {
+        id: nomination.id,
+        ceremony_year: nomination.ceremony_year,
+        category: nomination.category?.name || '',
+        category_group: nomination.category?.category_group || '',
+        nominee_name: nomination.nominee_name,
+        is_winner: nomination.is_winner,
+        movie: nomination.movie ? {
+          id: nomination.movie.id,
+          title: nomination.movie.title,
+          tmdb_id: nomination.movie.tmdb_id,
+          imdb_id: nomination.movie.imdb_id,
+          // Add collection status and poster (from collection or TMDB)
+          in_collection: !!collectionMovie,
+          poster_path: posterPath
+        } : null
+      };
     }));
 
     // Group by year if requested
