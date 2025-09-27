@@ -18,13 +18,14 @@ export async function GET(request: NextRequest) {
     // Search movies on TMDB
     const searchResults = await tmdb.searchMovies(query.trim(), undefined, page);
 
-    // Get list of movies already in our database to mark them
+    // Get list of movies already in our database to mark them (only approved movies)
     const existingMovieIds = await prisma.movie.findMany({
       select: { tmdb_id: true },
       where: {
         tmdb_id: {
           in: searchResults.results.map(movie => movie.id)
-        }
+        },
+        approval_status: 'approved'
       }
     });
 

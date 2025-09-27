@@ -161,6 +161,8 @@ export async function GET(request: NextRequest) {
 
     // Build orderBy clause
     let orderBy: any = {};
+    let needsAllMovies = false; // Flag to determine if we need to fetch all movies for proper sorting
+
     switch (sortBy) {
       case 'title':
         orderBy = { title: sortOrder };
@@ -169,40 +171,101 @@ export async function GET(request: NextRequest) {
         orderBy = { release_date: sortOrder };
         break;
       case 'personal_rating':
-        // For personal rating, use created_at as base sort for DB, then JS sort
-        orderBy = { created_at: sortOrder };
-        break;
       case 'date_watched':
-        // For date_watched, we need JS sorting since it's user-specific
-        // Use release_date as database sort to get a reasonable order first
-        orderBy = { release_date: sortOrder };
+        // For user-specific fields, we need to fetch all movies first, then sort and paginate
+        needsAllMovies = true;
+        orderBy = { created_at: 'desc' }; // Default order for fetching all
         break;
       default:
         orderBy = { created_at: sortOrder };
         break;
     }
 
-    const [movies, total, grandTotal] = await withDatabaseRetry(() =>
-      Promise.all([
-        prisma.movie.findMany({
-          where,
-          include: {
-            user_movies: true,
-            oscar_data: true,
-            movie_tags: {
-              include: {
-                tag: true
+    let movies;
+    let total;
+    let grandTotal;
+
+    if (needsAllMovies) {
+      // Fetch all movies matching the filter for proper sorting
+      const [allMovies, totalCount, grandTotalCount] = await withDatabaseRetry(() =>
+        Promise.all([
+          prisma.movie.findMany({
+            where,
+            include: {
+              user_movies: true,
+              oscar_data: true,
+              movie_tags: {
+                include: {
+                  tag: true
+                }
               }
             }
-          },
-          orderBy,
-          skip,
-          take: limit,
-        }),
-        prisma.movie.count({ where }),
-        prisma.movie.count({ where: { approval_status: 'approved' } }) // Only count approved movies
-      ])
-    );
+          }),
+          prisma.movie.count({ where }),
+          prisma.movie.count({ where: { approval_status: 'approved' } })
+        ])
+      );
+
+      // Sort all movies based on the requested field
+      if (sortBy === 'personal_rating') {
+        allMovies.sort((a, b) => {
+          const aRating = a.user_movies[0]?.personal_rating || 0;
+          const bRating = b.user_movies[0]?.personal_rating || 0;
+          return sortOrder === 'desc' ? bRating - aRating : aRating - bRating;
+        });
+      } else if (sortBy === 'date_watched') {
+        allMovies.sort((a, b) => {
+          const aDate = a.user_movies[0]?.date_watched ? new Date(a.user_movies[0].date_watched).getTime() : 0;
+          const bDate = b.user_movies[0]?.date_watched ? new Date(b.user_movies[0].date_watched).getTime() : 0;
+
+          // If both have watch dates, sort by watch date
+          if (aDate && bDate) {
+            return sortOrder === 'desc' ? bDate - aDate : aDate - bDate;
+          }
+
+          // If one has watch date and other doesn't, prioritize the one with watch date
+          if (aDate && !bDate) return sortOrder === 'desc' ? -1 : 1;
+          if (!aDate && bDate) return sortOrder === 'desc' ? 1 : -1;
+
+          // If neither has watch date, sort by release date as fallback
+          const aRelease = a.release_date ? new Date(a.release_date).getTime() : 0;
+          const bRelease = b.release_date ? new Date(b.release_date).getTime() : 0;
+          return sortOrder === 'desc' ? bRelease - aRelease : aRelease - bRelease;
+        });
+      }
+
+      // Apply pagination after sorting
+      movies = allMovies.slice(skip, skip + limit);
+      total = totalCount;
+      grandTotal = grandTotalCount;
+    } else {
+      // Use standard pagination for database-sortable fields
+      const [fetchedMovies, totalCount, grandTotalCount] = await withDatabaseRetry(() =>
+        Promise.all([
+          prisma.movie.findMany({
+            where,
+            include: {
+              user_movies: true,
+              oscar_data: true,
+              movie_tags: {
+                include: {
+                  tag: true
+                }
+              }
+            },
+            orderBy,
+            skip,
+            take: limit,
+          }),
+          prisma.movie.count({ where }),
+          prisma.movie.count({ where: { approval_status: 'approved' } })
+        ])
+      );
+
+      movies = fetchedMovies;
+      total = totalCount;
+      grandTotal = grandTotalCount;
+    }
 
     // Filter low-confidence matches if requested
     let filteredMovies = movies;
@@ -240,33 +303,8 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Apply JavaScript sorting for user-specific fields
-    if (sortBy === 'personal_rating') {
-      movieGridItems.sort((a, b) => {
-        const aRating = a.personal_rating || 0;
-        const bRating = b.personal_rating || 0;
-        return sortOrder === 'desc' ? bRating - aRating : aRating - bRating;
-      });
-    } else if (sortBy === 'date_watched') {
-      movieGridItems.sort((a, b) => {
-        const aDate = a.date_watched ? new Date(a.date_watched).getTime() : 0;
-        const bDate = b.date_watched ? new Date(b.date_watched).getTime() : 0;
-
-        // If both have watch dates, sort by watch date
-        if (aDate && bDate) {
-          return sortOrder === 'desc' ? bDate - aDate : aDate - bDate;
-        }
-
-        // If one has watch date and other doesn't, prioritize the one with watch date
-        if (aDate && !bDate) return sortOrder === 'desc' ? -1 : 1;
-        if (!aDate && bDate) return sortOrder === 'desc' ? 1 : -1;
-
-        // If neither has watch date, sort by release date as fallback
-        const aRelease = a.release_date ? new Date(a.release_date).getTime() : 0;
-        const bRelease = b.release_date ? new Date(b.release_date).getTime() : 0;
-        return sortOrder === 'desc' ? bRelease - aRelease : aRelease - bRelease;
-      });
-    }
+    // JavaScript sorting is now handled earlier when needsAllMovies is true
+    // No additional sorting needed here
 
     // Adjust total count for low-confidence filter
     const adjustedTotal = tag === 'low-confidence' ? filteredMovies.length : total;
@@ -336,18 +374,96 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if movie already exists
+    // Check if movie already exists and is approved
     const existingMovie = await withDatabaseRetry(() =>
       prisma.movie.findUnique({
         where: { tmdb_id: parseInt(tmdb_id) }
       })
     );
 
-    if (existingMovie) {
+    if (existingMovie && existingMovie.approval_status === 'approved') {
       return NextResponse.json(
         { success: false, error: 'Movie already exists in collection' },
         { status: 409 }
       );
+    }
+
+    // If movie exists but was removed, update it back to approved instead of creating new
+    if (existingMovie && existingMovie.approval_status === 'removed') {
+      const updatedMovie = await withDatabaseRetry(() =>
+        prisma.movie.update({
+          where: { id: existingMovie.id },
+          data: {
+            approval_status: 'approved',
+            approved_at: new Date(),
+            approved_by: 'User'
+          }
+        })
+      );
+
+      // Create user movie record if personal data provided
+      if (personal_rating || date_watched || is_favorite || buddy_watched_with || notes) {
+        await prisma.userMovie.create({
+          data: {
+            movie_id: updatedMovie.id,
+            user_id: 1, // Default user for now
+            personal_rating: personal_rating ? parseInt(personal_rating) : null,
+            date_watched: date_watched ? new Date(date_watched) : null,
+            is_favorite: is_favorite || false,
+            buddy_watched_with: buddy_watched_with || null,
+            notes: notes || null
+          }
+        });
+      }
+
+      // Handle tags if provided
+      if (tags && tags.length > 0) {
+        for (const tagName of tags) {
+          // Find or create tag
+          let tag = await prisma.tag.findUnique({
+            where: { name: tagName }
+          });
+
+          if (!tag) {
+            tag = await prisma.tag.create({
+              data: {
+                name: tagName,
+                color: '#6366f1', // Default color
+                icon: 'tag'
+              }
+            });
+          }
+
+          // Link movie to tag (check if it doesn't already exist)
+          const existingMovieTag = await prisma.movieTag.findUnique({
+            where: {
+              movie_id_tag_id: {
+                movie_id: updatedMovie.id,
+                tag_id: tag.id
+              }
+            }
+          });
+
+          if (!existingMovieTag) {
+            await prisma.movieTag.create({
+              data: {
+                movie_id: updatedMovie.id,
+                tag_id: tag.id
+              }
+            });
+          }
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: updatedMovie.id,
+          tmdb_id: updatedMovie.tmdb_id,
+          title: updatedMovie.title,
+          message: 'Movie re-added to collection successfully'
+        }
+      });
     }
 
     // Get movie details from TMDB
