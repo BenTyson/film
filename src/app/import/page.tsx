@@ -628,7 +628,7 @@ export default function ImportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cinema-black via-cinema-dark to-cinema-gray">
+    <div className="min-h-screen animated-gradient relative gradient-pulse">
       {/* Header */}
       <div className="border-b border-border/50 bg-card/20 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -640,7 +640,7 @@ export default function ImportPage() {
               <ArrowLeft className="w-6 h-6" />
             </button>
             <div className="flex items-center gap-3">
-              <Upload className="w-8 h-8 text-cinema-gold" />
+              <Upload className="w-8 h-8 text-purple-400" />
               <h1 className="text-4xl font-heading font-bold">
                 Import Movies
               </h1>
@@ -666,9 +666,9 @@ export default function ImportPage() {
               <div className="max-w-2xl mx-auto">
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-border/50 rounded-lg p-12 hover:border-cinema-gold/50 transition-colors cursor-pointer group"
+                  className="border-2 border-dashed border-border/50 rounded-lg p-12 hover:border-purple-500/50 transition-colors cursor-pointer group"
                 >
-                  <File className="w-16 h-16 text-muted-foreground mx-auto mb-4 group-hover:text-cinema-gold transition-colors" />
+                  <File className="w-16 h-16 text-muted-foreground mx-auto mb-4 group-hover:text-purple-400 transition-colors" />
                   <h3 className="text-xl font-semibold mb-2">Upload CSV File</h3>
                   <p className="text-muted-foreground mb-4">
                     Select your movies.csv file to begin the import process
@@ -693,7 +693,7 @@ export default function ImportPage() {
                     className="mt-6 p-4 bg-card/30 rounded-lg border border-border/50"
                   >
                     <div className="flex items-center gap-3 mb-4">
-                      <File className="w-5 h-5 text-cinema-gold" />
+                      <File className="w-5 h-5 text-purple-400" />
                       <span className="font-medium">{csvFile.name}</span>
                       <span className="text-sm text-muted-foreground">
                         ({Math.round(csvFile.size / 1024)} KB)
@@ -738,13 +738,13 @@ export default function ImportPage() {
             >
               <div className="bg-card/30 backdrop-blur-sm rounded-lg border border-border/50 p-6 mb-6">
                 <h2 className="text-2xl font-semibold mb-4 flex items-center gap-3">
-                  <Film className="w-6 h-6 text-cinema-gold" />
+                  <Film className="w-6 h-6 text-purple-400" />
                   Preview Import
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="bg-background/50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-cinema-gold">{csvData.length}</div>
+                    <div className="text-2xl font-bold text-purple-400">{csvData.length}</div>
                     <div className="text-sm text-muted-foreground">Total Movies</div>
                   </div>
                   <div className="bg-background/50 rounded-lg p-4 text-center">
@@ -830,7 +830,7 @@ export default function ImportPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="text-2xl font-semibold flex items-center gap-3">
-                      <CheckCircle className="w-6 h-6 text-cinema-gold" />
+                      <CheckCircle className="w-6 h-6 text-purple-400" />
                       Import {isDryRun ? 'Preview' : 'Complete'}
                     </h2>
                     {localStorage.getItem('lastImportDate') && (

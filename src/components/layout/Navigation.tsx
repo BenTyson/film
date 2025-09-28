@@ -42,7 +42,7 @@ export function Navigation() {
               >
                 {isActive && (
                   <motion.div
-                    className="absolute inset-0 bg-white rounded-xl shadow-lg"
+                    className="absolute inset-0 bg-white/80 rounded-xl shadow-lg"
                     layoutId="activeNav"
                     transition={{ duration: 0.3, ease: "easeOut" }}
                   />

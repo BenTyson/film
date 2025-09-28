@@ -82,7 +82,8 @@ async function main() {
     const uniqueMovies = new Map();
     oscarData.forEach(nomination => {
       nomination.movies.forEach(movie => {
-        const key = `${movie.title}-${movie.tmdb_id || 'no-tmdb'}`;
+        // Use tmdb_id as primary key since it's unique in the database
+        const key = movie.tmdb_id || `no-tmdb-${movie.title}`;
         if (!uniqueMovies.has(key)) {
           uniqueMovies.set(key, movie);
         }
@@ -99,7 +100,8 @@ async function main() {
     const createdMovies = await prisma.oscarMovie.findMany();
     const movieMap = new Map();
     createdMovies.forEach(movie => {
-      const key = `${movie.title}-${movie.tmdb_id || 'no-tmdb'}`;
+      // Update mapping to use the same key logic
+      const key = movie.tmdb_id || `no-tmdb-${movie.title}`;
       movieMap.set(key, movie.id);
     });
     stats.movies_created = createdMovies.length;
@@ -131,7 +133,7 @@ async function main() {
         let movieId = null;
         if (nomination.movies.length > 0) {
           const movie = nomination.movies[0];
-          const movieKey = `${movie.title}-${movie.tmdb_id || 'no-tmdb'}`;
+          const movieKey = movie.tmdb_id || `no-tmdb-${movie.title}`;
           movieId = movieMap.get(movieKey);
         }
 

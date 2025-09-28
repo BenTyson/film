@@ -12,9 +12,9 @@ export default function AddMovieRedirect() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cinema-black via-cinema-dark to-cinema-gray flex items-center justify-center">
+    <div className="min-h-screen animated-gradient relative gradient-pulse flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cinema-gold mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
         <p className="text-muted-foreground">Redirecting to Add Movie...</p>
       </div>
     </div>

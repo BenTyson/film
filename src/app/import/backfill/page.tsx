@@ -265,7 +265,7 @@ export default function ApprovalDashboard() {
     : pendingMovies;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cinema-black via-cinema-dark to-cinema-gray">
+    <div className="min-h-screen animated-gradient relative gradient-pulse">
       {/* Header */}
       <div className="border-b border-border/50 bg-card/20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

@@ -41,7 +41,13 @@ module.exports = {
           dark: '#1a1a1a',
           gray: '#2a2a2a',
           accent: '#e50914',
-          gold: '#ffd700',
+          gold: '#ffd700', // Keep for backward compatibility
+          purple: '#8b5cf6', // purple-500
+          purpleLight: '#a78bfa', // purple-400
+          purpleDark: '#7c3aed', // purple-600
+          purpleDeep: '#1a0f2e', // Very dark purple for backgrounds
+          purpleNight: '#0f0a1f', // Almost black with purple tint
+          purpleShadow: '#2d1b69', // Deep shadow purple
           silver: '#c0c0c0',
         }
       },

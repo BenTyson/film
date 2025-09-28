@@ -89,14 +89,14 @@ export default function OscarYearPage({ params }: OscarsPageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-cinema-black via-cinema-dark to-cinema-gray flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cinema-gold"></div>
+      <div className="min-h-screen animated-gradient relative gradient-pulse flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cinema-black via-cinema-dark to-cinema-gray">
+    <div className="min-h-screen animated-gradient relative gradient-pulse">
       {/* Header */}
       <div className="border-b border-border/50 bg-card/20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -108,7 +108,7 @@ export default function OscarYearPage({ params }: OscarsPageProps) {
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <div className="flex items-center gap-3">
-              <Award className="w-8 h-8 text-cinema-gold" />
+              <Award className="w-8 h-8 text-purple-400" />
               <h1 className="text-4xl font-heading font-bold">
                 {year} Academy Awards
               </h1>
@@ -176,8 +176,8 @@ export default function OscarYearPage({ params }: OscarsPageProps) {
                   transition={{ duration: 0.3 }}
                 >
                   {/* Category Header */}
-                  <div className="bg-cinema-gold/10 border-b border-cinema-gold/20 p-6">
-                    <h2 className="text-2xl font-semibold text-cinema-gold flex items-center gap-3">
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-600/10 border-b border-purple-500/20 p-6">
+                    <h2 className="text-2xl font-semibold text-purple-400 flex items-center gap-3">
                       <Award className="w-6 h-6" />
                       {category}
                     </h2>
@@ -191,7 +191,7 @@ export default function OscarYearPage({ params }: OscarsPageProps) {
                     {categoryWinners.length > 0 && (
                       <div className="mb-8">
                         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                          <Trophy className="w-5 h-5 text-cinema-gold" />
+                          <Trophy className="w-5 h-5 text-purple-400" />
                           Winner{categoryWinners.length > 1 ? 's' : ''}
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
@@ -247,7 +247,7 @@ function MovieCard({ oscar, onClick }: { oscar: OscarEntry; onClick: () => void 
 
   return (
     <motion.div
-      className="group relative bg-card/30 backdrop-blur-sm rounded-lg overflow-hidden border border-border/50 hover:border-cinema-gold/50 transition-all duration-300 cursor-pointer"
+      className="group relative bg-card/30 backdrop-blur-sm rounded-lg overflow-hidden border border-border/50 hover:border-purple-500/50 transition-all duration-300 cursor-pointer"
       whileHover={{ scale: 1.05 }}
       onClick={onClick}
     >
@@ -264,7 +264,7 @@ function MovieCard({ oscar, onClick }: { oscar: OscarEntry; onClick: () => void 
           <div className={cn(
             "px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1",
             oscar.nomination_type === 'won'
-              ? "bg-cinema-gold text-black"
+              ? "bg-gradient-to-r from-blue-500 to-purple-600 text-black"
               : "bg-gray-400 text-black"
           )}>
             {oscar.nomination_type === 'won' ? (
@@ -291,7 +291,7 @@ function MovieCard({ oscar, onClick }: { oscar: OscarEntry; onClick: () => void 
         </p>
 
         {oscar.nominee_name && (
-          <p className="text-xs text-cinema-gold mb-2">{oscar.nominee_name}</p>
+          <p className="text-xs text-purple-400 mb-2">{oscar.nominee_name}</p>
         )}
 
         {userMovie?.personal_rating && (

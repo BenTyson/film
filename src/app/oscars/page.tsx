@@ -7,6 +7,7 @@ import { Award, Search, RefreshCw, Clapperboard, Users, Plus } from 'lucide-reac
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { MovieDetailsModal } from '@/components/movie/MovieDetailsModal';
 
 interface OscarOverview {
   overview: {
@@ -71,6 +72,7 @@ interface OscarNomination {
 
 interface MovieWithOscars {
   id: number;
+  collection_id: number | null;
   tmdb_id: number;
   title: string;
   poster_path: string | null;
@@ -104,6 +106,8 @@ export default function OscarsPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Debounce search query
   useEffect(() => {
@@ -408,6 +412,23 @@ export default function OscarsPage() {
     }
   };
 
+  const handleMovieClick = (movie: MovieWithOscars) => {
+    // Only open modal if movie is in collection
+    if (movie.in_collection && movie.collection_id) {
+      setSelectedMovieId(movie.collection_id);
+      setIsModalOpen(true);
+    }
+    // For movies not in collection, we could show a different modal or do nothing
+    // For now, we'll just not open the modal
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedMovieId(null);
+    // Optionally refresh data if needed
+    // fetchOscarData();
+  };
+
   // Group nominations by year
   const nominationsByYear = nominations.reduce((acc, nom) => {
     if (!acc[nom.ceremony_year]) {
@@ -667,6 +688,7 @@ export default function OscarsPage() {
                   const existingMovieData = movieData[movieId];
                   yearMovies.set(movieId, {
                     id: nom.movie?.id || nom.id,
+                    collection_id: nom.movie?.collection_id || null,
                     tmdb_id: nom.movie?.tmdb_id || 0,
                     title: movieTitle,
                     poster_path: existingMovieData?.poster_path || null,
@@ -703,16 +725,19 @@ export default function OscarsPage() {
                                 : '/placeholder-movie.jpg';
 
                               return (
-                                <Link
+                                <div
                                   key={movie.tmdb_id}
-                                  href={`/movies/${movie.id}`}
-                                  className="group relative"
+                                  onClick={() => handleMovieClick(movie)}
+                                  className={cn(
+                                    "group relative cursor-pointer",
+                                    movie.in_collection ? "" : "cursor-not-allowed"
+                                  )}
                                 >
                                   <div
                                     className={cn(
                                       "relative rounded-lg overflow-hidden transition-all duration-300",
                                       isWinner ? "ring-2 ring-yellow-500" : "ring-1 ring-gray-700",
-                                      "hover:ring-2 hover:ring-yellow-400 hover:scale-105"
+                                      movie.in_collection ? "hover:ring-2 hover:ring-yellow-400 hover:scale-105" : ""
                                     )}
                                   >
                                     {/* Poster */}
@@ -758,7 +783,7 @@ export default function OscarsPage() {
                                       </div>
                                     </div>
                                   </div>
-                                </Link>
+                                </div>
                               );
                             })}
                           </div>
@@ -796,6 +821,13 @@ export default function OscarsPage() {
           </div>
         )}
       </div>
+
+      {/* Movie Details Modal */}
+      <MovieDetailsModal
+        movieId={selectedMovieId}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 }

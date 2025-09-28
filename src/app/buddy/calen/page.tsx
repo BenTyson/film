@@ -252,7 +252,7 @@ export default function CalenPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cinema-black via-cinema-dark to-cinema-gray">
+    <div className="min-h-screen animated-gradient relative gradient-pulse">
       {/* Unified Navigation + Controls Header */}
       <div className={`border-b border-gray-800/50 bg-black/60 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-lg' : 'border-white/10'}`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
@@ -393,14 +393,14 @@ export default function CalenPage() {
                   <div className="flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
                     <button
                       onClick={() => setSortOrder('asc')}
-                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${sortOrder === 'asc' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${sortOrder === 'asc' ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                       title="Oldest first"
                     >
                       <ArrowUp className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => setSortOrder('desc')}
-                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${sortOrder === 'desc' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${sortOrder === 'desc' ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                       title="Newest first"
                     >
                       <ArrowDown className="w-5 h-5" />
@@ -411,13 +411,13 @@ export default function CalenPage() {
                   <div className="flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
                     <button
                       onClick={() => setViewMode('grid')}
-                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${viewMode === 'grid' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${viewMode === 'grid' ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                     >
                       <Grid className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => setViewMode('list')}
-                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${viewMode === 'list' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${viewMode === 'list' ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                     >
                       <List className="w-5 h-5" />
                     </button>
@@ -428,21 +428,21 @@ export default function CalenPage() {
                     <div className="hidden lg:flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
                       <button
                         onClick={() => setGridColumns(4)}
-                        className={`p-3 transition-all min-h-[44px] min-w-[44px] ${gridColumns === 4 ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                        className={`p-3 transition-all min-h-[44px] min-w-[44px] ${gridColumns === 4 ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                         title="4 columns"
                       >
                         <LayoutGrid className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => setGridColumns(5)}
-                        className={`p-3 transition-all min-h-[44px] min-w-[44px] ${gridColumns === 5 ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                        className={`p-3 transition-all min-h-[44px] min-w-[44px] ${gridColumns === 5 ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                         title="5 columns"
                       >
                         <Grid3X3 className="w-5 h-5" />
                       </button>
                       <button
                         onClick={() => setGridColumns(6)}
-                        className={`p-3 transition-all min-h-[44px] min-w-[44px] ${gridColumns === 6 ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                        className={`p-3 transition-all min-h-[44px] min-w-[44px] ${gridColumns === 6 ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                         title="6 columns"
                       >
                         <Grip className="w-5 h-5" />
@@ -516,14 +516,14 @@ export default function CalenPage() {
                 <div className="flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
                   <button
                     onClick={() => setSortOrder('asc')}
-                    className={`p-2 transition-all ${sortOrder === 'asc' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                    className={`p-2 transition-all ${sortOrder === 'asc' ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                     title="Oldest first"
                   >
                     <ArrowUp className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setSortOrder('desc')}
-                    className={`p-2 transition-all ${sortOrder === 'desc' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                    className={`p-2 transition-all ${sortOrder === 'desc' ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                     title="Newest first"
                   >
                     <ArrowDown className="w-4 h-4" />
@@ -534,13 +534,13 @@ export default function CalenPage() {
                 <div className="flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-2 transition-all ${viewMode === 'grid' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                    className={`p-2 transition-all ${viewMode === 'grid' ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                   >
                     <Grid className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-2 transition-all ${viewMode === 'list' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                    className={`p-2 transition-all ${viewMode === 'list' ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                   >
                     <List className="w-4 h-4" />
                   </button>

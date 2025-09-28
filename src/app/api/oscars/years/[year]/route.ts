@@ -86,6 +86,7 @@ export async function GET(
           imdb_id: nomination.movie.imdb_id,
           // Add collection status and poster (from collection or TMDB)
           in_collection: !!collectionMovie,
+          collection_id: collectionMovie?.id || null,
           poster_path: posterPath
         } : null
       };

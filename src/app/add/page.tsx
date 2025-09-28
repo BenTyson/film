@@ -241,7 +241,7 @@ export default function AddMoviePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cinema-black via-cinema-dark to-cinema-gray">
+    <div className="min-h-screen animated-gradient relative gradient-pulse">
       {/* Success Toast */}
       <AnimatePresence>
         {addedSuccessfully && (
@@ -268,7 +268,7 @@ export default function AddMoviePage() {
               <ArrowLeft className="w-6 h-6" />
             </button>
             <div className="flex items-center gap-3">
-              <Plus className="w-8 h-8 text-cinema-gold" />
+              <Plus className="w-8 h-8 text-purple-400" />
               <h1 className="text-4xl font-heading font-bold">
                 Add Movie
               </h1>
@@ -302,7 +302,7 @@ export default function AddMoviePage() {
                   className="w-full pl-12 pr-12 py-4 bg-card/30 backdrop-blur-sm border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-cinema-gold/50 text-lg placeholder:text-muted-foreground/60 transition-all"
                 />
                 {isSearching && (
-                  <Loader2 className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 animate-spin text-cinema-gold" />
+                  <Loader2 className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 animate-spin text-purple-400" />
                 )}
                 {searchQuery && !isSearching && (
                   <button
@@ -347,7 +347,7 @@ export default function AddMoviePage() {
                         "group flex gap-4 p-4 bg-card/30 backdrop-blur-sm rounded-xl border transition-all duration-300",
                         movie.already_in_collection
                           ? "border-green-500/30 opacity-60 cursor-not-allowed"
-                          : "border-border/50 hover:border-cinema-gold/50 cursor-pointer hover:bg-card/50"
+                          : "border-border/50 hover:border-purple-500/50 cursor-pointer hover:bg-card/50"
                       )}
                       onClick={() => handleMovieSelect(movie)}
                       initial={{ opacity: 0, x: -20 }}
@@ -374,7 +374,7 @@ export default function AddMoviePage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
-                            <h3 className="text-lg font-semibold mb-1 group-hover:text-cinema-gold transition-colors">
+                            <h3 className="text-lg font-semibold mb-1 group-hover:text-purple-400 transition-colors">
                               {movie.title}
                             </h3>
                             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
@@ -407,7 +407,7 @@ export default function AddMoviePage() {
                             </div>
                           ) : (
                             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Plus className="w-5 h-5 text-cinema-gold" />
+                              <Plus className="w-5 h-5 text-purple-400" />
                             </div>
                           )}
                         </div>
@@ -441,7 +441,7 @@ export default function AddMoviePage() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
-                <Sparkles className="w-16 h-16 text-cinema-gold/50 mx-auto mb-4" />
+                <Sparkles className="w-16 h-16 text-purple-400/50 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Start typing to search</h3>
                 <p className="text-muted-foreground">
                   Find any movie to add to your collection
@@ -528,8 +528,8 @@ export default function AddMoviePage() {
                       className={cn(
                         "w-12 h-12 rounded-lg border-2 font-medium transition-all",
                         personalRating === rating
-                          ? "bg-cinema-gold text-black border-cinema-gold scale-110 shadow-lg"
-                          : "border-border/50 hover:border-cinema-gold/50 hover:scale-105"
+                          ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white border-purple-500 scale-110 shadow-lg"
+                          : "border-border/50 hover:border-purple-500/50 hover:scale-105"
                       )}
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
@@ -668,7 +668,7 @@ export default function AddMoviePage() {
                   />
                   <button
                     onClick={() => handleAddTag()}
-                    className="px-6 py-3 bg-cinema-gold text-black rounded-lg hover:bg-cinema-gold/90 transition-colors font-medium"
+                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:bg-cinema-gold/90 transition-colors font-medium"
                   >
                     Add
                   </button>
@@ -704,7 +704,7 @@ export default function AddMoviePage() {
                 <motion.button
                   onClick={handleAddMovie}
                   disabled={isAdding}
-                  className="flex-1 px-6 py-3 bg-cinema-gold text-black rounded-lg hover:bg-cinema-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold flex items-center justify-center gap-2"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:bg-cinema-gold/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold flex items-center justify-center gap-2"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >

@@ -8,87 +8,83 @@ datasource db {
 }
 
 model Movie {
-  id            Int      @id @default(autoincrement())
-  tmdb_id       Int      @unique
-  title         String
-  original_title String?
-  release_date  DateTime?
-  director      String?
-  overview      String?
-  poster_path   String?
-  backdrop_path String?
-  runtime       Int?
-  genres        Json?
-  vote_average  Float?
-  vote_count    Int?
-  popularity    Float?
-  budget        BigInt?
-  revenue       BigInt?
-  tagline       String?
-  imdb_id       String?
-  imdb_rating   Float?
-  csv_row_number Int?     // Track which CSV row this movie came from
-  csv_title     String?   // Original title from CSV
-  csv_director  String?   // Original director from CSV
-  csv_year      String?   // Original year from CSV
-  csv_notes     String?   // Original notes from CSV
-  approval_status String @default("pending") // "pending" | "approved"
-  approved_at   DateTime? // When the movie was approved
-  approved_by   String?   // Who approved it (future: user system)
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-
-  user_movies UserMovie[]
-  oscar_data  OscarData[]
-  movie_tags  MovieTag[]
-  match_analysis MovieMatchAnalysis?
+  id              Int                 @id @default(autoincrement())
+  tmdb_id         Int                 @unique
+  title           String
+  original_title  String?
+  release_date    DateTime?
+  director        String?
+  overview        String?
+  poster_path     String?
+  backdrop_path   String?
+  runtime         Int?
+  genres          Json?
+  vote_average    Float?
+  vote_count      Int?
+  popularity      Float?
+  budget          BigInt?
+  revenue         BigInt?
+  tagline         String?
+  imdb_id         String?
+  imdb_rating     Float?
+  csv_row_number  Int?
+  csv_title       String?
+  csv_director    String?
+  csv_year        String?
+  csv_notes       String?
+  approval_status String              @default("pending")
+  approved_at     DateTime?
+  approved_by     String?
+  created_at      DateTime            @default(now())
+  updated_at      DateTime            @updatedAt
+  match_analysis  MovieMatchAnalysis?
+  movie_tags      MovieTag[]
+  oscar_data      OscarData[]
+  user_movies     UserMovie[]
 
   @@map("movies")
 }
 
 model UserMovie {
-  id                 Int      @id @default(autoincrement())
+  id                 Int       @id @default(autoincrement())
   movie_id           Int
-  user_id            Int      @default(1)
+  user_id            Int       @default(1)
   date_watched       DateTime?
   personal_rating    Int?
   notes              String?
-  is_favorite        Boolean  @default(false)
+  is_favorite        Boolean   @default(false)
   buddy_watched_with String?
   watch_location     String?
-  created_at         DateTime @default(now())
-  updated_at         DateTime @updatedAt
-
-  movie Movie @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  movie              Movie     @relation(fields: [movie_id], references: [id], onDelete: Cascade)
 
   @@map("user_movies")
 }
 
 model OscarData {
-  id              Int      @id @default(autoincrement())
-  movie_id        Int
-  ceremony_year   Int
-  category        String
-  is_winner       Boolean  @default(false)
-  nominee_name    String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  movie_id      Int
+  ceremony_year Int
+  category      String
+  is_winner     Boolean  @default(false)
+  nominee_name  String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  movie         Movie    @relation(fields: [movie_id], references: [id], onDelete: Cascade)
 
-  movie Movie @relation(fields: [movie_id], references: [id], onDelete: Cascade)
-
+  @@unique([movie_id, ceremony_year, category])
   @@index([movie_id])
   @@index([ceremony_year])
-  @@unique([movie_id, ceremony_year, category])
   @@map("oscar_data")
 }
 
 model Tag {
-  id         Int      @id @default(autoincrement())
-  name       String   @unique
-  color      String?  // Hex color code
-  icon       String?  // Lucide icon name
-  created_at DateTime @default(now())
-
+  id         Int        @id @default(autoincrement())
+  name       String     @unique
+  color      String?
+  icon       String?
+  created_at DateTime   @default(now())
   movie_tags MovieTag[]
 
   @@map("tags")
@@ -99,85 +95,80 @@ model MovieTag {
   movie_id   Int
   tag_id     Int
   created_at DateTime @default(now())
-
-  movie Movie @relation(fields: [movie_id], references: [id], onDelete: Cascade)
-  tag   Tag   @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  movie      Movie    @relation(fields: [movie_id], references: [id], onDelete: Cascade)
 
   @@unique([movie_id, tag_id])
   @@map("movie_tags")
 }
 
 model MovieMatchAnalysis {
-  id               Int      @id @default(autoincrement())
-  movie_id         Int      @unique
-  confidence_score Int      // 0-100 confidence score
-  severity         String   // "high" | "medium" | "low"
-  mismatches       Json     // Array of mismatch descriptions
-  title_similarity Int?     // 0-100 title similarity score
-  director_similarity Int?  // 0-100 director similarity score
-  year_difference  Int?     // Year difference between CSV and TMDB
-  analysis_date    DateTime @default(now())
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-
-  movie Movie @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+  id                  Int      @id @default(autoincrement())
+  movie_id            Int      @unique
+  confidence_score    Int
+  severity            String
+  mismatches          Json
+  title_similarity    Int?
+  director_similarity Int?
+  year_difference     Int?
+  analysis_date       DateTime @default(now())
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+  movie               Movie    @relation(fields: [movie_id], references: [id], onDelete: Cascade)
 
   @@map("movie_match_analysis")
 }
 
 model BestPictureNominee {
   id            Int      @id @default(autoincrement())
-  tmdb_id       Int?     // TMDB ID if available
-  ceremony_year Int      // Academy Awards ceremony year
-  movie_title   String   // Movie title
-  release_year  Int?     // Movie release year
-  director      String?  // Director name for enhanced matching
-  is_winner     Boolean  @default(false) // true if winner, false if just nominee
+  tmdb_id       Int?
+  ceremony_year Int
+  movie_title   String
+  release_year  Int?
+  is_winner     Boolean  @default(false)
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
+  director      String?
 
   @@unique([ceremony_year, movie_title])
   @@map("best_picture_nominees")
 }
 
 model OscarCategory {
-  id             Int      @id @default(autoincrement())
-  name           String   @unique
-  category_group String?  // Group like "Acting", "Technical", "Writing", etc.
-  is_active      Boolean  @default(true) // Some categories were discontinued
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
-
-  nominations OscarNomination[]
+  id             Int               @id @default(autoincrement())
+  name           String            @unique
+  category_group String?
+  is_active      Boolean           @default(true)
+  created_at     DateTime          @default(now())
+  updated_at     DateTime          @updatedAt
+  nominations    OscarNomination[]
 
   @@map("oscar_categories")
 }
 
 model OscarMovie {
-  id         Int      @id @default(autoincrement())
-  tmdb_id    Int?     @unique
-  imdb_id    String?  @unique
-  title      String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
+  id          Int               @id @default(autoincrement())
+  tmdb_id     Int?              @unique
+  imdb_id     String?           @unique
+  title       String
+  created_at  DateTime          @default(now())
+  updated_at  DateTime          @updatedAt
   nominations OscarNomination[]
 
   @@map("oscar_movies")
 }
 
 model OscarNomination {
-  id            Int      @id @default(autoincrement())
-  ceremony_year Int      // Academy Awards ceremony year
-  category_id   Int      // Foreign key to OscarCategory
-  movie_id      Int?     // Foreign key to OscarMovie (nullable for person-only nominations)
-  nominee_name  String?  // Individual nominee name (actor, director, etc.)
-  is_winner     Boolean  @default(false)
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-
-  category OscarCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
-  movie    OscarMovie?   @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+  id            Int           @id @default(autoincrement())
+  ceremony_year Int
+  category_id   Int
+  movie_id      Int?
+  nominee_name  String?
+  is_winner     Boolean       @default(false)
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @updatedAt
+  movie         OscarMovie?   @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+  category      OscarCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
 
   @@index([ceremony_year])
   @@index([category_id])

@@ -59,7 +59,7 @@ export function MovieCard({ movie, onSelect, className }: MovieCardProps) {
         {(hasOscarWins || hasOscarNominations) && (
           <div className="absolute top-2 right-2 flex gap-1">
             {hasOscarWins && (
-              <div className="bg-cinema-gold text-cinema-black px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                 <Award className="w-3 h-3" />
                 {movie.oscar_badges.wins}
               </div>

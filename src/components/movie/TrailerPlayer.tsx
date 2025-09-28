@@ -89,7 +89,7 @@ export function TrailerPlayer({ trailer, autoPlay = false, className }: TrailerP
                 <p className="text-sm text-gray-300 flex items-center gap-2">
                   {trailer.type}
                   {trailer.official && (
-                    <span className="px-2 py-0.5 bg-yellow-500 text-black text-xs font-bold rounded">
+                    <span className="px-2 py-0.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold rounded">
                       OFFICIAL
                     </span>
                   )}
@@ -187,7 +187,7 @@ export function TrailerPlayer({ trailer, autoPlay = false, className }: TrailerP
                   <p className="text-sm text-gray-300 flex items-center gap-2">
                     {selectedTrailer.type}
                     {selectedTrailer.official && (
-                      <span className="px-2 py-0.5 bg-yellow-500 text-black text-xs font-bold rounded">
+                      <span className="px-2 py-0.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold rounded">
                         OFFICIAL
                       </span>
                     )}

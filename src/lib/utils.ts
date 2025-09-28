@@ -122,13 +122,13 @@ export function extractColorFromImage(imageSrc: string): Promise<string> {
 
 export function getRatingColor(rating: number): string {
   if (rating >= 8) return 'text-green-400';
-  if (rating >= 6) return 'text-yellow-400';
+  if (rating >= 6) return 'text-purple-400';
   if (rating >= 4) return 'text-orange-400';
   return 'text-red-400';
 }
 
 export function getOscarBadgeColor(type: 'nominated' | 'won'): string {
-  return type === 'won' ? 'bg-yellow-500' : 'bg-gray-400';
+  return type === 'won' ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-gray-400';
 }
 
 export function sortMovies<T extends {
