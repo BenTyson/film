@@ -14,7 +14,13 @@ interface CSVRow {
 }
 
 interface MatchCandidate {
-  movie: any;
+  movie: {
+    id: number;
+    title: string;
+    director: string | null;
+    release_date: Date | null;
+    user_movies: unknown[];
+  };
   csvRow: CSVRow;
   matchScore: number;
   matchReasons: string[];
@@ -28,7 +34,7 @@ interface MatchCandidate {
   };
 }
 
-function calculateMatchScore(movie: any, csvRow: CSVRow): { score: number; reasons: string[] } {
+function calculateMatchScore(movie: { title: string; director: string | null; release_date: Date | null }, csvRow: CSVRow): { score: number; reasons: string[] } {
   let score = 0;
   const reasons: string[] = [];
 
@@ -120,7 +126,7 @@ function calculateStringSimilarity(str1: string, str2: string): number {
   return Math.round((1 - distance / maxLength) * 100);
 }
 
-function createMatchAnalysis(movie: any, csvRow: CSVRow): {
+function createMatchAnalysis(movie: { title: string; director: string | null; release_date: Date | null }, csvRow: CSVRow): {
   confidenceScore: number;
   severity: 'high' | 'medium' | 'low';
   mismatches: string[];
@@ -197,7 +203,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await fs.access(csvPath);
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         { success: false, error: 'movies.csv not found in project root' },
         { status: 404 }
@@ -213,11 +219,11 @@ export async function POST(request: NextRequest) {
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(',');
       if (values.length >= headers.length && values[2]?.trim()) { // Must have title
-        const row: any = { rowNumber: i + 1 }; // 1-based row numbering
+        const row: Record<string, string | number> = { rowNumber: i + 1 }; // 1-based row numbering
         headers.forEach((header, index) => {
           row[header] = values[index]?.trim() || '';
         });
-        csvRows.push(row as CSVRow);
+        csvRows.push(row as unknown as CSVRow);
       }
     }
 

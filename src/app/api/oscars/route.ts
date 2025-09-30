@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
         where: {
           ceremony_year: parseInt(year),
           ...(category && { category }),
-          ...(type && { nomination_type: type }),
+          ...(type && { is_winner: type === 'won' }),
         },
         include: {
           movie: {
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         },
         orderBy: [
           { category: 'asc' },
-          { nomination_type: 'desc' }, // Winners first
+          { is_winner: 'desc' }, // Winners first
         ]
       });
 
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
       // Total wins vs nominations
       prisma.oscarData.groupBy({
-        by: ['nomination_type'],
+        by: ['is_winner'],
         _count: {
           id: true
         }
@@ -88,14 +88,14 @@ export async function GET(request: NextRequest) {
         where: {
           oscar_data: {
             some: {
-              nomination_type: 'won'
+              is_winner: true
             }
           }
         },
         include: {
           oscar_data: {
             where: {
-              nomination_type: 'won'
+              is_winner: true
             }
           },
           user_movies: true
@@ -117,8 +117,8 @@ export async function GET(request: NextRequest) {
       mostAwardedMovies
     ] = stats;
 
-    const winsCount = typeStats.find(s => s.nomination_type === 'won')?._count.id || 0;
-    const nominationsCount = typeStats.find(s => s.nomination_type === 'nominated')?._count.id || 0;
+    const winsCount = typeStats.find(s => s.is_winner === true)?._count.id || 0;
+    const nominationsCount = typeStats.find(s => s.is_winner === false)?._count.id || 0;
 
     return NextResponse.json({
       success: true,

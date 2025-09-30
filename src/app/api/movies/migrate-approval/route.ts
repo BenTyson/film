@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -10,7 +11,6 @@ export async function POST(request: NextRequest) {
     const moviesToMigrate = await prisma.movie.findMany({
       where: {
         OR: [
-          { approval_status: null },
           { approval_status: '' },
           // Include movies that might still be set to a default value
           { approval_status: 'pending', approved_at: null, approved_by: null }

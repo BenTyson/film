@@ -108,7 +108,7 @@ export function MovieListItem({ movie, onSelect, className }: MovieListItemProps
                       {movie.oscar_badges.wins}
                     </div>
                   )}
-                  {hasOscarNominations > movie.oscar_badges.wins && (
+                  {movie.oscar_badges.nominations > movie.oscar_badges.wins && (
                     <div className="bg-cinema-silver text-cinema-black px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                       <Award className="w-3 h-3" />
                       {movie.oscar_badges.nominations - movie.oscar_badges.wins}

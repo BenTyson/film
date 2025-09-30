@@ -39,9 +39,10 @@ async function withDatabaseRetry<T>(operation: () => Promise<T>, retries = MAX_R
   throw lastError;
 }
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const movieId = parseInt(params.id);
+    const { id } = await params;
+    const movieId = parseInt(id);
 
     if (isNaN(movieId)) {
       return NextResponse.json(
@@ -193,14 +194,15 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({
       success: false,
       error: errorMessage,
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined
     }, { status: statusCode });
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const movieId = parseInt(params.id);
+    const { id } = await params;
+    const movieId = parseInt(id);
 
     if (isNaN(movieId)) {
       return NextResponse.json(
@@ -326,7 +328,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({
       success: false,
       error: errorMessage,
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined
     }, { status: statusCode });
   }
 }

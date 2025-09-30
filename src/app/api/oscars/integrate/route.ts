@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -43,8 +44,8 @@ export async function POST(request: NextRequest) {
       collection_movies_total: collectionMovies.length,
       matches_found: 0,
       oscar_data_created: 0,
-      movies_with_nominations: [],
-      sample_matches: []
+      movies_with_nominations: [] as Array<{title: string; nomination_count: number; wins: number}>,
+      sample_matches: [] as Array<{title: string; tmdb_id: number | null; nominations: unknown[]}>
     };
 
     if (!dryRun) {

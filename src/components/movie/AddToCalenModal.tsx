@@ -31,7 +31,7 @@ interface MoviesResponse {
 
 interface TagResponse {
   success: boolean;
-  data: {
+  data?: {
     movieId: number;
     movieTitle: string;
     addedTags: Array<{
@@ -42,6 +42,7 @@ interface TagResponse {
     }>;
     message: string;
   };
+  error?: string;
 }
 
 export function AddToCalenModal({ isOpen, onClose, onSuccess }: AddToCalenModalProps) {
@@ -104,7 +105,7 @@ export function AddToCalenModal({ isOpen, onClose, onSuccess }: AddToCalenModalP
       const response = await fetch(`/api/movies?${params}`);
       const data: MoviesResponse = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
         // Filter out movies that already have the Calen tag
         const filteredMovies = data.data.movies.filter(movie =>
           !movie.tags.some(tag => tag.name.toLowerCase() === 'calen')
@@ -138,7 +139,7 @@ export function AddToCalenModal({ isOpen, onClose, onSuccess }: AddToCalenModalP
 
       const data: TagResponse = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
         setAddedMovieIds(prev => new Set(prev).add(movie.id));
         // Remove movie from search results since it now has the Calen tag
         setMovies(prev => prev.filter(m => m.id !== movie.id));

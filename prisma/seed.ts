@@ -185,7 +185,7 @@ async function main() {
               movie_id: createdMovie.id,
               ceremony_year: oscarInfo.year + 1, // Usually next year
               category: award.category,
-              nomination_type: award.type,
+              is_winner: award.type === 'won',
             },
           });
         }

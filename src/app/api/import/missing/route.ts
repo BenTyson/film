@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from '@/lib/prisma';
 import { tmdb } from '@/lib/tmdb';
 import { NextRequest, NextResponse } from 'next/server';

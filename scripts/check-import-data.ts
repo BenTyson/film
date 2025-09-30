@@ -55,7 +55,6 @@ async function checkImportData() {
     const where2 = {
       OR: [
         { approval_status: 'pending' },
-        { approval_status: null },
         { approval_status: '' }
       ]
     };

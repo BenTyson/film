@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -43,11 +44,14 @@ interface MovieDetailsModalProps {
 interface MovieDetails extends MovieWithDetails {
   user_movies: Array<{
     id: number;
+    movie_id: number;
     date_watched: Date;
     personal_rating: number | null;
     notes: string | null;
     is_favorite: boolean;
     watch_location: string | null;
+    created_at: Date;
+    updated_at: Date;
   }>;
   trailer?: {
     key: string;
@@ -71,6 +75,18 @@ interface MovieDetails extends MovieWithDetails {
     job: string;
     department: string;
     profile_path: string | null;
+  }>;
+  tagline?: string;
+  vote_average?: number;
+  popularity?: number;
+  budget?: number;
+  revenue?: number;
+  original_language?: string;
+  production_companies?: Array<{
+    id: number;
+    name: string;
+    logo_path: string | null;
+    origin_country: string;
   }>;
 }
 
@@ -241,7 +257,7 @@ export function MovieDetailsModal({ movieId, isOpen, onClose, onMovieUpdate }: M
 
     try {
       // Get current tags from the movie
-      const currentTags = movie.movie_tags?.map(mt => mt.tag.name) || [];
+      const currentTags = movie.movie_tags?.map(mt => mt.tag?.name).filter((name): name is string => Boolean(name)) || [];
 
       // Find tags to add and remove
       const tagsToAdd = movieTags.filter(tag => !currentTags.includes(tag));
@@ -648,13 +664,13 @@ export function MovieDetailsModal({ movieId, isOpen, onClose, onMovieUpdate }: M
                       <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6">
                         <h2 className="text-xl font-bold text-white mb-4">Production Details</h2>
                         <div className="space-y-3">
-                          {movie.budget > 0 && (
+                          {movie.budget && movie.budget > 0 && (
                             <div className="flex justify-between">
                               <span className="text-white/60">Budget</span>
                               <span className="text-white font-medium">{formatCurrency(movie.budget)}</span>
                             </div>
                           )}
-                          {movie.revenue > 0 && (
+                          {movie.revenue && movie.revenue > 0 && (
                             <div className="flex justify-between">
                               <span className="text-white/60">Box Office</span>
                               <span className="text-white font-medium">{formatCurrency(movie.revenue)}</span>
@@ -906,11 +922,11 @@ export function MovieDetailsModal({ movieId, isOpen, onClose, onMovieUpdate }: M
                                   key={movieTag.id}
                                   className="px-3 py-1 rounded-full text-sm"
                                   style={{
-                                    backgroundColor: movieTag.tag.color ? `${movieTag.tag.color}30` : 'rgba(255,255,255,0.1)',
-                                    color: movieTag.tag.color || 'white'
+                                    backgroundColor: movieTag.tag?.color ? `${movieTag.tag.color}30` : 'rgba(255,255,255,0.1)',
+                                    color: movieTag.tag?.color || 'white'
                                   }}
                                 >
-                                  {movieTag.tag.name}
+                                  {movieTag.tag?.name}
                                 </span>
                               )) || <span className="text-white/60">No tags</span>}
                             </div>

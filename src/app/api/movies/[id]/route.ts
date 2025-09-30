@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
@@ -107,12 +107,10 @@ export async function GET(
         movie_id: Number(mt.movie_id),
         tag_id: Number(mt.tag_id),
         created_at: mt.created_at?.toISOString(),
-        updated_at: mt.updated_at?.toISOString(),
         tag: {
           ...mt.tag,
           id: Number(mt.tag.id),
-          created_at: mt.tag.created_at?.toISOString(),
-          updated_at: mt.tag.updated_at?.toISOString()
+          created_at: mt.tag.created_at?.toISOString()
         }
       })),
       trailer: trailerData
@@ -134,7 +132,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;

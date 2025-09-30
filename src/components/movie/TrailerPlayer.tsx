@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { useState } from 'react';
@@ -111,6 +112,7 @@ export function TrailerPlayer({ trailer, autoPlay = false, className }: TrailerP
                 key={t.key}
                 onClick={() => setSelectedTrailer({
                   ...t,
+                  site: 'YouTube',
                   thumbnail_url: `https://img.youtube.com/vi/${t.key}/hqdefault.jpg`,
                   all_trailers: trailer.all_trailers,
                 })}

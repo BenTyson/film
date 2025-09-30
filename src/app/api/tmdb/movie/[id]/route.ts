@@ -3,10 +3,11 @@ import { tmdb } from '@/lib/tmdb';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const movieId = parseInt(params.id);
+    const { id } = await params;
+    const movieId = parseInt(id);
 
     if (!movieId || isNaN(movieId)) {
       return NextResponse.json({

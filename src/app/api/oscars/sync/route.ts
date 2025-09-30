@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -39,15 +40,16 @@ export async function POST(request: NextRequest) {
         // If no match found, try case-insensitive search using raw SQL for SQLite
         let caseInsensitiveMovie = null;
         if (!movie) {
-          caseInsensitiveMovie = await prisma.$queryRaw`
+          const results = await prisma.$queryRaw`
             SELECT * FROM movies
             WHERE UPPER(title) = UPPER(${nominee.movie_title})
             LIMIT 1
-          `;
+          ` as unknown[];
+          caseInsensitiveMovie = results;
         }
 
         // Use the first available match
-        const foundMovie = movie || (caseInsensitiveMovie && caseInsensitiveMovie.length > 0 ? caseInsensitiveMovie[0] : null);
+        const foundMovie = movie || (caseInsensitiveMovie && Array.isArray(caseInsensitiveMovie) && caseInsensitiveMovie.length > 0 ? caseInsensitiveMovie[0] as typeof movie : null);
 
         if (!foundMovie) {
           console.log(`❌ Movie not found in collection: ${nominee.movie_title}`);
@@ -69,13 +71,12 @@ export async function POST(request: NextRequest) {
         if (existingOscar) {
           console.log(`🔄 Found existing Oscar data (ID: ${existingOscar.id})`);
           // Update if needed
-          const newNominationType = nominee.is_winner ? 'won' : 'nominated';
-          if (existingOscar.nomination_type !== newNominationType) {
-            console.log(`📝 Updating nomination type from '${existingOscar.nomination_type}' to '${newNominationType}'`);
+          if (existingOscar.is_winner !== nominee.is_winner) {
+            console.log(`📝 Updating winner status from '${existingOscar.is_winner}' to '${nominee.is_winner}'`);
             await prisma.oscarData.update({
               where: { id: existingOscar.id },
               data: {
-                nomination_type: newNominationType
+                is_winner: nominee.is_winner
               }
             });
             console.log(`✅ Updated existing Oscar data`);
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
               movie_id: foundMovie.id,
               ceremony_year: nominee.ceremony_year,
               category: 'Best Picture',
-              nomination_type: nominee.is_winner ? 'won' : 'nominated'
+              is_winner: nominee.is_winner
             }
           });
           console.log(`✅ Created new Oscar data (ID: ${newOscarData.id})`);

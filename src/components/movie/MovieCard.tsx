@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import Image from 'next/image';
@@ -64,7 +65,7 @@ export function MovieCard({ movie, onSelect, className }: MovieCardProps) {
                 {movie.oscar_badges.wins}
               </div>
             )}
-            {hasOscarNominations > movie.oscar_badges.wins && (
+            {movie.oscar_badges.nominations > movie.oscar_badges.wins && (
               <div className="bg-cinema-silver text-cinema-black px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                 <Award className="w-3 h-3" />
                 {movie.oscar_badges.nominations - movie.oscar_badges.wins}

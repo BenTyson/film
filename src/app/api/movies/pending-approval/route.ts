@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -36,16 +37,14 @@ export async function GET(request: NextRequest) {
       prisma.movie.count(), // total movies
       prisma.movie.count({ where: { NOT: { csv_row_number: null } } }), // with CSV
       prisma.movie.count({ where: { approval_status: 'pending' } }), // pending
-      prisma.movie.count({ where: { approval_status: 'approved' } }), // approved
-      prisma.movie.count({ where: { approval_status: null } }) // no status
+      prisma.movie.count({ where: { approval_status: 'approved' } }) // approved
     ]);
 
     console.log('Debug counts:', {
       total: debugCounts[0],
       withCsv: debugCounts[1],
       pending: debugCounts[2],
-      approved: debugCounts[3],
-      noStatus: debugCounts[4]
+      approved: debugCounts[3]
     });
 
     const [movies, total] = await Promise.all([
@@ -77,7 +76,7 @@ export async function GET(request: NextRequest) {
     const approvalData = movies.map(movie => {
       const analysis = movie.match_analysis;
       const userMovie = movie.user_movies[0];
-      const oscarWins = movie.oscar_data.filter(o => o.nomination_type === 'won').length;
+      const oscarWins = movie.oscar_data.filter(o => o.is_winner).length;
       const oscarNominations = movie.oscar_data.length;
 
       return {

@@ -292,7 +292,7 @@ class TMDBClient {
     return this.makeRequest<TMDBVideosResponse>(`/movie/${movieId}/videos`);
   }
 
-  getImageURL(path: string | null, size: 'w200' | 'w300' | 'w400' | 'w500' | 'w780' | 'original' = 'w500'): string | null {
+  getImageURL(path: string | null, size: 'w200' | 'w300' | 'w400' | 'w500' | 'w780' | 'w1280' | 'original' = 'w500'): string | null {
     if (!path) return null;
     return `https://image.tmdb.org/t/p/${size}${path}`;
   }

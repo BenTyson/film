@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma, checkDatabaseHealth } from '@/lib/prisma';
 import { tmdb } from '@/lib/tmdb';
 import { NextRequest, NextResponse } from 'next/server';
@@ -276,7 +277,7 @@ export async function GET(request: NextRequest) {
     // Transform to MovieGridItem format
     const movieGridItems: MovieGridItem[] = filteredMovies.map(movie => {
       const userMovie = movie.user_movies[0]; // Assuming one user for now
-      const oscarWins = movie.oscar_data.filter(o => o.nomination_type === 'won').length;
+      const oscarWins = movie.oscar_data.filter(o => o.is_winner).length;
       const oscarNominations = movie.oscar_data.length;
 
       return {
@@ -349,7 +350,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: errorMessage,
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined
     }, { status: statusCode });
   }
 }
@@ -576,7 +577,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: false,
       error: errorMessage,
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined
     }, { status: statusCode });
   }
 }

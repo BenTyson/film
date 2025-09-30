@@ -164,8 +164,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await prisma.oscarMovie.createMany({
-        data: movieData,
-        skipDuplicates: true // Handle potential TMDB ID conflicts
+        data: movieData
       });
 
       // Get the created movies to build the map

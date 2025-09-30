@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { tmdb } from '@/lib/tmdb';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';

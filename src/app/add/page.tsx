@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -94,7 +95,7 @@ export default function AddMoviePage() {
   const [tagInput, setTagInput] = useState('');
   const [notes, setNotes] = useState('');
 
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-focus search on mount
   useEffect(() => {

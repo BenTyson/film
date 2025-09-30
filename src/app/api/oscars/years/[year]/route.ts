@@ -3,10 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { year: string } }
+  { params }: { params: Promise<{ year: string }> }
 ) {
   try {
-    const year = parseInt(params.year);
+    const { year: paramYear } = await params;
+    const year = parseInt(paramYear);
 
     if (isNaN(year)) {
       return NextResponse.json({
@@ -133,7 +134,8 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error(`Error fetching Oscar nominations for year ${params.year}:`, error);
+    const { year: paramYear } = await params;
+    console.error(`Error fetching Oscar nominations for year ${paramYear}:`, error);
     return NextResponse.json({
       success: false,
       error: 'Failed to fetch Oscar nominations for year'

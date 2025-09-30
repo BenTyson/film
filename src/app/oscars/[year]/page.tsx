@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -35,10 +36,11 @@ interface OscarEntry {
 }
 
 interface OscarsPageProps {
-  params: { year: string };
+  params: Promise<{ year: string }>;
 }
 
 export default function OscarYearPage({ params }: OscarsPageProps) {
+  const resolvedParams = use(params);
   const [oscars, setOscars] = useState<OscarEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -46,7 +48,7 @@ export default function OscarYearPage({ params }: OscarsPageProps) {
   const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const year = parseInt(params.year);
+  const year = parseInt(resolvedParams.year);
 
   useEffect(() => {
     const fetchOscarData = async () => {

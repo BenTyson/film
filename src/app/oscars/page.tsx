@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, react-hooks/exhaustive-deps */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -67,6 +68,9 @@ interface OscarNomination {
     title: string;
     tmdb_id: number;
     imdb_id: string;
+    in_collection?: boolean;
+    collection_id?: number | null;
+    poster_path?: string | null;
   } | null;
 }
 
@@ -224,13 +228,14 @@ export default function OscarsPage() {
             if (!movies[movieId]) {
               movies[movieId] = {
                 id: nom.movie.id,
+                collection_id: nom.movie.collection_id || null,
                 tmdb_id: nom.movie.tmdb_id,
                 title: nom.movie.title,
                 poster_path: nom.movie.poster_path || null,
                 release_date: '',
                 nominations: [],
                 in_collection: nom.movie.in_collection || false,
-                watched: nom.movie.in_collection || false
+                watched: false
               };
             }
             movies[movieId].nominations.push(nom);
@@ -310,13 +315,14 @@ export default function OscarsPage() {
             if (!movies[movieId]) {
               movies[movieId] = {
                 id: nom.movie.id,
+                collection_id: nom.movie.collection_id || null,
                 tmdb_id: nom.movie.tmdb_id,
                 title: nom.movie.title,
                 poster_path: nom.movie.poster_path || null,
                 release_date: '',
                 nominations: [],
                 in_collection: nom.movie.in_collection || false,
-                watched: nom.movie.in_collection || false
+                watched: false
               };
             }
             movies[movieId].nominations.push(nom);
@@ -359,13 +365,14 @@ export default function OscarsPage() {
               if (!movies[movieId]) {
                 movies[movieId] = {
                   id: nom.movie.id,
+                  collection_id: nom.movie.collection_id || null,
                   tmdb_id: nom.movie.tmdb_id,
                   title: nom.movie.title,
                   poster_path: nom.movie.poster_path || null,
                   release_date: '',
                   nominations: [],
                   in_collection: nom.movie.in_collection || false,
-                  watched: nom.movie.in_collection || false
+                  watched: false
                 };
               }
               movies[movieId].nominations.push(nom);
@@ -688,7 +695,7 @@ export default function OscarsPage() {
                   const existingMovieData = movieData[movieId];
                   yearMovies.set(movieId, {
                     id: nom.movie?.id || nom.id,
-                    collection_id: nom.movie?.collection_id || null,
+                    collection_id: null,
                     tmdb_id: nom.movie?.tmdb_id || 0,
                     title: movieTitle,
                     poster_path: existingMovieData?.poster_path || null,

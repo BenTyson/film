@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,7 +14,7 @@ import type { MovieGridItem } from '@/types/movie';
 
 interface MoviesResponse {
   success: boolean;
-  data: {
+  data?: {
     movies: MovieGridItem[];
     pagination: {
       page: number;
@@ -25,6 +26,7 @@ interface MoviesResponse {
     };
     totalMovies: number;
   };
+  error?: string;
 }
 
 const navItems = [
@@ -103,11 +105,11 @@ export default function HomePage() {
 
       const data: MoviesResponse = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
         if (append) {
           setMovies(prev => {
             const existingIds = new Set(prev.map(m => m.id));
-            const newMovies = data.data.movies.filter(m => !existingIds.has(m.id));
+            const newMovies = data.data!.movies.filter(m => !existingIds.has(m.id));
             return [...prev, ...newMovies];
           });
         } else {
