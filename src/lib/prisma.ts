@@ -4,7 +4,7 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// SQLite connection configuration for stability
+// Database connection configuration
 const prismaConfig = {
   datasources: {
     db: {
@@ -13,16 +13,6 @@ const prismaConfig = {
   },
   // Configure connection timeout and retry logic
   log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-  // SQLite specific optimizations
-  __internal: {
-    engine: {
-      // Reduce connection pool pressure for SQLite
-      connectionLimit: 1,
-      // Connection timeout settings
-      connectTimeout: 20000, // 20 seconds
-      queryTimeout: 30000,   // 30 seconds
-    },
-  },
 }
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient(prismaConfig as Prisma.PrismaClientOptions)
