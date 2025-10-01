@@ -8,13 +8,14 @@ const globalForPrisma = globalThis as unknown as {
 const prismaConfig = {
   datasources: {
     db: {
-      url: process.env.DATABASE_URL,
+      url: process.env.DATABASE_URL || 'postgresql://placeholder',
     },
   },
   // Configure connection timeout and retry logic
   log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
 }
 
+// Initialize Prisma client (with placeholder URL during build if needed)
 export const prisma = globalForPrisma.prisma ?? new PrismaClient(prismaConfig as Prisma.PrismaClientOptions)
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
