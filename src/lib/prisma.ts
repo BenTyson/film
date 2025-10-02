@@ -8,7 +8,7 @@ const globalForPrisma = globalThis as unknown as {
 const prismaConfig = {
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || 'postgresql://placeholder',
+      url: process.env.DATABASE_URL,
     },
   },
   // Configure connection timeout and retry logic
