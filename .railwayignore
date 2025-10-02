@@ -1,0 +1,14 @@
+# Exclude SQLite databases
+*.db
+prisma/*.db
+
+# Exclude migration utility scripts
+prisma/migrate-to-postgres.ts
+prisma/verify-migration.ts
+prisma/schema-sqlite.prisma
+test-railway-query.ts
+
+# Exclude local development files
+.env.local
+.next/cache
+node_modules/.cache
