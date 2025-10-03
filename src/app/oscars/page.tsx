@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Award, Search, RefreshCw, Clapperboard, Users, Plus, Edit } from 'lucide-react';
+import { Award, Search, RefreshCw, Clapperboard, Users, Plus, Edit, Film } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -91,6 +91,7 @@ const navItems = [
   { href: '/', label: 'Collection', icon: Clapperboard },
   { href: '/oscars', label: 'Oscars', icon: Award },
   { href: '/buddy/calen', label: 'Calen', icon: Users },
+  { href: '/watchlist', label: 'Watchlist', icon: Film },
   { href: '/add', label: 'Add', icon: Plus },
 ];
 

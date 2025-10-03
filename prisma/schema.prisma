@@ -80,12 +80,13 @@ model OscarData {
 }
 
 model Tag {
-  id         Int        @id @default(autoincrement())
-  name       String     @unique
-  color      String?
-  icon       String?
-  created_at DateTime   @default(now())
-  movie_tags MovieTag[]
+  id            Int             @id @default(autoincrement())
+  name          String          @unique
+  color         String?
+  icon          String?
+  created_at    DateTime        @default(now())
+  movie_tags    MovieTag[]
+  watchlist_tags WatchlistTag[]
 
   @@map("tags")
 }
@@ -174,4 +175,36 @@ model OscarNomination {
   @@index([category_id])
   @@index([movie_id])
   @@map("oscar_nominations")
+}
+
+model WatchlistMovie {
+  id            Int            @id @default(autoincrement())
+  tmdb_id       Int            @unique
+  title         String
+  director      String?
+  release_date  DateTime?
+  poster_path   String?
+  backdrop_path String?
+  overview      String?
+  runtime       Int?
+  genres        Json?
+  vote_average  Float?
+  imdb_id       String?
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+  tags          WatchlistTag[]
+
+  @@map("watchlist_movies")
+}
+
+model WatchlistTag {
+  id                 Int            @id @default(autoincrement())
+  watchlist_movie_id Int
+  tag_id             Int
+  created_at         DateTime       @default(now())
+  watchlist_movie    WatchlistMovie @relation(fields: [watchlist_movie_id], references: [id], onDelete: Cascade)
+  tag                Tag            @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@unique([watchlist_movie_id, tag_id])
+  @@map("watchlist_tags")
 }
