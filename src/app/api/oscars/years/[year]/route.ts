@@ -58,9 +58,10 @@ export async function GET(
       // If not in collection and no poster, try to fetch from internal TMDB API
       if (!collectionMovie && nomination.movie?.tmdb_id && !posterPath) {
         try {
-          const baseUrl = process.env.NODE_ENV === 'production'
-            ? 'https://yourdomain.com'
-            : 'http://localhost:3002';
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+            (process.env.NODE_ENV === 'production'
+              ? 'https://film-production.up.railway.app'
+              : 'http://localhost:3000');
           const tmdbResponse = await fetch(`${baseUrl}/api/tmdb/movie/${nomination.movie.tmdb_id}`);
           if (tmdbResponse.ok) {
             const tmdbData = await tmdbResponse.json();
