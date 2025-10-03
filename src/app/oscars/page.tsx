@@ -4,11 +4,12 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Award, Search, RefreshCw, Clapperboard, Users, Plus } from 'lucide-react';
+import { Award, Search, RefreshCw, Clapperboard, Users, Plus, Edit } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { MovieDetailsModal } from '@/components/movie/MovieDetailsModal';
+import { EditOscarMovieModal } from '@/components/oscar/EditOscarMovieModal';
 
 interface OscarOverview {
   overview: {
@@ -112,6 +113,8 @@ export default function OscarsPage() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingOscarMovie, setEditingOscarMovie] = useState<{id: number; title: string; tmdb_id: number | null; imdb_id: string | null} | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Debounce search query
   useEffect(() => {
@@ -434,6 +437,28 @@ export default function OscarsPage() {
     setSelectedMovieId(null);
     // Optionally refresh data if needed
     // fetchOscarData();
+  };
+
+  const handleEditOscarMovie = (e: React.MouseEvent, movie: MovieWithOscars) => {
+    e.stopPropagation(); // Prevent movie click
+    setEditingOscarMovie({
+      id: movie.id,
+      title: movie.title,
+      tmdb_id: movie.tmdb_id,
+      imdb_id: null // We'll need to add this to the interface if needed
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleOscarMovieUpdated = () => {
+    // Refresh the data to show updated movie
+    if (selectedYear) {
+      fetchYearNominations(selectedYear);
+    } else if (selectedDecade) {
+      fetchDecadeNominations(selectedDecade);
+    } else {
+      fetchAllNominations();
+    }
   };
 
   // Group nominations by year
@@ -778,6 +803,15 @@ export default function OscarsPage() {
                                         )}
                                       </div>
 
+                                      {/* Edit Button */}
+                                      <button
+                                        onClick={(e) => handleEditOscarMovie(e, movie)}
+                                        className="absolute top-2 left-2 p-2 bg-gray-900/80 hover:bg-yellow-600 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                        title="Edit TMDB match"
+                                      >
+                                        <Edit className="w-4 h-4 text-white" />
+                                      </button>
+
                                     </div>
 
                                     {/* Title */}
@@ -835,6 +869,16 @@ export default function OscarsPage() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
       />
+
+      {/* Edit Oscar Movie Modal */}
+      {editingOscarMovie && (
+        <EditOscarMovieModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          oscarMovie={editingOscarMovie}
+          onMovieUpdated={handleOscarMovieUpdated}
+        />
+      )}
     </div>
   );
 }
