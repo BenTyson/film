@@ -14,6 +14,7 @@ import {
   Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TagIcon } from '@/components/ui/TagIcon';
 
 interface AddToWatchlistModalProps {
   isOpen: boolean;
@@ -137,8 +138,8 @@ export function AddToWatchlistModal({
           {/* Header */}
           <div className="sticky top-0 z-10 flex items-center justify-between p-6 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/20 rounded-lg">
-                <Plus className="w-5 h-5 text-blue-400" />
+              <div className="p-2 bg-gradient-to-r from-blue-500/20 to-purple-600/20 rounded-lg">
+                <Plus className="w-5 h-5 text-purple-400" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">Add to Watchlist</h2>
@@ -164,13 +165,13 @@ export function AddToWatchlistModal({
                     key={tag.id}
                     onClick={() => toggleTag(tag.id)}
                     className={cn(
-                      'px-3 py-1.5 rounded-full text-sm font-medium transition-all',
+                      'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all',
                       selectedTags.includes(tag.id)
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
                         : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                     )}
                   >
-                    {tag.icon && <span className="mr-1">{tag.icon}</span>}
+                    {tag.icon && <TagIcon iconName={tag.icon} />}
                     {tag.name}
                   </button>
                 ))}

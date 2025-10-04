@@ -21,6 +21,7 @@ import {
   Check,
 } from 'lucide-react';
 import { cn, formatDate, formatYear } from '@/lib/utils';
+import { TagIcon } from '@/components/ui/TagIcon';
 
 interface WatchlistMovieModalProps {
   movieId: number | null;
@@ -400,13 +401,13 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
                             key={tag.id}
                             onClick={() => toggleTag(tag.id)}
                             className={cn(
-                              'px-3 py-1.5 rounded-full text-sm font-medium transition-all',
+                              'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all',
                               selectedTags.includes(tag.id)
-                                ? 'bg-blue-500 text-white'
+                                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
                                 : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                             )}
                           >
-                            {tag.icon && <span className="mr-1">{tag.icon}</span>}
+                            {tag.icon && <TagIcon iconName={tag.icon} />}
                             {tag.name}
                           </button>
                         ))}
@@ -417,9 +418,9 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
                           movie.tags.map((movieTag) => (
                             <span
                               key={movieTag.id}
-                              className="px-3 py-1.5 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium"
+                              className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-500/20 to-purple-600/20 text-purple-400 rounded-full text-sm font-medium"
                             >
-                              {movieTag.tag.icon && <span className="mr-1">{movieTag.tag.icon}</span>}
+                              {movieTag.tag.icon && <TagIcon iconName={movieTag.tag.icon} />}
                               {movieTag.tag.name}
                             </span>
                           ))

@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { WatchlistMovieModal } from '@/components/watchlist/WatchlistMovieModal';
 import { AddToWatchlistModal } from '@/components/watchlist/AddToWatchlistModal';
+import { TagIcon } from '@/components/ui/TagIcon';
 import Image from 'next/image';
 
 interface WatchlistMovie {
@@ -148,116 +149,125 @@ export default function WatchlistPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-950 via-gray-900 to-black text-white">
-      {/* Navigation */}
-      <nav
-        className={cn(
-          'fixed top-0 left-0 right-0 z-40 transition-all duration-300',
-          isScrolled ? 'bg-black/80 backdrop-blur-md border-b border-white/10' : 'bg-transparent'
-        )}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-8">
-              <Link href="/" className="flex items-center gap-2">
-                <Film className="w-8 h-8 text-blue-500" />
-                <span className="text-xl font-bold">Film Collection</span>
-              </Link>
-              <div className="hidden md:flex items-center gap-1">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = pathname === item.href;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all',
-                        isActive
-                          ? 'bg-white/10 text-white'
-                          : 'text-gray-400 hover:text-white hover:bg-white/5'
-                      )}
+    <div className="min-h-screen animated-gradient relative gradient-pulse">
+      {/* Unified Navigation + Controls Header */}
+      <div className={`border-b border-gray-800/50 bg-black/60 backdrop-blur-xl sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-lg' : 'border-white/10'}`}>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+
+          {/* Normal State: Two Rows - Clean and Efficient */}
+          {!isScrolled && (
+            <div className="space-y-3 py-3 sm:py-4">
+
+              {/* Row 1: Navigation + Movie Count */}
+              <motion.div
+                className="flex flex-col sm:flex-row items-center justify-between gap-3"
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              >
+                {/* Navigation */}
+                <div className="flex items-center gap-1 sm:gap-2">
+                  {navItems.map((item) => {
+                    const IconComponent = item.icon;
+                    const isActive = pathname === item.href;
+
+                    return (
+                      <Link key={item.href} href={item.href}>
+                        <motion.div
+                          className={cn(
+                            "relative flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm font-medium transition-all duration-300 min-h-[44px]",
+                            isActive
+                              ? "text-black"
+                              : "text-white/70 hover:text-white"
+                          )}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {isActive && (
+                            <motion.div
+                              className="absolute inset-0 bg-white rounded-xl shadow-lg"
+                              layoutId="activeNav"
+                              transition={{ duration: 0.3, ease: "easeOut" }}
+                            />
+                          )}
+                          <IconComponent className="w-4 h-4 relative z-10" />
+                          <span className="relative z-10 hidden sm:inline">{item.label}</span>
+                        </motion.div>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {/* Movie Count */}
+                <span className="hidden sm:block text-gray-400 text-sm font-medium px-3 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50 whitespace-nowrap">
+                  {loading ? 'Loading...' :
+                    searchQuery || selectedTag ?
+                      `${filteredMovies.length} of ${movies.length} found` :
+                      `${movies.length} watchlist movies`
+                  }
+                </span>
+              </motion.div>
+
+              {/* Row 2: Search + All Controls */}
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+
+                {/* Search */}
+                <div className="relative flex-1 max-w-full sm:max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search watchlist..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500/50 focus:border-yellow-500/50 transition-all text-white placeholder-gray-400 min-h-[44px]"
+                  />
+                </div>
+
+                {/* Controls - Responsive Layout */}
+                <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-start sm:justify-end">
+
+                  {/* Add to Watchlist Button */}
+                  <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg font-medium transition-all min-h-[44px] shadow-lg hover:shadow-xl"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Add to Watchlist</span>
+                    <span className="sm:hidden">Add</span>
+                  </button>
+
+                  {/* Grid Density Toggle */}
+                  <div className="hidden lg:flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
+                    <button
+                      onClick={() => setGridColumns(4)}
+                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${gridColumns === 4 ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                      title="4 columns"
                     >
-                      <Icon className="w-4 h-4" />
-                      {item.label}
-                    </Link>
-                  );
-                })}
+                      <LayoutGrid className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setGridColumns(5)}
+                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${gridColumns === 5 ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                      title="5 columns"
+                    >
+                      <Grid3X3 className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setGridColumns(6)}
+                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${gridColumns === 6 ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                      title="6 columns"
+                    >
+                      <Grip className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
-      </nav>
+      </div>
 
-      <div className="pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-4xl font-bold mb-2">Watchlist</h1>
-          <p className="text-gray-400">Movies you want to watch</p>
-        </motion.div>
-
-        {/* Controls */}
-        <div className="flex flex-col lg:flex-row gap-4 mb-6">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search watchlist..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white placeholder-gray-400"
-            />
-          </div>
-
-          {/* Grid Size */}
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg p-1">
-            <button
-              onClick={() => setGridColumns(4)}
-              className={cn(
-                'p-2 rounded transition-all',
-                gridColumns === 4 ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'
-              )}
-              title="Large grid"
-            >
-              <Grid3X3 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setGridColumns(5)}
-              className={cn(
-                'p-2 rounded transition-all',
-                gridColumns === 5 ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'
-              )}
-              title="Medium grid"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setGridColumns(6)}
-              className={cn(
-                'p-2 rounded transition-all',
-                gridColumns === 6 ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'
-              )}
-              title="Small grid"
-            >
-              <Grip className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Add Button */}
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Movie</span>
-          </button>
-        </div>
-
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-6">
         {/* Tag Filters */}
         <div className="flex flex-wrap gap-2 mb-6">
           <button
@@ -265,7 +275,7 @@ export default function WatchlistPage() {
             className={cn(
               'px-4 py-2 rounded-full text-sm font-medium transition-all',
               selectedTag === null
-                ? 'bg-blue-500 text-white'
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
                 : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
             )}
           >
@@ -276,21 +286,16 @@ export default function WatchlistPage() {
               key={tag.id}
               onClick={() => setSelectedTag(tag.id)}
               className={cn(
-                'px-4 py-2 rounded-full text-sm font-medium transition-all',
+                'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all',
                 selectedTag === tag.id
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
                   : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
               )}
             >
-              {tag.icon && <span className="mr-1">{tag.icon}</span>}
+              {tag.icon && <TagIcon iconName={tag.icon} />}
               {tag.name}
             </button>
           ))}
-        </div>
-
-        {/* Movie Count */}
-        <div className="mb-4 text-gray-400">
-          {filteredMovies.length} {filteredMovies.length === 1 ? 'movie' : 'movies'}
         </div>
 
         {/* Movies Grid */}
@@ -342,10 +347,10 @@ export default function WatchlistPage() {
                       {movie.tags.slice(0, 2).map((movieTag) => (
                         <div
                           key={movieTag.id}
-                          className="w-6 h-6 rounded-full bg-blue-500/80 flex items-center justify-center text-xs"
+                          className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center"
                           title={movieTag.tag.name}
                         >
-                          {movieTag.tag.icon || movieTag.tag.name[0]}
+                          <TagIcon iconName={movieTag.tag.icon} className="w-3 h-3 text-white" />
                         </div>
                       ))}
                     </div>
@@ -361,7 +366,7 @@ export default function WatchlistPage() {
             <p className="text-gray-500 mb-6">Start adding movies you want to watch</p>
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg transition-all"
             >
               <Plus className="w-5 h-5" />
               Add Your First Movie
