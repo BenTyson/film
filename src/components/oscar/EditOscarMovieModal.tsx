@@ -136,26 +136,17 @@ export function EditOscarMovieModal({
             {/* Current Movie Info */}
             <div className="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
               <h3 className="text-sm font-medium text-gray-400 mb-2">Current TMDB Match</h3>
-              <div className="flex items-center gap-4">
+              <div>
+                <p className="text-white font-medium">{oscarMovie.title}</p>
                 {oscarMovie.tmdb_id && (
-                  <img
-                    src={`https://image.tmdb.org/t/p/w92https://image.tmdb.org/t/p/w500/${oscarMovie.tmdb_id}`}
-                    alt={oscarMovie.title}
-                    className="w-16 h-24 object-cover rounded"
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder-poster.svg';
-                    }}
-                  />
+                  <p className="text-sm text-gray-400">TMDB ID: {oscarMovie.tmdb_id}</p>
                 )}
-                <div>
-                  <p className="text-white font-medium">{oscarMovie.title}</p>
-                  {oscarMovie.tmdb_id && (
-                    <p className="text-sm text-gray-400">TMDB ID: {oscarMovie.tmdb_id}</p>
-                  )}
-                  {oscarMovie.imdb_id && (
-                    <p className="text-sm text-gray-400">IMDB ID: {oscarMovie.imdb_id}</p>
-                  )}
-                </div>
+                {oscarMovie.imdb_id && (
+                  <p className="text-sm text-gray-400">IMDB ID: {oscarMovie.imdb_id}</p>
+                )}
+                {!oscarMovie.tmdb_id && (
+                  <p className="text-sm text-yellow-500 mt-1">⚠️ No TMDB match - please search and select the correct movie</p>
+                )}
               </div>
             </div>
 
