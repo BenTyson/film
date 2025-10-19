@@ -117,3 +117,24 @@ body {
     opacity: 1;
   }
 }
+
+/* Clerk UserButton text color overrides */
+.cl-userButtonPopoverActionButton {
+  color: white !important;
+}
+
+.cl-userButtonPopoverActionButtonText {
+  color: white !important;
+}
+
+.cl-userButtonPopoverActionButtonIcon {
+  color: white !important;
+}
+
+.cl-userPreviewMainIdentifier {
+  color: white !important;
+}
+
+.cl-userPreviewSecondaryIdentifier {
+  color: #9ca3af !important;
+}

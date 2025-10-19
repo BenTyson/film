@@ -5,7 +5,7 @@
 **→ For quick orientation, read [session-start/QUICK-START.md](./session-start/QUICK-START.md) first**
 
 ## Overview
-Personal movie tracking application with premium streaming service-quality interface, built on Next.js with PostgreSQL database and TMDB API integration.
+Multi-user movie tracking application with premium streaming service-quality interface, built on Next.js with PostgreSQL database, Clerk authentication, and TMDB API integration.
 
 ## High-Level Architecture
 
@@ -21,6 +21,7 @@ Personal movie tracking application with premium streaming service-quality inter
 │   Framer Motion │    │   Prisma ORM    │
 │   Radix UI      │    │   (Type Safety) │
 │   Tailwind CSS  │    │                 │
+│   Clerk Auth    │    │                 │
 └─────────────────┘    └─────────────────┘
 ```
 
@@ -47,6 +48,17 @@ PostgreSQL Database ◄──► TMDB API (for new movies)
 ### Core Entities
 
 ```sql
+-- Users: Authentication via Clerk
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  clerk_id VARCHAR(255) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255),
+  role VARCHAR(50) DEFAULT 'user', -- 'user' or 'admin'
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Movies: Core movie data from TMDB
 CREATE TABLE movies (
   id SERIAL PRIMARY KEY,
@@ -65,17 +77,19 @@ CREATE TABLE movies (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- User Movies: Personal tracking data
+-- User Movies: Personal tracking data (user-specific)
 CREATE TABLE user_movies (
   id SERIAL PRIMARY KEY,
   movie_id INTEGER REFERENCES movies(id),
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   date_watched DATE NOT NULL,
   personal_rating INTEGER CHECK (personal_rating >= 1 AND personal_rating <= 10),
   notes TEXT,
   is_favorite BOOLEAN DEFAULT FALSE,
   watch_location VARCHAR(100),
   created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+  updated_at TIMESTAMP DEFAULT NOW(),
+  INDEX idx_user_movies_user_id (user_id)
 );
 
 -- Oscar Data: Academy Award tracking
@@ -435,14 +449,23 @@ Database Queries
 
 ## Security Considerations
 
+### Authentication Security
+- **Clerk Authentication**: Industry-standard OAuth 2.0 with JWT sessions
+- **Session Management**: Secure HTTP-only cookies, automatic rotation
+- **Middleware Protection**: All routes protected by Next.js middleware
+- **User Isolation**: Strict database filtering prevents cross-user data access
+- **Role-Based Access**: Admin role verification for privileged operations
+
 ### API Security
+- **Authentication Required**: All API routes require valid Clerk session
+- **Ownership Verification**: Mutations verify user owns the resource
 - **Rate Limiting**: Per-IP and per-user rate limits
 - **Input Validation**: Zod schemas for all inputs
 - **SQL Injection**: Prisma ORM prevents SQL injection
 - **XSS Protection**: Next.js built-in XSS protection
 
 ### Environment Security
-- **Environment Variables**: All secrets in Railway vault
+- **Environment Variables**: All secrets in Railway vault (Clerk keys, DB credentials)
 - **HTTPS**: Force HTTPS in production
 - **CORS**: Proper CORS configuration
 - **Headers**: Security headers via Next.js config
@@ -497,7 +520,8 @@ Mood-based movie watchlist system for tracking movies to watch, completely separ
 ```prisma
 model WatchlistMovie {
   id            Int            @id @default(autoincrement())
-  tmdb_id       Int            @unique
+  tmdb_id       Int
+  user_id       Int
   title         String
   director      String?
   release_date  DateTime?
@@ -510,7 +534,11 @@ model WatchlistMovie {
   imdb_id       String?
   created_at    DateTime       @default(now())
   updated_at    DateTime       @updatedAt
+  user          User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
   tags          WatchlistTag[]
+
+  @@unique([tmdb_id, user_id])
+  @@index([user_id])
 }
 
 model WatchlistTag {
@@ -610,6 +638,117 @@ Future: Move to Collection Workflow:
 - **TMDB Integration:** Reuses existing TMDB client (`/lib/tmdb.ts`)
 - **Lazy Loading:** Modal only searches when user types
 - **State Management:** Optimized re-renders with proper dependency arrays
+
+---
+
+## Multi-User Architecture (January 2025)
+
+### Authentication via Clerk
+
+The application uses [Clerk](https://clerk.com) for authentication, providing:
+- **Social Login**: Google OAuth (easily extendable to GitHub, Discord, etc.)
+- **Session Management**: Secure JWT-based sessions
+- **User Management**: Built-in user profile management
+- **Middleware Protection**: Next.js middleware guards all routes
+
+### User Data Isolation
+
+**Core Principle:** Each user only sees their own data. Movies, watchlist items, and user-specific metadata are strictly isolated by user_id.
+
+#### Protected Routes (User-Specific)
+```typescript
+// Pattern: Filter by current user's ID
+const user = await getCurrentUser(); // from @/lib/auth
+
+const movies = await prisma.movie.findMany({
+  where: {
+    user_movies: {
+      some: { user_id: user.id }  // Only this user's movies
+    }
+  }
+});
+```
+
+**Implemented Routes:**
+- `/api/movies` - Movie collection (filters by user_id)
+- `/api/movies/[id]` - Movie details (verifies ownership)
+- `/api/movies/[id]/tags` - Tag operations (verifies ownership)
+- `/api/watchlist` - Watchlist items (filters by user_id)
+
+#### Public Routes (Shared Data)
+```typescript
+// No user filtering - accessible to all authenticated users
+const oscarData = await prisma.oscarData.findMany({
+  where: { ceremony_year: 2024 }
+  // No user_id filter - Oscar data is public
+});
+```
+
+**Public Routes:**
+- `/api/oscars/*` - Oscar nominations and winners
+- `/api/tmdb/*` - TMDB API proxy
+- `/api/search/*` - Movie search functionality
+
+### Authentication Helpers
+
+Located in `/src/lib/auth.ts`:
+
+```typescript
+// Get current authenticated user (throws if not logged in)
+export async function getCurrentUser(): Promise<User> {
+  const { userId } = await auth(); // Clerk session
+  if (!userId) throw new Error('Unauthorized');
+
+  const user = await prisma.user.findUnique({
+    where: { clerk_id: userId }
+  });
+
+  if (!user) throw new Error('User not found in database');
+  return user;
+}
+
+// Require admin role (for future admin features)
+export async function requireAdmin(): Promise<User> {
+  const user = await getCurrentUser();
+  if (user.role !== 'admin') {
+    throw new Error('Forbidden: Admin access required');
+  }
+  return user;
+}
+```
+
+### User Synchronization
+
+**Current:** Manual sync via script (until webhook configured)
+```bash
+npx tsx scripts/create-clerk-user-manually.ts
+```
+
+**Future:** Clerk webhook will automatically create database user records on signup.
+
+### Testing Multi-User Isolation
+
+Comprehensive test script verifies data isolation:
+```bash
+npx tsx scripts/test-multi-user-isolation.ts
+```
+
+Tests verify:
+- ✅ User 1's movies (2,412) not visible to User 2
+- ✅ User 2's empty collection properly isolated
+- ✅ Watchlist items filtered by user
+- ✅ Tag operations restricted to movie owners
+- ✅ Oscar data remains public (all users can view)
+
+### Environment Variables
+
+Required Clerk configuration:
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+```
+
+**→ See [api-auth-patterns.md](./api-auth-patterns.md) for detailed authentication patterns**
 
 ---
 

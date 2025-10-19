@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter, Poppins } from 'next/font/google'
+import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 
 const inter = Inter({
@@ -26,14 +27,29 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
-        <div className="min-h-screen bg-background text-foreground">
-          <main>
-            {children}
-          </main>
-        </div>
-      </body>
-    </html>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: '#3b82f6',
+          colorBackground: '#0a0a0a',
+          colorInputBackground: '#1a1a1a',
+          colorInputText: '#ffffff',
+          colorText: '#ffffff',
+        },
+        layout: {
+          socialButtonsVariant: 'iconButton',
+        },
+      }}
+    >
+      <html lang="en" className="dark">
+        <body className={`${inter.variable} ${poppins.variable} font-sans antialiased`}>
+          <div className="min-h-screen bg-background text-foreground">
+            <main>
+              {children}
+            </main>
+          </div>
+        </body>
+      </html>
+    </ClerkProvider>
   )
 }

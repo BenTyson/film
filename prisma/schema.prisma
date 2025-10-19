@@ -45,10 +45,26 @@ model Movie {
   @@map("movies")
 }
 
+model User {
+  id            Int       @id @default(autoincrement())
+  clerk_id      String    @unique
+  email         String    @unique
+  name          String?
+  role          String    @default("user") // "user" or "admin"
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // Relations
+  user_movies      UserMovie[]
+  watchlist_movies WatchlistMovie[]
+
+  @@map("users")
+}
+
 model UserMovie {
   id                 Int       @id @default(autoincrement())
   movie_id           Int
-  user_id            Int       @default(1)
+  user_id            Int
   date_watched       DateTime?
   personal_rating    Int?
   notes              String?
@@ -58,7 +74,9 @@ model UserMovie {
   created_at         DateTime  @default(now())
   updated_at         DateTime  @updatedAt
   movie              Movie     @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+  user               User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  @@index([user_id])
   @@map("user_movies")
 }
 
@@ -179,7 +197,8 @@ model OscarNomination {
 
 model WatchlistMovie {
   id            Int            @id @default(autoincrement())
-  tmdb_id       Int            @unique
+  tmdb_id       Int
+  user_id       Int
   title         String
   director      String?
   release_date  DateTime?
@@ -192,8 +211,11 @@ model WatchlistMovie {
   imdb_id       String?
   created_at    DateTime       @default(now())
   updated_at    DateTime       @updatedAt
+  user          User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
   tags          WatchlistTag[]
 
+  @@unique([tmdb_id, user_id])
+  @@index([user_id])
   @@map("watchlist_movies")
 }
 

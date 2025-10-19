@@ -1,12 +1,16 @@
 import { prisma } from '@/lib/prisma';
 import { tmdb } from '@/lib/tmdb';
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+
     const { id } = await params;
     const movieId = parseInt(id);
 
@@ -21,6 +25,7 @@ export async function GET(
       where: { id: movieId },
       include: {
         user_movies: {
+          where: { user_id: user.id }, // Only this user's data
           orderBy: { date_watched: 'desc' }
         },
         oscar_data: {
@@ -39,6 +44,14 @@ export async function GET(
         success: false,
         error: 'Movie not found'
       }, { status: 404 });
+    }
+
+    // Verify user owns this movie (has a user_movie record)
+    if (movie.user_movies.length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'Movie not in your collection'
+      }, { status: 403 });
     }
 
     // Fetch trailer data from TMDB
@@ -135,6 +148,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+
     const { id } = await params;
     const movieId = parseInt(id);
     const body = await request.json();
@@ -154,6 +170,18 @@ export async function PATCH(
       watch_location,
       date_watched
     } = body;
+
+    // Verify user owns this user_movie record
+    const existingUserMovie = await prisma.userMovie.findUnique({
+      where: { id: user_movie_id }
+    });
+
+    if (!existingUserMovie || existingUserMovie.user_id !== user.id) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized to update this movie'
+      }, { status: 403 });
+    }
 
     // Update the user movie record
     const updatedUserMovie = await prisma.userMovie.update({

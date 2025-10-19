@@ -20,7 +20,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a personal movie tracking web application built with Next.js, designed to track and manage a collection of ~3000+ movies with premium streaming service-quality UI/UX.
 
 ## Key Features
+- **Multi-user authentication** with Clerk (Google OAuth)
 - Visual movie library with poster grid layout
+- **User data isolation** - each user sees only their own collection
 - Oscar nominations and wins tracking with dedicated pages (1928-2025, 1,158+ movies, 2,053+ nominations)
 - **Watchlist** with mood-based tagging (Morgan, Liam, Epic, Scary, Indie) - separate from main collection
 - "Buddy system" for tracking movies watched with specific people (e.g., Calen)
@@ -32,6 +34,7 @@ This is a personal movie tracking web application built with Next.js, designed t
 
 ### Frontend
 - **Next.js 14+** with App Router and TypeScript
+- **Clerk** for authentication and user management
 - **Tailwind CSS** with custom dark theme and animations
 - **Framer Motion** for premium animations and transitions
 - **Radix UI** primitives for accessible components
@@ -94,12 +97,13 @@ prisma/
 ## Database Schema Overview
 
 ### Core Tables
+- **users**: User accounts from Clerk (clerk_id, email, name, role)
 - **movies**: TMDB movie data (title, director, release_date, poster_url, etc.)
-- **user_movies**: Personal tracking data (date_watched, rating, notes)
+- **user_movies**: Personal tracking data (date_watched, rating, notes) - **user-specific**
 - **oscar_data**: Academy Award nominations and wins (LEGACY - see unified Oscar system below)
 - **tags**: Watch buddy tags (Calen, Solo, Family, etc.) and mood tags (shared with watchlist)
 - **movie_tags**: Many-to-many relationship for tagging movies
-- **watchlist_movies**: Separate watchlist items with TMDB data
+- **watchlist_movies**: Separate watchlist items with TMDB data - **user-specific**
 - **watchlist_tags**: Many-to-many relationship for watchlist mood tags
 
 ### Oscar System (Unified Architecture)
@@ -122,11 +126,16 @@ prisma/
 
 ### Environment Variables Required
 ```bash
+# TMDB API
 TMDB_API_KEY=your_tmdb_api_key
-DATABASE_URL=your_postgresql_connection_string
-```
 
-**Note:** NextAuth configuration (NEXTAUTH_SECRET, NEXTAUTH_URL) planned for future authentication/login update.
+# Database
+DATABASE_URL=your_postgresql_connection_string
+
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+```
 
 ## Development Guidelines
 
@@ -142,6 +151,12 @@ DATABASE_URL=your_postgresql_connection_string
 - Implement proper TypeScript interfaces
 - Follow Next.js App Router conventions
 - Use Framer Motion for complex animations
+
+### Authentication Patterns
+- **Always** use `getCurrentUser()` from `@/lib/auth` for user-specific API routes
+- Filter database queries by `user.id` to ensure data isolation
+- Verify ownership before mutations (POST/PUT/DELETE operations)
+- Keep Oscar and TMDB routes public (no user filtering)
 
 ### Performance Considerations
 - Implement image optimization for movie posters
@@ -177,12 +192,14 @@ DATABASE_URL=your_postgresql_connection_string
 
 ## Future Enhancements
 
-### Next Major Update: Authentication/Login System
-- User accounts and sessions (NextAuth.js)
-- Protected routes and role-based permissions
-- Multi-user support for shared collections
+### ✅ Completed: Authentication/Login System (January 2025)
+- ✅ User accounts and sessions (Clerk)
+- ✅ Protected routes with middleware
+- ✅ Multi-user support with data isolation
+- ⏸️ Role-based permissions (admin routes pending)
+- ⏸️ Clerk webhook for automatic user sync
 
-**→ See [skills/setup-auth.md](./skills/setup-auth.md) for implementation guide**
+**→ See [architecture.md § Multi-User Architecture](./architecture.md#multi-user-architecture-january-2025) for details**
 
 ### Additional Planned Features
 - Statistics dashboard (movies per year, ratings distribution)

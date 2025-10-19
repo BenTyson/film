@@ -1,21 +1,27 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET all watchlist movies with optional tag filter
 export async function GET(request: NextRequest) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+
     const { searchParams } = new URL(request.url);
     const tagId = searchParams.get('tagId');
 
-    const where = tagId
-      ? {
-          tags: {
-            some: {
-              tag_id: parseInt(tagId),
-            },
-          },
-        }
-      : {};
+    const where: any = {
+      user_id: user.id, // Filter by current user
+    };
+
+    if (tagId) {
+      where.tags = {
+        some: {
+          tag_id: parseInt(tagId),
+        },
+      };
+    }
 
     const watchlistMovies = await prisma.watchlistMovie.findMany({
       where,
@@ -50,6 +56,9 @@ export async function GET(request: NextRequest) {
 // POST - Add movie to watchlist
 export async function POST(request: NextRequest) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+
     const body = await request.json();
     const { tmdb_id, title, director, release_date, poster_path, backdrop_path, overview, runtime, genres, vote_average, imdb_id, tag_ids } = body;
 
@@ -63,9 +72,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if movie already exists in watchlist
-    const existingMovie = await prisma.watchlistMovie.findUnique({
-      where: { tmdb_id },
+    // Check if movie already exists in this user's watchlist
+    const existingMovie = await prisma.watchlistMovie.findFirst({
+      where: {
+        tmdb_id,
+        user_id: user.id,
+      },
     });
 
     if (existingMovie) {
@@ -82,6 +94,7 @@ export async function POST(request: NextRequest) {
     const watchlistMovie = await prisma.watchlistMovie.create({
       data: {
         tmdb_id,
+        user_id: user.id,
         title,
         director,
         release_date: release_date ? new Date(release_date) : null,

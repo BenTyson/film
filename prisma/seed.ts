@@ -100,6 +100,20 @@ async function main() {
   await prisma.userMovie.deleteMany({});
   await prisma.movie.deleteMany({});
   await prisma.tag.deleteMany({});
+  await prisma.watchlistMovie.deleteMany({});
+  await prisma.user.deleteMany({});
+
+  // Create a test user
+  console.log('👤 Creating test user...');
+  const testUser = await prisma.user.create({
+    data: {
+      clerk_id: 'test_seed_user',
+      email: 'test@example.com',
+      name: 'Test User',
+      role: 'user'
+    }
+  });
+  console.log(`✅ Created test user: ${testUser.email} (ID: ${testUser.id})`);
 
   // Create tags
   console.log('🏷️  Creating tags...');
@@ -149,6 +163,7 @@ async function main() {
       await prisma.userMovie.create({
         data: {
           movie_id: createdMovie.id,
+          user_id: testUser.id,
           date_watched: watchDate,
           personal_rating: personalRating,
           notes: `Great ${movie.genres?.[0]?.name || 'movie'}! ${personalRating >= 8 ? 'Loved it!' : personalRating >= 6 ? 'Really enjoyed it.' : 'It was okay.'}`,

@@ -1,5 +1,6 @@
 import { prisma, checkDatabaseHealth } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 
 // Request timeout configuration
 const REQUEST_TIMEOUT = 30000; // 30 seconds
@@ -41,6 +42,9 @@ async function withDatabaseRetry<T>(operation: () => Promise<T>, retries = MAX_R
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+
     const { id } = await params;
     const movieId = parseInt(id);
 
@@ -61,11 +65,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       );
     }
 
-    // Verify movie exists
+    // Verify movie exists AND user owns it
     const movie = await withDatabaseRetry(() =>
       prisma.movie.findUnique({
         where: { id: movieId },
-        select: { id: true, title: true }
+        select: {
+          id: true,
+          title: true,
+          user_movies: {
+            where: { user_id: user.id },
+            select: { id: true }
+          }
+        }
       })
     );
 
@@ -73,6 +84,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json(
         { success: false, error: 'Movie not found' },
         { status: 404 }
+      );
+    }
+
+    // Verify user owns this movie
+    if (movie.user_movies.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Movie not in your collection' },
+        { status: 403 }
       );
     }
 
@@ -201,6 +220,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+
     const { id } = await params;
     const movieId = parseInt(id);
 
@@ -221,11 +243,18 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       );
     }
 
-    // Verify movie exists
+    // Verify movie exists AND user owns it
     const movie = await withDatabaseRetry(() =>
       prisma.movie.findUnique({
         where: { id: movieId },
-        select: { id: true, title: true }
+        select: {
+          id: true,
+          title: true,
+          user_movies: {
+            where: { user_id: user.id },
+            select: { id: true }
+          }
+        }
       })
     );
 
@@ -233,6 +262,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json(
         { success: false, error: 'Movie not found' },
         { status: 404 }
+      );
+    }
+
+    // Verify user owns this movie
+    if (movie.user_movies.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Movie not in your collection' },
+        { status: 403 }
       );
     }
 

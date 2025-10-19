@@ -2,6 +2,7 @@
 import { prisma, checkDatabaseHealth } from '@/lib/prisma';
 import { tmdb } from '@/lib/tmdb';
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 import type { MovieGridItem } from '@/types/movie';
 
 // Request timeout configuration
@@ -82,6 +83,9 @@ async function withDatabaseRetry<T>(operation: () => Promise<T>, retries = MAX_R
 
 export async function GET(request: NextRequest) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -93,10 +97,16 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    // Build where clause for filtering
+    // Build where clause for filtering - ONLY show current user's movies
     const where: any = {
       // Only show approved movies on the main movies page
-      approval_status: 'approved'
+      approval_status: 'approved',
+      // CRITICAL: Filter by current user's movies
+      user_movies: {
+        some: {
+          user_id: user.id
+        }
+      }
     };
 
     if (search) {
@@ -111,6 +121,7 @@ export async function GET(request: NextRequest) {
         case 'favorites':
           where.user_movies = {
             some: {
+              user_id: user.id,
               is_favorite: true
             }
           };
@@ -128,6 +139,7 @@ export async function GET(request: NextRequest) {
           thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
           where.user_movies = {
             some: {
+              user_id: user.id,
               date_watched: {
                 gte: thirtyDaysAgo
               }
@@ -203,7 +215,16 @@ export async function GET(request: NextRequest) {
             }
           }),
           prisma.movie.count({ where }),
-          prisma.movie.count({ where: { approval_status: 'approved' } })
+          prisma.movie.count({
+            where: {
+              approval_status: 'approved',
+              user_movies: {
+                some: {
+                  user_id: user.id
+                }
+              }
+            }
+          })
         ])
       );
 
@@ -259,7 +280,16 @@ export async function GET(request: NextRequest) {
             take: limit,
           }),
           prisma.movie.count({ where }),
-          prisma.movie.count({ where: { approval_status: 'approved' } })
+          prisma.movie.count({
+            where: {
+              approval_status: 'approved',
+              user_movies: {
+                some: {
+                  user_id: user.id
+                }
+              }
+            }
+          })
         ])
       );
 
@@ -335,7 +365,10 @@ export async function GET(request: NextRequest) {
     let statusCode = 500;
 
     if (error instanceof Error) {
-      if (error.message.includes('timeout')) {
+      if (error.message === 'Unauthorized') {
+        errorMessage = 'Please sign in to view your movies';
+        statusCode = 401;
+      } else if (error.message.includes('timeout')) {
         errorMessage = 'Request timeout - the server is taking too long to respond';
         statusCode = 408;
       } else if (error.message.includes('connection')) {
