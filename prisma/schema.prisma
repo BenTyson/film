@@ -58,6 +58,7 @@ model User {
   user_movies      UserMovie[]
   watchlist_movies WatchlistMovie[]
   tags             Tag[]
+  vaults           Vault[]
 
   @@map("users")
 }
@@ -234,4 +235,41 @@ model WatchlistTag {
 
   @@unique([watchlist_movie_id, tag_id])
   @@map("watchlist_tags")
+}
+
+model Vault {
+  id          Int          @id @default(autoincrement())
+  user_id     Int
+  name        String
+  description String?
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+  user        User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  movies      VaultMovie[]
+
+  @@index([user_id])
+  @@map("vaults")
+}
+
+model VaultMovie {
+  id            Int       @id @default(autoincrement())
+  vault_id      Int
+  tmdb_id       Int
+  title         String
+  director      String?
+  release_date  DateTime?
+  poster_path   String?
+  backdrop_path String?
+  overview      String?
+  runtime       Int?
+  genres        Json?
+  vote_average  Float?
+  imdb_id       String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  vault         Vault     @relation(fields: [vault_id], references: [id], onDelete: Cascade)
+
+  @@unique([vault_id, tmdb_id])
+  @@index([vault_id])
+  @@map("vault_movies")
 }

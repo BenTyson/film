@@ -4,9 +4,10 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Award, Search, RefreshCw, Clapperboard, Users, Plus, Edit, Film } from 'lucide-react';
+import { Award, Search, RefreshCw, Clapperboard, Users, Plus, Edit, Film, Archive } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
+import { UserButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import { MovieDetailsModal } from '@/components/movie/MovieDetailsModal';
 import { EditOscarMovieModal } from '@/components/oscar/EditOscarMovieModal';
@@ -92,11 +93,13 @@ const navItems = [
   { href: '/oscars', label: 'Oscars', icon: Award },
   { href: '/buddy/calen', label: 'Calen', icon: Users },
   { href: '/watchlist', label: 'Watchlist', icon: Film },
+  { href: '/vaults', label: 'Vaults', icon: Archive },
   { href: '/add', label: 'Add', icon: Plus },
 ];
 
 export default function OscarsPage() {
   const pathname = usePathname();
+  const { isSignedIn } = useUser();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [overviewData, setOverviewData] = useState<OscarOverview | null>(null);
@@ -493,36 +496,74 @@ export default function OscarsPage() {
                 transition={{ duration: 0.4, ease: "easeOut" }}
               >
                 {/* Navigation */}
-                <div className="flex items-center gap-1 sm:gap-2">
-                  {navItems.map((item) => {
-                    const IconComponent = item.icon;
-                    const isActive = pathname === item.href;
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    {navItems.map((item) => {
+                      const IconComponent = item.icon;
+                      const isActive = pathname === item.href;
 
-                    return (
-                      <Link key={item.href} href={item.href}>
-                        <motion.div
-                          className={cn(
-                            "relative flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm font-medium transition-all duration-300 min-h-[44px]",
-                            isActive
-                              ? "text-black"
-                              : "text-white/70 hover:text-white"
-                          )}
+                      return (
+                        <Link key={item.href} href={item.href}>
+                          <motion.div
+                            className={cn(
+                              "relative flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-sm font-medium transition-all duration-300 min-h-[44px]",
+                              isActive
+                                ? "text-black"
+                                : "text-white/70 hover:text-white"
+                            )}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            {isActive && (
+                              <motion.div
+                                className="absolute inset-0 bg-white rounded-xl shadow-lg"
+                                layoutId="activeNav"
+                                transition={{ duration: 0.3, ease: "easeOut" }}
+                              />
+                            )}
+                            <IconComponent className="w-4 h-4 relative z-10" />
+                            <span className="relative z-10 hidden sm:inline">{item.label}</span>
+                          </motion.div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+
+                  {/* Auth Section */}
+                  <div className="flex items-center gap-2 pl-2 border-l border-white/10">
+                    {isSignedIn ? (
+                      <UserButton
+                        afterSignOutUrl="/sign-in"
+                        appearance={{
+                          elements: {
+                            avatarBox: 'w-10 h-10 cursor-pointer hover:opacity-80 transition-opacity',
+                            userButtonPopoverCard: 'bg-black/90 backdrop-blur-xl border border-white/10',
+                            userButtonPopoverActionButton: 'hover:bg-white/10 text-white',
+                            userButtonPopoverActionButtonText: 'text-white',
+                            userButtonPopoverActionButtonIcon: 'text-white',
+                            userButtonPopoverFooter: 'hidden',
+                            userPreviewMainIdentifier: 'text-white',
+                            userPreviewSecondaryIdentifier: 'text-gray-400',
+                          },
+                          variables: {
+                            colorText: '#ffffff',
+                            colorTextSecondary: '#9ca3af',
+                          }
+                        }}
+                        showName={false}
+                      />
+                    ) : (
+                      <Link href="/sign-in">
+                        <motion.button
+                          className="px-4 py-2 text-sm font-medium text-white/70 hover:text-white rounded-xl transition-colors min-h-[44px]"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          {isActive && (
-                            <motion.div
-                              className="absolute inset-0 bg-white rounded-xl shadow-lg"
-                              layoutId="activeNav"
-                              transition={{ duration: 0.3, ease: "easeOut" }}
-                            />
-                          )}
-                          <IconComponent className="w-4 h-4 relative z-10" />
-                          <span className="relative z-10 hidden sm:inline">{item.label}</span>
-                        </motion.div>
+                          Sign In
+                        </motion.button>
                       </Link>
-                    );
-                  })}
+                    )}
+                  </div>
                 </div>
 
                 {/* Oscar Count */}

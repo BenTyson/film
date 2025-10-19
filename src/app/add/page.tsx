@@ -24,6 +24,7 @@ import {
   AlertCircle,
   Sparkles
 } from 'lucide-react';
+import { UserButton, useUser } from '@clerk/nextjs';
 import { cn, formatYear } from '@/lib/utils';
 
 interface SearchResult {
@@ -73,6 +74,7 @@ const TAG_SUGGESTIONS = [
 
 export default function AddMoviePage() {
   const router = useRouter();
+  const { isSignedIn } = useUser();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const notesTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -287,19 +289,45 @@ export default function AddMoviePage() {
       {/* Header */}
       <div className="border-b border-border/50 bg-card/20 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center gap-4 mb-6">
-            <button
-              onClick={() => router.push('/')}
-              className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </button>
-            <div className="flex items-center gap-3">
-              <Plus className="w-8 h-8 text-purple-400" />
-              <h1 className="text-4xl font-heading font-bold">
-                Add Movie
-              </h1>
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.push('/')}
+                className="p-2 hover:bg-muted/50 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-6 h-6" />
+              </button>
+              <div className="flex items-center gap-3">
+                <Plus className="w-8 h-8 text-purple-400" />
+                <h1 className="text-4xl font-heading font-bold">
+                  Add Movie
+                </h1>
+              </div>
             </div>
+
+            {/* Auth Section */}
+            {isSignedIn && (
+              <UserButton
+                afterSignOutUrl="/sign-in"
+                appearance={{
+                  elements: {
+                    avatarBox: 'w-10 h-10 cursor-pointer hover:opacity-80 transition-opacity',
+                    userButtonPopoverCard: 'bg-black/90 backdrop-blur-xl border border-white/10',
+                    userButtonPopoverActionButton: 'hover:bg-white/10 text-white',
+                    userButtonPopoverActionButtonText: 'text-white',
+                    userButtonPopoverActionButtonIcon: 'text-white',
+                    userButtonPopoverFooter: 'hidden',
+                    userPreviewMainIdentifier: 'text-white',
+                    userPreviewSecondaryIdentifier: 'text-gray-400',
+                  },
+                  variables: {
+                    colorText: '#ffffff',
+                    colorTextSecondary: '#9ca3af',
+                  }
+                }}
+                showName={false}
+              />
+            )}
           </div>
 
           <p className="text-muted-foreground">

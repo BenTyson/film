@@ -650,6 +650,294 @@ Future: Move to Collection Workflow:
 
 ---
 
+## Vaults Feature (October 2024)
+
+### Architecture Overview
+Custom movie collection system for organizing films into thematic "vaults" (e.g., "Best Action Films of All Time", "Memorable Movies From my Childhood"). Vaults allow users to curate collections of movies that may or may not be in their watched collection, similar to playlists.
+
+### Technical Implementation
+
+#### Database Models
+```prisma
+model Vault {
+  id          Int          @id @default(autoincrement())
+  user_id     Int
+  name        String
+  description String?
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+  user        User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  movies      VaultMovie[]
+
+  @@index([user_id])
+  @@map("vaults")
+}
+
+model VaultMovie {
+  id            Int       @id @default(autoincrement())
+  vault_id      Int
+  tmdb_id       Int
+  title         String
+  director      String?
+  release_date  DateTime?
+  poster_path   String?
+  backdrop_path String?
+  overview      String?
+  runtime       Int?
+  genres        Json?
+  vote_average  Float?
+  imdb_id       String?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  vault         Vault     @relation(fields: [vault_id], references: [id], onDelete: Cascade)
+
+  @@unique([vault_id, tmdb_id])
+  @@index([vault_id])
+  @@map("vault_movies")
+}
+```
+
+**Key Design Decision:** Separate `VaultMovie` table from main `Movie` collection allows:
+- Independence from watched collection (vault movies don't need to be watched)
+- No approval workflow needed (direct from TMDB)
+- Multiple vaults can contain the same movie
+- Easy migration path: add vault movie to main collection when watched
+- Different organizational paradigm (thematic vs. chronological)
+
+#### API Endpoints
+```
+GET    /api/vaults             - List all user's vaults with preview posters
+POST   /api/vaults             - Create new vault
+GET    /api/vaults/[id]        - Get vault details with movies + collection status
+PATCH  /api/vaults/[id]        - Update vault name/description
+DELETE /api/vaults/[id]        - Delete vault and all movies
+POST   /api/vaults/[id]/movies - Add movie to vault from TMDB
+DELETE /api/vaults/[id]/movies/[movieId] - Remove movie from vault
+```
+
+**Request/Response Pattern:**
+```typescript
+// POST /api/vaults
+Request: {
+  name: "Best Action Films of All Time",
+  description: "My favorite action movies"
+}
+
+Response: {
+  success: true,
+  data: {
+    id: 1,
+    name: "Best Action Films of All Time",
+    description: "My favorite action movies",
+    movie_count: 0
+  }
+}
+
+// GET /api/vaults/[id]
+Response: {
+  success: true,
+  data: {
+    vault: {
+      id: 1,
+      name: "Best Action Films of All Time",
+      movies: [
+        {
+          id: 5,
+          tmdb_id: 155,
+          title: "The Dark Knight",
+          in_collection: true,           // Is this movie in user's watched collection?
+          collection_movie_id: 42,        // Movie table ID if in collection
+          poster_path: "/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+          ...
+        }
+      ]
+    }
+  }
+}
+```
+
+#### Components
+
+**VaultCard.tsx** (`src/components/vault/`)
+- Visual card showing vault name, description, and 2x2 grid of first 4 movie posters
+- Increased height (h-80) for better poster visibility
+- Movie count badge
+- Click to navigate to vault detail page
+
+**CreateVaultModal.tsx** (`src/components/vault/`)
+- Name input (required)
+- Description textarea (optional)
+- Validates against duplicate names
+- Creates new vault
+
+**EditVaultModal.tsx** (`src/components/vault/`)
+- Edit vault name/description
+- Delete vault with confirmation dialog
+- Shows delete warning UI
+
+**AddToVaultModal.tsx** (`src/components/vault/`)
+- TMDB search integration (clone of AddToWatchlistModal)
+- Movie selection with poster preview
+- Add to specific vault workflow
+- Checks for duplicates within vault
+
+**VaultMovieModal.tsx** (`src/components/vault/`)
+- Display vault movie details (for movies NOT in collection)
+- Three tabs: Overview, Details, Media
+- Shows TMDB info, director, runtime, genres
+- "In Collection" badge if movie exists in user's watched collection
+- Media tab: Shows trailer (embedded YouTube) and poster grid
+- Remove from vault option
+
+#### Smart Modal Selection Pattern
+
+Vault detail page uses intelligent modal routing based on collection status:
+
+```typescript
+const handleMovieClick = (movie: VaultMovieWithCollectionStatus) => {
+  if (movie.in_collection && movie.collection_movie_id) {
+    // Movie is in collection - use full MovieDetailsModal with all user data
+    setSelectedCollectionMovieId(movie.collection_movie_id);
+    setIsCollectionModalOpen(true);
+  } else {
+    // Movie only in vault - use simpler VaultMovieModal
+    setSelectedMovie(movie);
+    setIsMovieModalOpen(true);
+  }
+};
+```
+
+**Benefits:**
+- Full editing capabilities for watched movies (ratings, notes, tags)
+- Simple preview for unwatched vault movies
+- Seamless UX transition as movies move from vault to collection
+
+#### Vaults Page (`/vaults`)
+- Grid layout of vault cards
+- Search/filter vaults by name or description
+- "Create New Vault" button with modal
+- Empty state with call-to-action
+
+#### Vault Detail Page (`/vaults/[id]`)
+- Movie grid showing all vault movies
+- Search/filter movies within vault
+- "Add Movie" button with TMDB search modal
+- Smart modal selection based on collection status
+- Edit vault button (opens EditVaultModal)
+
+### Multi-User Data Isolation
+
+**Critical Pattern:** Vault API routes ensure proper data isolation:
+
+```typescript
+// GET /api/vaults/[id]
+const vault = await prisma.vault.findUnique({
+  where: {
+    id: vaultId,
+    user_id: user.id  // ⚠️ CRITICAL: Only return vault if owned by user
+  },
+  include: { movies: true }
+});
+
+// Check if vault movies are in THIS USER's collection
+const userMovies = await prisma.userMovie.findMany({
+  where: {
+    user_id: user.id,  // ⚠️ Filter by current user
+    movie: {
+      tmdb_id: { in: vault.movies.map(m => m.tmdb_id) }
+    }
+  },
+  include: { movie: { select: { tmdb_id: true, id: true } } }
+});
+```
+
+### Integration with Main Collection
+
+**Adding Vault Movie to Collection:**
+
+The `/api/movies` POST endpoint handles vault-to-collection migration with proper multi-user support:
+
+```typescript
+// 1. Check if THIS USER already has movie in their collection
+const existingUserMovie = await prisma.userMovie.findFirst({
+  where: {
+    user_id: user.id,
+    movie: { tmdb_id: tmdbId, approval_status: 'approved' }
+  }
+});
+
+if (existingUserMovie) {
+  return NextResponse.json({
+    error: 'Movie already exists in your collection'
+  }, { status: 409 });
+}
+
+// 2. Check if movie exists in global Movie table (from vaults or other users)
+const existingMovie = await prisma.movie.findUnique({
+  where: { tmdb_id: tmdbId }
+});
+
+// 3. Reuse existing Movie record OR create new
+if (existingMovie && existingMovie.approval_status === 'approved') {
+  // Reuse existing Movie record
+  movie = existingMovie;
+} else {
+  // Fetch from TMDB and create new Movie record
+  const movieDetails = await tmdb.getMovieDetails(tmdbId);
+  movie = await prisma.movie.create({ data: { ...movieDetails } });
+}
+
+// 4. Create UserMovie to link to this user's collection
+await prisma.userMovie.create({
+  data: {
+    movie_id: movie.id,
+    user_id: user.id,
+    // ... personal data
+  }
+});
+```
+
+**Key Benefits:**
+- Prevents duplicate Movie records across users
+- Maintains proper data isolation (UserMovie per user)
+- Efficient database usage (shared Movie data, user-specific tracking)
+
+### Performance Considerations
+- **Efficient Filtering:** User-scoped WHERE clauses in all queries
+- **TMDB Integration:** Reuses existing TMDB client (`/lib/tmdb.ts`)
+- **Preview Optimization:** VaultCard only loads first 4 posters
+- **State Management:** Optimized re-renders with proper dependency arrays
+- **Collection Status Check:** Single joined query instead of N+1
+
+### Bug Fixes (January 2025)
+
+**Multi-User Data Isolation Issues:**
+
+1. **Search API "In Collection" Bug** (`/api/search/movies`)
+   - **Problem:** Checked global Movie table, showing movies from other users as "In Collection"
+   - **Fix:** Changed to check UserMovie table filtered by current user
+   ```typescript
+   // BEFORE (Wrong)
+   const existingMovieIds = await prisma.movie.findMany({
+     where: { tmdb_id: { in: searchResults.map(m => m.id) } }
+   });
+
+   // AFTER (Correct)
+   const existingUserMovies = await prisma.userMovie.findMany({
+     where: {
+       user_id: user.id,  // Only check current user's collection
+       movie: { tmdb_id: { in: searchResults.map(m => m.id) } }
+     }
+   });
+   ```
+
+2. **Add Movie Duplicate Detection Bug** (`/api/movies` POST)
+   - **Problem:** Rejected adding vault movies if they existed in ANY user's collection
+   - **Fix:** Check UserMovie first (user-specific), then reuse global Movie record
+   - **Result:** Users can add movies from vaults to collection even if other users have them
+
+---
+
 ## Multi-User Architecture (January 2025)
 
 ### Authentication via Clerk

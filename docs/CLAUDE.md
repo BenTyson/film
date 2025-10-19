@@ -25,7 +25,9 @@ This is a personal movie tracking web application built with Next.js, designed t
 - **User data isolation** - each user sees only their own collection
 - Oscar nominations and wins tracking with dedicated pages (1928-2025, 1,158+ movies, 2,053+ nominations)
 - **Watchlist** with mood-based tagging (Morgan, Liam, Epic, Scary, Indie) - separate from main collection
+- **Vaults** for creating thematic movie collections (e.g., "Best Action Films", "Childhood Favorites") - separate from watched collection
 - "Buddy system" for tracking movies watched with specific people (e.g., Calen)
+- Clerk UserButton avatar in all page headers for authentication management
 - Dark theme with futuristic aesthetic
 - Mobile-responsive design
 - Integration with TMDB API for movie data and imagery

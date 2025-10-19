@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Grid, List, Grid3X3, LayoutGrid, Grip, ArrowUp, ArrowDown, Award, Users, Plus, Clapperboard, Film } from 'lucide-react';
+import { Search, Grid, List, Grid3X3, LayoutGrid, Grip, ArrowUp, ArrowDown, Award, Users, Plus, Clapperboard, Film, Archive } from 'lucide-react';
 import { MovieGrid } from '@/components/movie/MovieGrid';
 import { MovieList } from '@/components/movie/MovieList';
 import { MovieDetailsModal } from '@/components/movie/MovieDetailsModal';
@@ -35,6 +35,7 @@ const navItems = [
   { href: '/oscars', label: 'Oscars', icon: Award },
   { href: '/buddy/calen', label: 'Calen', icon: Users },
   { href: '/watchlist', label: 'Watchlist', icon: Film },
+  { href: '/vaults', label: 'Vaults', icon: Archive },
   { href: '/add', label: 'Add', icon: Plus },
 ];
 

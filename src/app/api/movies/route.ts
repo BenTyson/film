@@ -419,130 +419,86 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if movie already exists and is approved
+    // Check if THIS USER already has this movie in their collection
+    const existingUserMovie = await withDatabaseRetry(() =>
+      prisma.userMovie.findFirst({
+        where: {
+          user_id: user.id,
+          movie: {
+            tmdb_id: parseInt(tmdb_id),
+            approval_status: 'approved'
+          }
+        }
+      })
+    );
+
+    if (existingUserMovie) {
+      return NextResponse.json(
+        { success: false, error: 'Movie already exists in your collection' },
+        { status: 409 }
+      );
+    }
+
+    // Check if movie exists in global Movie table (from vault or other users)
     const existingMovie = await withDatabaseRetry(() =>
       prisma.movie.findUnique({
         where: { tmdb_id: parseInt(tmdb_id) }
       })
     );
 
-    if (existingMovie && existingMovie.approval_status === 'approved') {
-      return NextResponse.json(
-        { success: false, error: 'Movie already exists in collection' },
-        { status: 409 }
-      );
-    }
+    let movie;
 
-    // If movie exists but was removed, update it back to approved instead of creating new
-    if (existingMovie && existingMovie.approval_status === 'removed') {
-      const updatedMovie = await withDatabaseRetry(() =>
-        prisma.movie.update({
-          where: { id: existingMovie.id },
-          data: {
-            approval_status: 'approved',
-            approved_at: new Date(),
-            approved_by: 'User'
-          }
-        })
-      );
-
-      // Create user movie record - ALWAYS create it to link the movie to the user
-      await prisma.userMovie.create({
-        data: {
-          movie_id: updatedMovie.id,
-          user_id: user.id,
-          personal_rating: personal_rating ? parseInt(personal_rating) : null,
-          date_watched: date_watched ? new Date(date_watched) : null,
-          is_favorite: is_favorite || false,
-          ...(buddiesArray && buddiesArray.length > 0 && { buddy_watched_with: buddiesArray }),
-          notes: notes || null
-        }
-      });
-
-      // Handle tags if provided
-      if (tags && tags.length > 0) {
-        for (const tagName of tags) {
-          // Find or create tag for this user
-          let tag = await prisma.tag.findFirst({
-            where: {
-              name: tagName,
-              user_id: user.id
+    // If movie exists in global table, reuse it; otherwise create new
+    if (existingMovie) {
+      // If movie was removed, update it back to approved
+      if (existingMovie.approval_status === 'removed') {
+        movie = await withDatabaseRetry(() =>
+          prisma.movie.update({
+            where: { id: existingMovie.id },
+            data: {
+              approval_status: 'approved',
+              approved_at: new Date(),
+              approved_by: 'User'
             }
-          });
-
-          if (!tag) {
-            tag = await prisma.tag.create({
-              data: {
-                name: tagName,
-                color: '#6366f1', // Default color
-                icon: 'tag',
-                user_id: user.id
-              }
-            });
-          }
-
-          // Link movie to tag (check if it doesn't already exist)
-          const existingMovieTag = await prisma.movieTag.findUnique({
-            where: {
-              movie_id_tag_id: {
-                movie_id: updatedMovie.id,
-                tag_id: tag.id
-              }
-            }
-          });
-
-          if (!existingMovieTag) {
-            await prisma.movieTag.create({
-              data: {
-                movie_id: updatedMovie.id,
-                tag_id: tag.id
-              }
-            });
-          }
-        }
+          })
+        );
+      } else {
+        // Movie already exists with approved status (from vault or other user)
+        // Just reuse it
+        movie = existingMovie;
       }
+    } else {
+      // Get movie details from TMDB and create new record
+      const movieDetails = await tmdb.getMovieDetails(parseInt(tmdb_id));
+      const credits = await tmdb.getMovieCredits(parseInt(tmdb_id));
+      const director = tmdb.findDirector(credits);
 
-      return NextResponse.json({
-        success: true,
+      // Create movie record
+      movie = await withDatabaseRetry(() =>
+        prisma.movie.create({
         data: {
-          id: updatedMovie.id,
-          tmdb_id: updatedMovie.tmdb_id,
-          title: updatedMovie.title,
-          message: 'Movie re-added to collection successfully'
+          tmdb_id: parseInt(tmdb_id),
+          title: movieDetails.title,
+          original_title: movieDetails.original_title,
+          release_date: movieDetails.release_date ? new Date(movieDetails.release_date) : null,
+          overview: movieDetails.overview,
+          poster_path: movieDetails.poster_path,
+          backdrop_path: movieDetails.backdrop_path,
+          vote_average: movieDetails.vote_average,
+          vote_count: movieDetails.vote_count,
+          popularity: movieDetails.popularity,
+          genres: movieDetails.genres || null,
+          director: director || null,
+          runtime: movieDetails.runtime,
+          budget: movieDetails.budget,
+          revenue: movieDetails.revenue,
+          tagline: movieDetails.tagline,
+          approval_status: "approved",
+          approved_at: new Date()
         }
-      });
+      })
+    );
     }
-
-    // Get movie details from TMDB
-    const movieDetails = await tmdb.getMovieDetails(parseInt(tmdb_id));
-    const credits = await tmdb.getMovieCredits(parseInt(tmdb_id));
-    const director = tmdb.findDirector(credits);
-
-    // Create movie record
-    const movie = await withDatabaseRetry(() =>
-      prisma.movie.create({
-      data: {
-        tmdb_id: parseInt(tmdb_id),
-        title: movieDetails.title,
-        original_title: movieDetails.original_title,
-        release_date: movieDetails.release_date ? new Date(movieDetails.release_date) : null,
-        overview: movieDetails.overview,
-        poster_path: movieDetails.poster_path,
-        backdrop_path: movieDetails.backdrop_path,
-        vote_average: movieDetails.vote_average,
-        vote_count: movieDetails.vote_count,
-        popularity: movieDetails.popularity,
-        genres: movieDetails.genres || null,
-        director: director || null,
-        runtime: movieDetails.runtime,
-        budget: movieDetails.budget,
-        revenue: movieDetails.revenue,
-        tagline: movieDetails.tagline,
-        approval_status: "approved",
-        approved_at: new Date()
-      }
-    })
-  );
 
     // Create user movie record - ALWAYS create it to link the movie to the user
     await prisma.userMovie.create({
@@ -579,13 +535,24 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // Link movie to tag
-        await prisma.movieTag.create({
-          data: {
-            movie_id: movie.id,
-            tag_id: tag.id
+        // Link movie to tag (check if it doesn't already exist)
+        const existingMovieTag = await prisma.movieTag.findUnique({
+          where: {
+            movie_id_tag_id: {
+              movie_id: movie.id,
+              tag_id: tag.id
+            }
           }
         });
+
+        if (!existingMovieTag) {
+          await prisma.movieTag.create({
+            data: {
+              movie_id: movie.id,
+              tag_id: tag.id
+            }
+          });
+        }
       }
     }
 

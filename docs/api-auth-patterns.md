@@ -93,14 +93,147 @@ export async function GET(request: Request) {
 }
 ```
 
+## Pattern 4: Multi-User Data Isolation (Critical)
+
+**Problem:** The global `Movie` table is shared across all users. A movie can exist in the `Movie` table from:
+- User A's watched collection
+- User B's vault
+- Any user's watchlist
+
+**Solution:** Always check `UserMovie` table (not `Movie` table) for user-specific status.
+
+### Anti-Pattern ❌ (Wrong - checks global Movie table)
+
+```typescript
+// ❌ WRONG: Checking Movie table shows movies from OTHER users
+export async function GET(request: NextRequest) {
+  const searchResults = await tmdb.searchMovies(query);
+
+  // ❌ This checks global Movie table - includes all users!
+  const existingMovies = await prisma.movie.findMany({
+    where: {
+      tmdb_id: { in: searchResults.map(m => m.id) },
+      approval_status: 'approved'
+    }
+  });
+
+  const existingIds = new Set(existingMovies.map(m => m.tmdb_id));
+
+  // ❌ Shows movies from other users as "In Collection"
+  return searchResults.map(movie => ({
+    ...movie,
+    already_in_collection: existingIds.has(movie.id)
+  }));
+}
+```
+
+### Correct Pattern ✅ (checks UserMovie table)
+
+```typescript
+// ✅ CORRECT: Check UserMovie table filtered by current user
+export async function GET(request: NextRequest) {
+  const user = await getCurrentUser(); // Get authenticated user
+  const searchResults = await tmdb.searchMovies(query);
+
+  // ✅ Check THIS USER's collection via UserMovie table
+  const existingUserMovies = await prisma.userMovie.findMany({
+    select: {
+      movie: { select: { tmdb_id: true } }
+    },
+    where: {
+      user_id: user.id,  // ⚠️ CRITICAL: Filter by current user
+      movie: {
+        tmdb_id: { in: searchResults.map(m => m.id) }
+      }
+    }
+  });
+
+  const existingIds = new Set(
+    existingUserMovies.map(um => um.movie.tmdb_id)
+  );
+
+  // ✅ Only shows movies from THIS user's collection
+  return searchResults.map(movie => ({
+    ...movie,
+    already_in_collection: existingIds.has(movie.id)
+  }));
+}
+```
+
+### Pattern 4b: Duplicate Detection with Movie Reuse
+
+When adding movies to collection, check `UserMovie` for duplicates but reuse global `Movie` records:
+
+```typescript
+// ✅ CORRECT: Check UserMovie for duplicates, reuse Movie records
+export async function POST(request: NextRequest) {
+  const user = await getCurrentUser();
+  const { tmdb_id } = await request.json();
+
+  // Step 1: Check if THIS USER already has this movie
+  const existingUserMovie = await prisma.userMovie.findFirst({
+    where: {
+      user_id: user.id,  // ⚠️ Check current user only
+      movie: {
+        tmdb_id: parseInt(tmdb_id),
+        approval_status: 'approved'
+      }
+    }
+  });
+
+  if (existingUserMovie) {
+    return NextResponse.json({
+      error: 'Movie already exists in your collection'
+    }, { status: 409 });
+  }
+
+  // Step 2: Check if movie exists in global Movie table
+  const existingMovie = await prisma.movie.findUnique({
+    where: { tmdb_id: parseInt(tmdb_id) }
+  });
+
+  let movie;
+
+  // Step 3: Reuse existing Movie OR create new
+  if (existingMovie && existingMovie.approval_status === 'approved') {
+    movie = existingMovie; // ✅ Reuse from vaults/other users
+  } else {
+    // Fetch from TMDB and create new Movie record
+    const movieDetails = await tmdb.getMovieDetails(parseInt(tmdb_id));
+    movie = await prisma.movie.create({ data: { ...movieDetails } });
+  }
+
+  // Step 4: Create UserMovie to link to THIS user's collection
+  await prisma.userMovie.create({
+    data: {
+      movie_id: movie.id,
+      user_id: user.id,
+      // ... personal data (rating, notes, etc.)
+    }
+  });
+
+  return NextResponse.json({ success: true, data: movie });
+}
+```
+
+**Key Benefits:**
+- ✅ Prevents false "already exists" errors across users
+- ✅ Maintains proper data isolation (UserMovie per user)
+- ✅ Efficient database usage (shared Movie records)
+- ✅ Users can add vault movies to collection even if other users have them
+
 ## Implementation Status
 
 ### ✅ Implemented Routes (User-specific data)
 These routes are **PROTECTED** and filter by user_id:
-- ✅ `/api/movies` - Filters user_movies by current user (src/app/api/movies/route.ts:19)
-- ✅ `/api/movies/[id]` - Verifies user ownership (src/app/api/movies/[id]/route.ts:27-28)
-- ✅ `/api/movies/[id]/tags` - POST/DELETE requires ownership (src/app/api/movies/[id]/tags/route.ts:69-81)
-- ✅ `/api/watchlist` - Filters by user_id (src/app/api/watchlist/route.ts:15)
+- ✅ `/api/movies` - Filters user_movies by current user (Pattern 4b - reuses Movie records)
+- ✅ `/api/movies/[id]` - Verifies user ownership
+- ✅ `/api/movies/[id]/tags` - POST/DELETE requires ownership
+- ✅ `/api/watchlist` - Filters by user_id
+- ✅ `/api/vaults` - Filters vaults by user_id
+- ✅ `/api/vaults/[id]` - Verifies vault ownership
+- ✅ `/api/vaults/[id]/movies` - POST checks vault ownership
+- ✅ `/api/search/movies` - Pattern 4 - checks UserMovie for "In Collection" status
 
 ### ⏸️ Pending Routes (Mutation operations)
 These routes should verify ownership:

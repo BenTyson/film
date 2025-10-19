@@ -69,6 +69,18 @@ Mood-based movie watchlist system (separate from main collection)
 
 **→ See [architecture.md § Watchlist](../architecture.md#watchlist-feature-october-2024) for detailed architecture**
 
+### Vaults
+Custom movie collection system for organizing films into thematic collections
+- Create named vaults (e.g., "Best Action Films", "Childhood Favorites")
+- TMDB integration for adding movies
+- Movies don't need to be in watched collection
+- "In Collection" badge shows if vault movie is in your watched collection
+- Smart modal selection: full details for watched movies, preview for unwatched
+- Dedicated vaults listing at `/vaults` and detail pages at `/vaults/[id]`
+- User-specific vaults with multi-user data isolation
+
+**→ See [architecture.md § Vaults](../architecture.md#vaults-feature-october-2024) for detailed architecture**
+
 ### Buddy System
 Tag-based collections for tracking movies watched with specific people
 - "Calen" buddy page with dedicated filtering

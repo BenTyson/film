@@ -2,9 +2,13 @@
 import { tmdb } from '@/lib/tmdb';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q');
     const page = parseInt(searchParams.get('page') || '1');
@@ -19,18 +23,24 @@ export async function GET(request: NextRequest) {
     // Search movies on TMDB
     const searchResults = await tmdb.searchMovies(query.trim(), undefined, page);
 
-    // Get list of movies already in our database to mark them (only approved movies)
-    const existingMovieIds = await prisma.movie.findMany({
-      select: { tmdb_id: true },
+    // Get list of movies in CURRENT USER'S collection (not global)
+    const existingUserMovies = await prisma.userMovie.findMany({
+      select: {
+        movie: {
+          select: { tmdb_id: true }
+        }
+      },
       where: {
-        tmdb_id: {
-          in: searchResults.results.map(movie => movie.id)
-        },
-        approval_status: 'approved'
+        user_id: user.id,
+        movie: {
+          tmdb_id: {
+            in: searchResults.results.map(movie => movie.id)
+          }
+        }
       }
     });
 
-    const existingIds = new Set(existingMovieIds.map(movie => movie.tmdb_id));
+    const existingIds = new Set(existingUserMovies.map(um => um.movie.tmdb_id));
 
     // Enhance search results with additional info
     const enhancedResults = await Promise.all(
