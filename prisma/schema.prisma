@@ -57,6 +57,7 @@ model User {
   // Relations
   user_movies      UserMovie[]
   watchlist_movies WatchlistMovie[]
+  tags             Tag[]
 
   @@map("users")
 }
@@ -69,7 +70,7 @@ model UserMovie {
   personal_rating    Int?
   notes              String?
   is_favorite        Boolean   @default(false)
-  buddy_watched_with String?
+  buddy_watched_with Json?     // Array of buddy names: ["Calen", "Morgan"]
   watch_location     String?
   created_at         DateTime  @default(now())
   updated_at         DateTime  @updatedAt
@@ -99,13 +100,17 @@ model OscarData {
 
 model Tag {
   id            Int             @id @default(autoincrement())
-  name          String          @unique
+  name          String
   color         String?
   icon          String?
+  user_id       Int?
   created_at    DateTime        @default(now())
+  user          User?           @relation(fields: [user_id], references: [id], onDelete: Cascade)
   movie_tags    MovieTag[]
   watchlist_tags WatchlistTag[]
 
+  @@unique([name, user_id])
+  @@index([user_id])
   @@map("tags")
 }
 

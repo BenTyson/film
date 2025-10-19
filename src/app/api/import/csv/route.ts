@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { prisma } from '@/lib/prisma';
 import { tmdb } from '@/lib/tmdb';
+import { getCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface CSVRow {
@@ -22,6 +23,7 @@ interface ImportResult {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
     const body = await request.json();
     const { csvData, dryRun = false } = body;
 
@@ -156,11 +158,11 @@ export async function POST(request: NextRequest) {
         await prisma.userMovie.create({
           data: {
             movie_id: movie.id,
-            user_id: 1, // Default user
+            user_id: user.id,
             personal_rating: null, // Not in CSV
             date_watched: personalData.dateWatched,
             is_favorite: false, // Not in CSV
-            buddy_watched_with: personalData.buddyWatchedWith,
+            ...(personalData.buddyWatchedWith && { buddy_watched_with: [personalData.buddyWatchedWith] }),
             notes: personalData.notes
           }
         });
@@ -168,8 +170,12 @@ export async function POST(request: NextRequest) {
         // Handle tags if any buddy info found
         if (personalData.tags.length > 0) {
           for (const tagName of personalData.tags) {
-            let tag = await prisma.tag.findUnique({
-              where: { name: tagName }
+            // Find or create tag for this user
+            let tag = await prisma.tag.findFirst({
+              where: {
+                name: tagName,
+                user_id: user.id
+              }
             });
 
             if (!tag) {
@@ -177,7 +183,8 @@ export async function POST(request: NextRequest) {
                 data: {
                   name: tagName,
                   color: tagName === 'Calen' ? '#3b82f6' : '#6366f1',
-                  icon: 'user'
+                  icon: 'user',
+                  user_id: user.id
                 }
               });
             }

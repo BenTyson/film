@@ -320,7 +320,7 @@ export async function POST(request: NextRequest) {
               movie_id: createdMovie.id,
               user_id: 1,
               date_watched: personalData.dateWatched,
-              buddy_watched_with: personalData.buddyWatchedWith,
+              ...(personalData.buddyWatchedWith && { buddy_watched_with: [personalData.buddyWatchedWith] }),
               notes: personalData.notes
             }
           });

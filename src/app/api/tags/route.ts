@@ -1,10 +1,22 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+
+    // Get tags that are either:
+    // 1. Created by this user, OR
+    // 2. Global tags (user_id is null)
     const tags = await prisma.tag.findMany({
+      where: {
+        OR: [
+          { user_id: user.id },
+          { user_id: null }
+        ]
+      },
       orderBy: { name: 'asc' }
     });
 
@@ -23,6 +35,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
     const body = await request.json();
     const { name, color, icon } = body;
 
@@ -33,9 +46,14 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check if tag already exists
+    // Check if tag already exists for this user
     const existingTag = await prisma.tag.findUnique({
-      where: { name }
+      where: {
+        name_user_id: {
+          name,
+          user_id: user.id
+        }
+      }
     });
 
     if (existingTag) {
@@ -49,7 +67,8 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         color: color || '#6366f1',
-        icon: icon || 'tag'
+        icon: icon || 'tag',
+        user_id: user.id
       }
     });
 

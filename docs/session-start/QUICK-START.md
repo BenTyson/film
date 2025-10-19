@@ -1,6 +1,6 @@
 # Film Project Quick-Start Guide
 
-**Last Updated:** October 2024
+**Last Updated:** January 2025
 
 Welcome! This guide provides rapid orientation to the Film project codebase. Read this first, then follow signposts to specialized documentation for deeper dives.
 
@@ -27,8 +27,9 @@ A personal movie tracking web application for managing a collection of 3000+ mov
 ### Backend & Database
 - **Prisma ORM** with **PostgreSQL** (hosted on Railway)
 - **TMDB API** for movie data, posters, metadata
+- **Clerk** for authentication and user management
 - 12 database models
-- 38 API endpoints
+- 39 API endpoints
 - 66+ source files
 
 ### Deployment
@@ -60,9 +61,11 @@ Comprehensive Academy Award tracking system (1928-2025)
 ### Watchlist
 Mood-based movie watchlist system (separate from main collection)
 - TMDB integration for adding movies
-- Mood tags: Morgan, Liam, Epic, Scary, Indie
+- Default mood tags: Morgan, Epic, Indie, Funny, Drama, Classic
+- Custom tag creation: Users can add their own tags via input field + Add button
 - Dedicated watchlist page at `/watchlist`
 - Tag-based filtering and organization
+- User-specific tags (owned by individual users) and global tags (shared)
 
 **→ See [architecture.md § Watchlist](../architecture.md#watchlist-feature-october-2024) for detailed architecture**
 
@@ -107,12 +110,13 @@ Tag-based collections for tracking movies watched with specific people
 │   │   │   └── calen/page.tsx  # Calen buddy collection page
 │   │   ├── add-movie/          # Add movie to collection
 │   │   ├── import/             # CSV import interface
-│   │   └── api/                # 38 API endpoints
+│   │   └── api/                # 39 API endpoints
 │   │       ├── movies/         # Movie CRUD + filtering (12 routes)
 │   │       ├── oscars/         # Oscar data (12 routes)
 │   │       ├── watchlist/      # Watchlist CRUD (2 routes)
 │   │       ├── tmdb/           # TMDB proxy (2 routes)
 │   │       ├── tags/           # Tag management (1 route)
+│   │       ├── buddies/        # Buddy presets (1 route)
 │   │       ├── import/         # CSV import (4 routes)
 │   │       └── search/         # Search utilities (2 routes)
 │   ├── components/             # React components
@@ -181,12 +185,15 @@ Movie (main movies table)
 
 UserMovie (personal tracking)
 ├── movie_id → Movie
+├── user_id → User
 ├── date_watched, personal_rating
 ├── notes, is_favorite
-└── buddy_watched_with
+└── buddy_watched_with (JSON array: ["Calen", "Morgan"])
 
 Tag (buddy and mood tags)
-├── name (unique), color, icon
+├── name, color, icon
+├── user_id (NULL for global tags, user ID for user-specific)
+├── @@unique([name, user_id]) - composite unique constraint
 └── Used by: MovieTag, WatchlistTag
 ```
 
@@ -396,10 +403,10 @@ git push origin main
 
 ---
 
-## 10. Project Stats (As of October 2024)
+## 10. Project Stats (As of January 2025)
 
 - **Total Source Files:** 66+ TypeScript/TSX files
-- **API Endpoints:** 38 routes
+- **API Endpoints:** 39 routes
 - **Database Models:** 12 models
 - **Active Scripts:** 4 utility scripts
 - **Components:** 15+ reusable components
@@ -407,6 +414,7 @@ git push origin main
 - **Oscar Movies:** 1,158 unique movies
 - **Oscar Nominations:** 2,053+ nominations (1928-2025)
 - **Documentation Files:** 10 markdown files
+- **Authentication:** Multi-user with Clerk (Google OAuth)
 
 ---
 

@@ -40,6 +40,13 @@ export function AddToWatchlistModal({
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [addingMovie, setAddingMovie] = useState<number | null>(null);
+  const [customTagInput, setCustomTagInput] = useState('');
+  const [customTags, setCustomTags] = useState<Array<{
+    id: number;
+    name: string;
+    color: string | null;
+    icon: string | null;
+  }>>([]);
 
   const searchTMDB = async (query: string) => {
     if (!query.trim()) {
@@ -79,6 +86,46 @@ export function AddToWatchlistModal({
     setSelectedTags((prev) =>
       prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
     );
+  };
+
+  const handleCreateCustomTag = async () => {
+    const tagName = customTagInput.trim();
+    if (!tagName) return;
+
+    // Check if tag already exists
+    const allTags = [...availableTags, ...customTags];
+    if (allTags.some(tag => tag.name.toLowerCase() === tagName.toLowerCase())) {
+      alert('A tag with this name already exists');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/tags', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: tagName,
+          color: '#6366f1',
+          icon: 'tag',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const newTag = data.data;
+        setCustomTags((prev) => [...prev, newTag]);
+        setSelectedTags((prev) => [...prev, newTag.id]);
+        setCustomTagInput('');
+      } else {
+        alert(`Failed to create tag: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error creating tag:', error);
+      alert('Failed to create tag');
+    }
   };
 
   const handleAddToWatchlist = async (movie: any) => {
@@ -160,6 +207,8 @@ export function AddToWatchlistModal({
             {/* Tag Selection */}
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-gray-400">Select Mood Tags (Optional)</h3>
+
+              {/* Default Tags */}
               <div className="flex flex-wrap gap-2">
                 {availableTags.map((tag) => (
                   <button
@@ -176,6 +225,46 @@ export function AddToWatchlistModal({
                     {tag.name}
                   </button>
                 ))}
+              </div>
+
+              {/* Custom Tags */}
+              {customTags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {customTags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      onClick={() => toggleTag(tag.id)}
+                      className={cn(
+                        'flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all',
+                        selectedTags.includes(tag.id)
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+                          : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                      )}
+                    >
+                      {tag.icon && <TagIcon iconName={tag.icon} />}
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Add Custom Tag Input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add custom tag..."
+                  value={customTagInput}
+                  onChange={(e) => setCustomTagInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleCreateCustomTag()}
+                  className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white placeholder-gray-400"
+                />
+                <button
+                  onClick={handleCreateCustomTag}
+                  disabled={!customTagInput.trim()}
+                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-all"
+                >
+                  Add
+                </button>
               </div>
             </div>
 

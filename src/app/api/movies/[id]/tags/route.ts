@@ -105,10 +105,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       const normalizedTagName = tagName.trim();
 
-      // Find or create tag
+      // Find or create tag for this user
       let tag = await withDatabaseRetry(() =>
-        prisma.tag.findUnique({
-          where: { name: normalizedTagName }
+        prisma.tag.findFirst({
+          where: {
+            name: normalizedTagName,
+            user_id: user.id
+          }
         })
       );
 
@@ -122,7 +125,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             data: {
               name: normalizedTagName,
               color: defaultColor,
-              icon: defaultIcon
+              icon: defaultIcon,
+              user_id: user.id
             }
           })
         );
@@ -283,10 +287,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
       const normalizedTagName = tagName.trim();
 
-      // Find tag
+      // Find tag for this user
       const tag = await withDatabaseRetry(() =>
-        prisma.tag.findUnique({
-          where: { name: normalizedTagName }
+        prisma.tag.findFirst({
+          where: {
+            name: normalizedTagName,
+            user_id: user.id
+          }
         })
       );
 

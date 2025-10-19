@@ -168,8 +168,23 @@ export async function PATCH(
       notes,
       is_favorite,
       watch_location,
-      date_watched
+      date_watched,
+      buddy_watched_with
     } = body;
+
+    // Normalize buddy_watched_with to array format
+    let buddiesUpdate: { buddy_watched_with: string[] } | object = {};
+    if (buddy_watched_with !== undefined) {
+      if (Array.isArray(buddy_watched_with) && buddy_watched_with.length > 0) {
+        const filteredBuddies = buddy_watched_with.filter((b: unknown) => typeof b === 'string' && b.trim());
+        if (filteredBuddies.length > 0) {
+          buddiesUpdate = { buddy_watched_with: filteredBuddies };
+        }
+      } else if (typeof buddy_watched_with === 'string' && buddy_watched_with.trim()) {
+        buddiesUpdate = { buddy_watched_with: [buddy_watched_with.trim()] };
+      }
+      // If null or empty array, don't include in update (leaves existing value)
+    }
 
     // Verify user owns this user_movie record
     const existingUserMovie = await prisma.userMovie.findUnique({
@@ -192,6 +207,7 @@ export async function PATCH(
         ...(is_favorite !== undefined && { is_favorite }),
         ...(watch_location !== undefined && { watch_location }),
         ...(date_watched !== undefined && { date_watched: new Date(date_watched) }),
+        ...buddiesUpdate,
         updated_at: new Date(),
       }
     });

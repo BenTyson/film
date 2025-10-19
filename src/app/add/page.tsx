@@ -54,13 +54,11 @@ interface SearchResponse {
   };
 }
 
-const BUDDY_PRESETS = [
-  { name: 'Calen', icon: '👥', color: 'text-blue-400' },
-  { name: 'Morgan', icon: '💑', color: 'text-pink-400' },
-  { name: 'Liam', icon: '👨‍👦', color: 'text-green-400' },
-  { name: 'Elodi', icon: '👨‍👩‍👧', color: 'text-purple-400' },
-  { name: 'Solo', icon: '🎬', color: 'text-gray-400' },
-];
+interface BuddyPreset {
+  name: string;
+  icon: string;
+  color: string;
+}
 
 const TAG_SUGGESTIONS = [
   'Must Rewatch',
@@ -85,17 +83,36 @@ export default function AddMoviePage() {
   const [isAdding, setIsAdding] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [addedSuccessfully, setAddedSuccessfully] = useState(false);
+  const [buddyPresets, setBuddyPresets] = useState<BuddyPreset[]>([]);
 
   // Form data
   const [personalRating, setPersonalRating] = useState<number | null>(null);
   const [dateWatched, setDateWatched] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
-  const [buddyWatchedWith, setBuddyWatchedWith] = useState('');
+  const [buddies, setBuddies] = useState<string[]>([]); // Changed to array
+  const [buddyInput, setBuddyInput] = useState(''); // New input state
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [notes, setNotes] = useState('');
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch buddy presets on mount
+  useEffect(() => {
+    const fetchBuddyPresets = async () => {
+      try {
+        const response = await fetch('/api/buddies');
+        const data = await response.json();
+        if (data.success) {
+          setBuddyPresets(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching buddy presets:', error);
+      }
+    };
+
+    fetchBuddyPresets();
+  }, []);
 
   // Auto-focus search on mount
   useEffect(() => {
@@ -183,8 +200,16 @@ export default function AddMoviePage() {
     setDateWatched(today);
   };
 
-  const handleBuddyPreset = (buddy: string) => {
-    setBuddyWatchedWith(buddy === buddyWatchedWith ? '' : buddy);
+  const handleAddBuddy = (buddyToAdd?: string) => {
+    const buddy = buddyToAdd || buddyInput.trim();
+    if (buddy && !buddies.includes(buddy)) {
+      setBuddies([...buddies, buddy]);
+      setBuddyInput('');
+    }
+  };
+
+  const removeBuddy = (buddyToRemove: string) => {
+    setBuddies(buddies.filter(b => b !== buddyToRemove));
   };
 
   const handleAddMovie = async () => {
@@ -202,7 +227,7 @@ export default function AddMoviePage() {
           personal_rating: personalRating,
           date_watched: dateWatched || null,
           is_favorite: isFavorite,
-          buddy_watched_with: buddyWatchedWith || null,
+          buddy_watched_with: buddies.length > 0 ? buddies : null,
           tags: tags,
           notes: notes || null
         }),
@@ -221,7 +246,8 @@ export default function AddMoviePage() {
           setPersonalRating(null);
           setDateWatched('');
           setIsFavorite(false);
-          setBuddyWatchedWith('');
+          setBuddies([]);
+          setBuddyInput('');
           setTags([]);
           setNotes('');
           setSearchQuery('');
@@ -582,36 +608,66 @@ export default function AddMoviePage() {
                 </p>
               </div>
 
-              {/* Buddy Watched With - Enhanced with Presets */}
+              {/* Buddy Watched With - Like Tags System */}
               <div>
                 <label className="block text-sm font-medium mb-3 flex items-center gap-2">
                   <Users className="w-4 h-4 text-green-500" />
                   Watched With
                 </label>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {BUDDY_PRESETS.map((buddy) => (
-                    <button
-                      key={buddy.name}
-                      onClick={() => handleBuddyPreset(buddy.name)}
-                      className={cn(
-                        "px-4 py-2 rounded-lg border-2 transition-all flex items-center gap-2",
-                        buddyWatchedWith === buddy.name
-                          ? "bg-primary/20 border-primary text-primary"
-                          : "border-border/50 hover:border-primary/50"
-                      )}
-                    >
-                      <span>{buddy.icon}</span>
-                      <span className={buddy.color}>{buddy.name}</span>
-                    </button>
-                  ))}
+                {buddyPresets.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {buddyPresets.map((buddy) => (
+                      <button
+                        key={buddy.name}
+                        onClick={() => handleAddBuddy(buddy.name)}
+                        disabled={buddies.includes(buddy.name)}
+                        className={cn(
+                          "px-4 py-2 rounded-lg border-2 transition-all flex items-center gap-2",
+                          buddies.includes(buddy.name)
+                            ? "bg-primary/20 border-primary text-primary opacity-50 cursor-not-allowed"
+                            : "border-border/50 hover:border-primary/50"
+                        )}
+                      >
+                        <span>{buddy.icon}</span>
+                        <span className={buddy.color}>{buddy.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Add custom name..."
+                    value={buddyInput}
+                    onChange={(e) => setBuddyInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddBuddy()}
+                    className="flex-1 px-4 py-3 bg-background/50 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-cinema-gold/50"
+                  />
+                  <button
+                    onClick={() => handleAddBuddy()}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:bg-cinema-gold/90 transition-colors font-medium"
+                  >
+                    Add
+                  </button>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Or type a custom name..."
-                  value={buddyWatchedWith}
-                  onChange={(e) => setBuddyWatchedWith(e.target.value)}
-                  className="w-full px-4 py-3 bg-background/50 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-cinema-gold/50"
-                />
+                {buddies.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {buddies.map((buddy) => (
+                      <span
+                        key={buddy}
+                        className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm flex items-center gap-2 border border-green-500/40"
+                      >
+                        {buddy}
+                        <button
+                          onClick={() => removeBuddy(buddy)}
+                          className="hover:text-red-400 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Favorite Toggle */}

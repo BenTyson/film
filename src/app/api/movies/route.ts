@@ -390,16 +390,27 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
     const body = await request.json();
     const {
       tmdb_id,
       personal_rating,
       date_watched,
       is_favorite,
-      buddy_watched_with,
+      buddy_watched_with, // Can be string, array, or null
       tags,
       notes
     } = body;
+
+    // Normalize buddy_watched_with to array format
+    let buddiesArray: string[] | null = null;
+    if (buddy_watched_with) {
+      if (Array.isArray(buddy_watched_with)) {
+        buddiesArray = buddy_watched_with.filter((b: unknown) => typeof b === 'string' && b.trim());
+      } else if (typeof buddy_watched_with === 'string' && buddy_watched_with.trim()) {
+        buddiesArray = [buddy_watched_with.trim()];
+      }
+    }
 
     if (!tmdb_id) {
       return NextResponse.json(
@@ -435,27 +446,28 @@ export async function POST(request: NextRequest) {
         })
       );
 
-      // Create user movie record if personal data provided
-      if (personal_rating || date_watched || is_favorite || buddy_watched_with || notes) {
-        await prisma.userMovie.create({
-          data: {
-            movie_id: updatedMovie.id,
-            user_id: 1, // Default user for now
-            personal_rating: personal_rating ? parseInt(personal_rating) : null,
-            date_watched: date_watched ? new Date(date_watched) : null,
-            is_favorite: is_favorite || false,
-            buddy_watched_with: buddy_watched_with || null,
-            notes: notes || null
-          }
-        });
-      }
+      // Create user movie record - ALWAYS create it to link the movie to the user
+      await prisma.userMovie.create({
+        data: {
+          movie_id: updatedMovie.id,
+          user_id: user.id,
+          personal_rating: personal_rating ? parseInt(personal_rating) : null,
+          date_watched: date_watched ? new Date(date_watched) : null,
+          is_favorite: is_favorite || false,
+          ...(buddiesArray && buddiesArray.length > 0 && { buddy_watched_with: buddiesArray }),
+          notes: notes || null
+        }
+      });
 
       // Handle tags if provided
       if (tags && tags.length > 0) {
         for (const tagName of tags) {
-          // Find or create tag
-          let tag = await prisma.tag.findUnique({
-            where: { name: tagName }
+          // Find or create tag for this user
+          let tag = await prisma.tag.findFirst({
+            where: {
+              name: tagName,
+              user_id: user.id
+            }
           });
 
           if (!tag) {
@@ -463,7 +475,8 @@ export async function POST(request: NextRequest) {
               data: {
                 name: tagName,
                 color: '#6366f1', // Default color
-                icon: 'tag'
+                icon: 'tag',
+                user_id: user.id
               }
             });
           }
@@ -531,27 +544,28 @@ export async function POST(request: NextRequest) {
     })
   );
 
-    // Create user movie record if personal data provided
-    if (personal_rating || date_watched || is_favorite || buddy_watched_with || notes) {
-      await prisma.userMovie.create({
-        data: {
-          movie_id: movie.id,
-          user_id: 1, // Default user for now
-          personal_rating: personal_rating ? parseInt(personal_rating) : null,
-          date_watched: date_watched ? new Date(date_watched) : null,
-          is_favorite: is_favorite || false,
-          buddy_watched_with: buddy_watched_with || null,
-          notes: notes || null
-        }
-      });
-    }
+    // Create user movie record - ALWAYS create it to link the movie to the user
+    await prisma.userMovie.create({
+      data: {
+        movie_id: movie.id,
+        user_id: user.id,
+        personal_rating: personal_rating ? parseInt(personal_rating) : null,
+        date_watched: date_watched ? new Date(date_watched) : null,
+        is_favorite: is_favorite || false,
+        ...(buddiesArray && buddiesArray.length > 0 && { buddy_watched_with: buddiesArray }),
+        notes: notes || null
+      }
+    });
 
     // Handle tags if provided
     if (tags && tags.length > 0) {
       for (const tagName of tags) {
-        // Find or create tag
-        let tag = await prisma.tag.findUnique({
-          where: { name: tagName }
+        // Find or create tag for this user
+        let tag = await prisma.tag.findFirst({
+          where: {
+            name: tagName,
+            user_id: user.id
+          }
         });
 
         if (!tag) {
@@ -559,7 +573,8 @@ export async function POST(request: NextRequest) {
             data: {
               name: tagName,
               color: '#6366f1', // Default color
-              icon: 'tag'
+              icon: 'tag',
+              user_id: user.id
             }
           });
         }

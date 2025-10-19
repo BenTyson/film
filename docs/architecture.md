@@ -1,6 +1,6 @@
 # System Architecture
 
-**Last Updated:** October 2024
+**Last Updated:** January 2025
 
 **→ For quick orientation, read [session-start/QUICK-START.md](./session-start/QUICK-START.md) first**
 
@@ -86,6 +86,7 @@ CREATE TABLE user_movies (
   personal_rating INTEGER CHECK (personal_rating >= 1 AND personal_rating <= 10),
   notes TEXT,
   is_favorite BOOLEAN DEFAULT FALSE,
+  buddy_watched_with JSONB, -- Array of buddy names: ["Calen", "Morgan"]
   watch_location VARCHAR(100),
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
@@ -103,13 +104,16 @@ CREATE TABLE oscar_data (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Tags: Watch buddy and category tags
+-- Tags: Watch buddy and category tags (user-specific or global)
 CREATE TABLE tags (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(50) UNIQUE NOT NULL,
+  name VARCHAR(50) NOT NULL,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE, -- NULL for global tags
   color VARCHAR(7), -- Hex color code
   icon VARCHAR(50), -- Lucide icon name
-  created_at TIMESTAMP DEFAULT NOW()
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(name, user_id), -- Composite unique constraint
+  INDEX idx_tags_user_id (user_id)
 );
 
 -- Movie Tags: Many-to-many relationship
@@ -295,7 +299,7 @@ App Layout (src/app/layout.tsx)
 
 ### Next.js API Routes Structure
 
-**Total: 38 API endpoints**
+**Total: 39 API endpoints**
 
 ```
 /api
@@ -340,6 +344,9 @@ App Layout (src/app/layout.tsx)
 │
 ├── /tags (1 endpoint)
 │   └── GET/POST /                    # List all tags or create new tag
+│
+├── /buddies (1 endpoint)
+│   └── GET  /                        # Get dynamic buddy presets (admin or user-specific)
 │
 ├── /search (2 endpoints)
 │   ├── GET  /                        # Generic search across collection
@@ -595,7 +602,8 @@ Response: {
 **AddToWatchlistModal.tsx** (`src/components/watchlist/`)
 - TMDB search integration
 - Movie selection with poster preview
-- Mood tag selection (multi-select)
+- Mood tag selection (multi-select from defaults)
+- Custom tag creation with input field + Add button
 - Add to watchlist workflow
 
 **WatchlistMovieModal.tsx** (`src/components/watchlist/`)
@@ -606,8 +614,9 @@ Response: {
 
 #### Mood Tags
 Shared `Tag` infrastructure with main collection:
-- **Person-based:** Morgan, Liam (who wants to watch it)
-- **Mood/Genre-based:** Epic, Scary, Indie (viewing mood)
+- **Default Global Tags:** Morgan, Epic, Indie, Funny, Drama, Classic
+- **Custom User Tags:** Users can create their own tags via input field
+- **User Isolation:** Tags are user-specific (user_id) or global (user_id: null)
 - Color-coded for visual organization
 - Multi-select enabled (movie can have multiple tags)
 
@@ -764,11 +773,17 @@ The application now features a sophisticated tag-based collection system that al
 // Database Models
 model Tag {
   id         Int      @id @default(autoincrement())
-  name       String   @unique
+  name       String
+  user_id    Int?     // NULL for global tags, user ID for user-specific tags
   color      String?  // Hex color (#8B5CF6 for Calen)
   icon       String?  // Lucide icon name (Users for Calen)
   created_at DateTime @default(now())
+  user       User?    @relation(fields: [user_id], references: [id], onDelete: Cascade)
   movie_tags MovieTag[]
+  watchlist_tags WatchlistTag[]
+
+  @@unique([name, user_id])  // Composite unique constraint
+  @@index([user_id])
 }
 
 model MovieTag {

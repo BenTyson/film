@@ -105,11 +105,9 @@ export default function WatchlistPage() {
       const response = await fetch('/api/tags');
       const data = await response.json();
       if (data.success) {
-        // Filter to only show watchlist mood tags
-        const watchlistTags = data.data.filter((tag: Tag) =>
-          ['Morgan', 'Liam', 'Epic', 'Scary', 'Indie'].includes(tag.name)
-        );
-        setAvailableTags(watchlistTags);
+        // Show all tags (global defaults + user's custom tags)
+        // This allows users to use any tags they create for watchlist filtering
+        setAvailableTags(data.data);
       }
     } catch (error) {
       console.error('Error fetching tags:', error);

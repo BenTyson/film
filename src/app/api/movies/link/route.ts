@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
     const body = await request.json();
     const {
       tmdb_id,
@@ -70,9 +72,12 @@ export async function POST(request: NextRequest) {
     // Handle tags if provided
     if (tags && tags.length > 0) {
       for (const tagName of tags) {
-        // Find or create tag
-        let tag = await prisma.tag.findUnique({
-          where: { name: tagName }
+        // Find or create tag for this user
+        let tag = await prisma.tag.findFirst({
+          where: {
+            name: tagName,
+            user_id: user.id
+          }
         });
 
         if (!tag) {
@@ -80,7 +85,8 @@ export async function POST(request: NextRequest) {
             data: {
               name: tagName,
               color: tagName === 'Calen' ? '#3b82f6' : '#6366f1',
-              icon: 'user'
+              icon: 'user',
+              user_id: user.id
             }
           });
         }

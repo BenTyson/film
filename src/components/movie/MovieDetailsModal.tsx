@@ -50,6 +50,7 @@ interface MovieDetails extends MovieWithDetails {
     notes: string | null;
     is_favorite: boolean;
     watch_location: string | null;
+    buddy_watched_with: string[] | null; // Array of buddy names
     created_at: Date;
     updated_at: Date;
   }>;
@@ -108,8 +109,12 @@ export function MovieDetailsModal({ movieId, isOpen, onClose, onMovieUpdate }: M
     notes: '',
     is_favorite: false,
     watch_location: '',
-    date_watched: ''
+    date_watched: '',
+    buddy_watched_with: [] as string[]
   });
+
+  // Buddy input for adding new buddies
+  const [buddyInput, setBuddyInput] = useState('');
 
   // Existing tags state
   const [movieTags, setMovieTags] = useState<string[]>([]);
@@ -147,7 +152,8 @@ export function MovieDetailsModal({ movieId, isOpen, onClose, onMovieUpdate }: M
             notes: userMovie.notes || '',
             is_favorite: userMovie.is_favorite || false,
             watch_location: userMovie.watch_location || '',
-            date_watched: userMovie.date_watched ? new Date(userMovie.date_watched).toISOString().split('T')[0] : ''
+            date_watched: userMovie.date_watched ? new Date(userMovie.date_watched).toISOString().split('T')[0] : '',
+            buddy_watched_with: Array.isArray(userMovie.buddy_watched_with) ? userMovie.buddy_watched_with : []
           });
         }
 
@@ -215,6 +221,24 @@ export function MovieDetailsModal({ movieId, isOpen, onClose, onMovieUpdate }: M
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, isEditing, onClose]);
+
+  const handleAddBuddy = () => {
+    const buddy = buddyInput.trim();
+    if (buddy && !editData.buddy_watched_with.includes(buddy)) {
+      setEditData(prev => ({
+        ...prev,
+        buddy_watched_with: [...prev.buddy_watched_with, buddy]
+      }));
+      setBuddyInput('');
+    }
+  };
+
+  const handleRemoveBuddy = (buddyToRemove: string) => {
+    setEditData(prev => ({
+      ...prev,
+      buddy_watched_with: prev.buddy_watched_with.filter(b => b !== buddyToRemove)
+    }));
+  };
 
   const handleSave = async () => {
     if (!movie || !movie.user_movies[0]) return;
@@ -813,6 +837,58 @@ export function MovieDetailsModal({ movieId, isOpen, onClose, onMovieUpdate }: M
                             ) : (
                               <p className="text-white">
                                 {userMovie?.watch_location || 'Not specified'}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Watched With */}
+                          <div>
+                            <label className="flex items-center gap-2 text-white/60 text-sm mb-2">
+                              <Users className="w-4 h-4" />
+                              Watched With
+                            </label>
+                            {isEditing ? (
+                              <div className="space-y-2">
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={buddyInput}
+                                    onChange={(e) => setBuddyInput(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleAddBuddy()}
+                                    placeholder="Add person's name..."
+                                    className="flex-1 px-3 py-2 bg-black/50 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-white/40"
+                                  />
+                                  <button
+                                    onClick={handleAddBuddy}
+                                    className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/40 rounded-lg transition-colors"
+                                  >
+                                    Add
+                                  </button>
+                                </div>
+                                {editData.buddy_watched_with.length > 0 && (
+                                  <div className="flex flex-wrap gap-2">
+                                    {editData.buddy_watched_with.map((buddy) => (
+                                      <span
+                                        key={buddy}
+                                        className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm flex items-center gap-2 border border-green-500/40"
+                                      >
+                                        {buddy}
+                                        <button
+                                          onClick={() => handleRemoveBuddy(buddy)}
+                                          className="hover:text-red-400 transition-colors"
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-white">
+                                {Array.isArray(userMovie?.buddy_watched_with) && userMovie.buddy_watched_with.length > 0
+                                  ? userMovie.buddy_watched_with.join(', ')
+                                  : 'Solo'}
                               </p>
                             )}
                           </div>
