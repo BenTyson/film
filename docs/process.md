@@ -1,5 +1,9 @@
 # Development Process
 
+**Last Updated:** October 2024
+
+**→ For quick orientation, read [session-start/QUICK-START.md](./session-start/QUICK-START.md) first**
+
 ## Project Setup & Configuration
 
 ### Initial Environment Setup
@@ -135,6 +139,97 @@ async function seedTags() {
   });
 }
 ```
+
+## Watchlist Development Workflow
+
+### Adding Movies to Watchlist
+
+**User Flow:**
+1. User clicks "Add to Watchlist" button on `/watchlist` page
+2. AddToWatchlistModal opens with TMDB search
+3. User searches for movie by title
+4. Modal queries TMDB API via `/api/tmdb/search`
+5. User selects movie from results
+6. User selects mood tags (Morgan, Liam, Epic, Scary, Indie)
+7. User clicks "Add to Watchlist"
+8. POST `/api/watchlist` creates:
+   - WatchlistMovie record with TMDB data
+   - WatchlistTag records for selected tags
+9. Modal closes and page refreshes to show new item
+
+**Technical Implementation:**
+```typescript
+// POST /api/watchlist
+const response = await fetch('/api/watchlist', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    tmdb_id: 872585,
+    tags: ['Epic', 'Morgan']
+  })
+});
+```
+
+### Managing Watchlist
+
+**Tag-Based Filtering:**
+- Uses shared Tag system with main collection
+- Filter by person (Morgan, Liam) or mood (Epic, Scary, Indie)
+- Multi-tag filtering supported
+
+**Removing from Watchlist:**
+```typescript
+// DELETE /api/watchlist/[id]
+await fetch(`/api/watchlist/${movieId}`, { method: 'DELETE' });
+```
+
+**Future: Moving to Main Collection:**
+1. Watch movie from watchlist
+2. Create Movie + UserMovie records
+3. Preserve tags, add date_watched, rating, notes
+4. Delete WatchlistMovie record
+
+**→ See [architecture.md § Watchlist](./architecture.md#watchlist-feature-october-2024) for detailed architecture**
+
+---
+
+## Oscar Editing Workflow
+
+### Editing Oscar Movie Metadata
+
+**Use Case:** Correcting TMDB ID mismatches or missing posters for Oscar-nominated movies
+
+**Workflow:**
+1. Navigate to Oscar page (e.g., `/oscars` or `/oscars/2024`)
+2. Identify movie with incorrect or missing poster
+3. Click "Edit" button to open EditOscarMovieModal
+4. Update TMDB ID or poster path:
+   - **TMDB ID correction:** Enter correct TMDB ID for accurate matching
+   - **Poster path override:** Manually specify poster path if TMDB fetch fails
+5. Modal validates input and updates OscarMovie record
+6. If TMDB ID changed, fetches fresh poster from TMDB API
+7. UI reflects updated poster immediately without page refresh
+
+**Technical Implementation:**
+```typescript
+// Update Oscar movie
+await fetch(`/api/oscars/movies/${oscarMovieId}`, {
+  method: 'PUT',
+  body: JSON.stringify({
+    tmdb_id: 1000837, // Corrected TMDB ID
+    poster_path: '/path/to/poster.jpg' // Optional override
+  })
+});
+```
+
+**Common Corrections:**
+- Fixing duplicate movie entries with wrong TMDB IDs
+- Updating movies with changed TMDB records
+- Manually specifying posters for rare/foreign films
+
+**→ See [oscars.md](./oscars.md) for complete Oscar system documentation**
+
+---
 
 ## Component Development Process
 
@@ -471,3 +566,15 @@ pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql
    - Implement proper caching strategy
    - Batch multiple requests when possible
    - Use appropriate image sizes
+
+---
+
+## Related Documentation
+
+- **Quick Start:** [session-start/QUICK-START.md](./session-start/QUICK-START.md) - Rapid orientation for new agents
+- **Main Overview:** [CLAUDE.md](./CLAUDE.md) - Project overview, tech stack, database schema
+- **Architecture:** [architecture.md](./architecture.md) - System architecture, components, API structure
+- **Oscar System:** [oscars.md](./oscars.md) - Complete Oscar tracking system documentation
+- **Skills:** [skills/](./skills/) - Claude Code skills for common tasks
+
+**For common workflows, see:** [session-start/QUICK-START.md § Common Tasks](./session-start/QUICK-START.md#6-common-tasks)

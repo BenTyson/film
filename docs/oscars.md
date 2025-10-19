@@ -1,5 +1,9 @@
 # Oscar Data System Documentation
 
+**Last Updated:** October 2024
+
+**→ For quick orientation, read [session-start/QUICK-START.md](./session-start/QUICK-START.md) first**
+
 ## Overview
 
 The Oscar data system is a comprehensive architecture for managing Academy Award nominations and wins data from 1928-2025. It provides a unified approach to track Oscar data, match it with the user's movie collection, and display movies with proper visual indicators (grayscale for non-collection movies).
@@ -159,6 +163,54 @@ const [movieData, setMovieData] = useState<Record<number, MovieWithOscars>>({});
 - Category filtering within the year
 - Winner vs nominee distinction
 - Movie details modal integration
+
+### Oscar Components
+
+#### `EditOscarMovieModal.tsx` (`src/components/oscar/`)
+
+**Purpose:** Edit Oscar movie metadata for correcting TMDB ID mismatches and poster path issues
+
+**Features:**
+- **TMDB ID Correction** - Fix movies matched to wrong TMDB records
+- **Poster Path Override** - Manually specify poster path if TMDB fetch fails
+- **Real-time Preview** - See poster changes before saving
+- **Validation** - Input validation and error handling
+- **Immediate Updates** - UI reflects changes without page refresh
+
+**Use Cases:**
+1. Correcting duplicate movie entries with wrong TMDB IDs
+2. Updating movies with changed TMDB records
+3. Manually specifying posters for rare/foreign films
+4. Fixing poster display issues for non-collection movies
+
+**Technical Implementation:**
+```typescript
+// Update Oscar movie via API
+await fetch(`/api/oscars/movies/${oscarMovieId}`, {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    tmdb_id: 1000837, // Corrected TMDB ID
+    poster_path: '/path/to/poster.jpg' // Optional override
+  })
+});
+
+// On success:
+// 1. Updates OscarMovie record
+// 2. Fetches fresh poster from TMDB if tmdb_id changed
+// 3. Updates UI without page reload
+```
+
+**Workflow:**
+1. Navigate to Oscar page
+2. Identify movie with incorrect/missing poster
+3. Click "Edit" button
+4. Enter correct TMDB ID or poster path
+5. Preview shows new poster
+6. Save updates OscarMovie record
+7. UI refreshes with corrected data
+
+**→ See [process.md § Oscar Editing Workflow](./process.md#oscar-editing-workflow) for detailed workflow**
 
 ### Data Flow
 
@@ -420,3 +472,15 @@ The system evolved from multiple Oscar data sources into a unified architecture 
 - Consider GraphQL endpoint for complex queries
 
 This documentation provides a complete reference for understanding and maintaining the Oscar data system architecture.
+
+---
+
+## Related Documentation
+
+- **Quick Start:** [session-start/QUICK-START.md](./session-start/QUICK-START.md) - Rapid orientation for new agents
+- **Main Overview:** [CLAUDE.md](./CLAUDE.md) - Project overview, tech stack, database schema
+- **Architecture:** [architecture.md](./architecture.md) - System architecture, components, API structure
+- **Development Process:** [process.md](./process.md) - Workflows, deployment, maintenance tasks
+- **Skills:** [skills/](./skills/) - Claude Code skills for common tasks
+
+**For Oscar workflows, see:** [process.md § Oscar Editing Workflow](./process.md#oscar-editing-workflow)

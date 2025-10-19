@@ -1,5 +1,9 @@
 # System Architecture
 
+**Last Updated:** October 2024
+
+**→ For quick orientation, read [session-start/QUICK-START.md](./session-start/QUICK-START.md) first**
+
 ## Overview
 Personal movie tracking application with premium streaming service-quality interface, built on Next.js with PostgreSQL database and TMDB API integration.
 
@@ -195,6 +199,7 @@ App Layout (src/app/layout.tsx)
 │   │       ├── Movie Info
 │   │       ├── Personal Notes
 │   │       ├── Oscar Information
+│   │       ├── TrailerPlayer (YouTube integration)
 │   │       └── Edit Actions
 │   ├── Filter & Sort Controls
 │   │   ├── Search Input (with debouncing)
@@ -210,6 +215,42 @@ App Layout (src/app/layout.tsx)
 │   └── Pagination/Infinite Scroll
 └── Footer
 ```
+
+### Component Inventory
+
+#### Movie Components (`src/components/movie/`)
+- **MovieCard.tsx** - Individual movie card with poster, title, rating, Oscar badges
+- **MovieGrid.tsx** - Grid layout for movie cards
+- **MovieList.tsx** - List layout for movie items
+- **MovieListItem.tsx** - Individual list item view
+- **MovieDetailsModal.tsx** - Full movie details modal with backdrop, info, trailer
+- **FixMovieModal.tsx** - Modal for fixing movie TMDB matching issues
+- **AddToCalenModal.tsx** - Modal for adding movies to Calen buddy collection
+- **TrailerPlayer.tsx** - YouTube trailer embed component
+
+#### Oscar Components (`src/components/oscar/`)
+- **EditOscarMovieModal.tsx** - Edit Oscar movie metadata (TMDB ID, poster path)
+  - Used for correcting TMDB ID mismatches
+  - Poster path override functionality
+  - Real-time poster preview
+  - Validation and error handling
+
+#### Watchlist Components (`src/components/watchlist/`)
+- **AddToWatchlistModal.tsx** - Search TMDB and add movies to watchlist
+  - TMDB search integration
+  - Mood tag selection (Morgan, Liam, Epic, Scary, Indie)
+  - Poster preview
+- **WatchlistMovieModal.tsx** - View/edit watchlist movie details
+  - Tag management
+  - Move to collection option
+  - Remove from watchlist
+
+#### Layout Components (`src/components/layout/`)
+- **Navigation.tsx** - Main navigation header with links to pages
+
+#### UI Components (`src/components/ui/`)
+- **TagIcon.tsx** - Lucide icon selector for tags
+- Radix UI primitives (Dialog, Select, Slider, Switch, etc.)
 
 ### Specialized Page Components
 
@@ -240,34 +281,68 @@ App Layout (src/app/layout.tsx)
 
 ### Next.js API Routes Structure
 
+**Total: 38 API endpoints**
+
 ```
 /api
-├── /movies
-│   ├── GET /           # List movies with filters & sorting
-│   ├── POST /          # Add new movie
-│   ├── GET /[id]       # Get specific movie
-│   ├── PUT /[id]       # Update movie data
-│   ├── DELETE /[id]    # Remove movie
-│   ├── GET /years      # Get movie counts by release year (supports tag filtering)
-│   └── /[id]/tags
-│       ├── POST /      # Add tags to existing movie
-│       └── DELETE /    # Remove tags from movie
-├── /tmdb
-│   ├── GET /search     # Search TMDB for movies
-│   ├── GET /movie/[id] # Get TMDB movie details
-│   └── GET /credits/[id] # Get movie credits
-├── /oscars
-│   ├── GET /           # List Oscar data
-│   ├── GET /[year]     # Oscars by year
-│   └── GET /movie/[id] # Oscar data for movie
-├── /tags
-│   ├── GET /           # List all tags
-│   ├── POST /          # Create new tag
-│   └── PUT /[id]       # Update tag
-└── /import
-    ├── POST /csv       # Import from CSV
-    └── GET /status     # Import progress
+├── /movies (12 endpoints)
+│   ├── GET  /                        # List movies with filters & sorting
+│   ├── POST /                        # Add new movie
+│   ├── GET  /[id]                    # Get specific movie details
+│   ├── PUT  /[id]                    # Update movie data
+│   ├── DELETE /[id]/remove           # Remove movie from collection
+│   ├── GET  /[id]/approve            # Approve pending movie (approval workflow)
+│   ├── POST /[id]/update-tmdb        # Refresh movie data from TMDB
+│   ├── POST /[id]/tags               # Add/remove tags from movie
+│   ├── GET  /years                   # Get movie counts by release year (supports tag filtering)
+│   ├── GET  /match-quality           # Movie matching quality analysis
+│   ├── GET  /approval-stats          # Approval workflow statistics
+│   ├── GET  /pending-approval        # List pending approval movies with details
+│   ├── GET  /pending-approval-simple # Simplified pending approval list
+│   ├── POST /migrate-approval        # Migrate approval data
+│   └── GET  /link                    # Link movies (utility)
+│
+├── /oscars (12 endpoints)
+│   ├── GET  /                        # List Oscar data overview
+│   ├── GET  /overview                # Oscar statistics and overview
+│   ├── GET  /categories              # List all Oscar categories
+│   ├── GET  /nominations             # Get nominations with filtering
+│   ├── GET  /years/[year]            # Get Oscar data for specific ceremony year
+│   ├── GET  /movies/[id]             # Get Oscar data for specific movie
+│   ├── POST /sync                    # Sync Oscar data
+│   ├── POST /import                  # Import Oscar data from JSON
+│   ├── POST /integrate               # Integrate Oscar data with collection
+│   ├── GET  /best-picture            # Best Picture nominees list
+│   ├── GET  /best-picture/[id]       # Best Picture nominee details
+│   └── POST /best-picture/import     # Import Best Picture data
+│
+├── /watchlist (2 endpoints)
+│   ├── GET/POST /                    # List watchlist or add movie to watchlist
+│   └── GET/POST/DELETE /[id]         # Get, update, or remove watchlist movie
+│
+├── /tmdb (2 endpoints)
+│   ├── GET  /search                  # Search TMDB for movies
+│   └── GET  /movie/[id]              # Get TMDB movie details and credits
+│
+├── /tags (1 endpoint)
+│   └── GET/POST /                    # List all tags or create new tag
+│
+├── /search (2 endpoints)
+│   ├── GET  /                        # Generic search across collection
+│   └── GET  /movies                  # Movie-specific search
+│
+├── /import (4 endpoints)
+│   ├── POST /csv                     # Import movies from CSV
+│   ├── POST /backfill-csv            # Backfill CSV import
+│   ├── POST /clean-csv               # Clean CSV import with quality checks
+│   └── POST /missing                 # Import missing movie data
+│
+└── /test (2 endpoints - development only)
+    ├── GET  /test-tmdb               # Test TMDB API connection
+    └── GET  /test-import             # Test import functionality
 ```
+
+**→ For API usage patterns, see [session-start/QUICK-START.md § Common Tasks](./session-start/QUICK-START.md#6-common-tasks)**
 
 ### API Response Patterns
 
@@ -411,7 +486,134 @@ Deploy to Production
 └── Health checks
 ```
 
-## Tag-Based Collection System (December 2025)
+## Watchlist Feature (October 2024)
+
+### Architecture Overview
+Mood-based movie watchlist system for tracking movies to watch, completely separate from the main collection. Users can search TMDB, add movies to watchlist with mood tags, and organize their watch queue.
+
+### Technical Implementation
+
+#### Database Models
+```prisma
+model WatchlistMovie {
+  id            Int            @id @default(autoincrement())
+  tmdb_id       Int            @unique
+  title         String
+  director      String?
+  release_date  DateTime?
+  poster_path   String?
+  backdrop_path String?
+  overview      String?
+  runtime       Int?
+  genres        Json?
+  vote_average  Float?
+  imdb_id       String?
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+  tags          WatchlistTag[]
+}
+
+model WatchlistTag {
+  id                 Int            @id @default(autoincrement())
+  watchlist_movie_id Int
+  tag_id             Int
+  created_at         DateTime       @default(now())
+  watchlist_movie    WatchlistMovie @relation(fields: [watchlist_movie_id], references: [id])
+  tag                Tag            @relation(fields: [tag_id], references: [id])
+
+  @@unique([watchlist_movie_id, tag_id])
+}
+```
+
+**Key Design Decision:** Separate `WatchlistMovie` table from main `Movie` collection allows:
+- Independent watchlist management
+- No approval workflow needed (direct from TMDB)
+- Easy migration path: move watchlist item to main collection when watched
+- Different filtering/sorting needs
+
+#### API Endpoints
+```
+GET  /api/watchlist          - List all watchlist movies with tag filtering
+POST /api/watchlist          - Add movie to watchlist with TMDB data
+GET  /api/watchlist/[id]     - Get watchlist movie details
+POST /api/watchlist/[id]     - Update watchlist movie tags
+DELETE /api/watchlist/[id]   - Remove from watchlist
+```
+
+**Request/Response Pattern:**
+```typescript
+// POST /api/watchlist
+Request: {
+  tmdb_id: 872585,
+  tags: ["Epic", "Morgan"]
+}
+
+Response: {
+  success: true,
+  data: {
+    id: 123,
+    tmdb_id: 872585,
+    title: "Oppenheimer",
+    tags: [
+      { id: 1, name: "Epic", color: "#10b981" },
+      { id: 2, name: "Morgan", color: "#3b82f6" }
+    ]
+  }
+}
+```
+
+#### Components
+
+**AddToWatchlistModal.tsx** (`src/components/watchlist/`)
+- TMDB search integration
+- Movie selection with poster preview
+- Mood tag selection (multi-select)
+- Add to watchlist workflow
+
+**WatchlistMovieModal.tsx** (`src/components/watchlist/`)
+- Display watchlist movie details
+- Tag management (add/remove)
+- Move to main collection option
+- Remove from watchlist
+
+#### Mood Tags
+Shared `Tag` infrastructure with main collection:
+- **Person-based:** Morgan, Liam (who wants to watch it)
+- **Mood/Genre-based:** Epic, Scary, Indie (viewing mood)
+- Color-coded for visual organization
+- Multi-select enabled (movie can have multiple tags)
+
+#### Watchlist Page (`/watchlist`)
+- Grid layout matching main collection design
+- Tag-based filtering
+- TMDB poster integration
+- "Add to Watchlist" button with modal
+- Empty state with call-to-action
+
+### Integration with Main Collection
+```
+User Workflow:
+1. Search TMDB via AddToWatchlistModal
+2. Select movie + mood tags
+3. POST /api/watchlist creates WatchlistMovie + WatchlistTags
+4. Movie appears on /watchlist page
+
+Future: Move to Collection Workflow:
+1. Watch movie from watchlist
+2. Move to main collection (creates Movie + UserMovie)
+3. Preserve tags, add date_watched
+4. Remove from watchlist
+```
+
+### Performance Considerations
+- **Efficient Filtering:** Tag-based WHERE clauses in Prisma
+- **TMDB Integration:** Reuses existing TMDB client (`/lib/tmdb.ts`)
+- **Lazy Loading:** Modal only searches when user types
+- **State Management:** Optimized re-renders with proper dependency arrays
+
+---
+
+## Tag-Based Collection System (December 2024)
 
 ### Architecture Overview
 The application now features a sophisticated tag-based collection system that allows users to create curated movie lists using tags like "Calen" for buddy-watched movies.
@@ -492,6 +694,49 @@ Parent page refreshes to show newly tagged movie
 - **Lazy Loading**: Modal only searches when user types
 - **State Management**: Optimized re-renders with proper dependency arrays
 
+## Utility Scripts
+
+### Active Scripts (`/scripts/`)
+
+**Oscar Data Management:**
+- **import-oscars.js** - Main Oscar data import from `src/data/oscar-nominations.json`
+  ```bash
+  node scripts/import-oscars.js
+  ```
+  - Clears existing Oscar data (oscar_nominations, oscar_movies, oscar_categories)
+  - Imports historical data (1928-2025)
+  - Creates 1,158+ movies and 2,053+ nominations
+  - Target categories: Best Picture, Best Actor, Best Actress, Best Director
+
+**Development Utilities:**
+- **reset-database.ts** - Reset database to empty state (DESTRUCTIVE)
+  ```bash
+  npx tsx scripts/reset-database.ts
+  ```
+  - WARNING: Deletes all data
+  - Resets auto-increment counters
+  - Use for clean development starts
+
+- **test-clean-import.ts** - Test CSV import workflow
+  ```bash
+  npx tsx scripts/test-clean-import.ts
+  ```
+  - Tests dry run with 5 movies
+  - Performs actual import with 20 movies
+  - Validates pending approval API
+
+- **check-import-data.ts** - Verify imported data integrity
+  ```bash
+  npx tsx scripts/check-import-data.ts
+  ```
+  - Database count verification
+  - Sample data inspection
+  - Query testing
+
+**→ See [process.md](./process.md) for detailed script usage and workflows**
+
+---
+
 ## Monitoring & Analytics
 
 ### Application Monitoring
@@ -502,6 +747,16 @@ Parent page refreshes to show newly tagged movie
 
 ### User Analytics
 - **Usage Patterns**: Movie viewing trends
-- **Feature Adoption**: Filter usage analytics, tag system usage
+- **Feature Adoption**: Filter usage analytics, tag system usage, watchlist engagement
 - **Performance**: Page load times
 - **Errors**: Client-side error tracking
+
+---
+
+## Related Documentation
+
+- **Quick Start:** [session-start/QUICK-START.md](./session-start/QUICK-START.md) - Rapid orientation for new agents
+- **Main Overview:** [CLAUDE.md](./CLAUDE.md) - Project overview, tech stack, database schema
+- **Oscar System:** [oscars.md](./oscars.md) - Complete Oscar tracking system documentation
+- **Development Process:** [process.md](./process.md) - Workflows, deployment, maintenance tasks
+- **Skills:** [skills/](./skills/) - Claude Code skills for common tasks

@@ -2,13 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Documentation Maintenance Guidelines
+
+**IMPORTANT for Claude Code agents:**
+- **Never create new markdown files without explicit user approval**
+- At the end of each session, **proactively suggest which docs need updates**
+- **List specific files and what changes are needed**, then wait for approval
+- **Update only approved documentation files**
+- Follow established documentation structure and cross-linking patterns
+
+**For quick orientation:** Read `docs/session-start/QUICK-START.md` first for rapid onboarding.
+
+---
+
 ## Project Overview
 
 This is a personal movie tracking web application built with Next.js, designed to track and manage a collection of ~3000+ movies with premium streaming service-quality UI/UX.
 
 ## Key Features
 - Visual movie library with poster grid layout
-- Oscar nominations and wins tracking with dedicated pages
+- Oscar nominations and wins tracking with dedicated pages (1928-2025, 1,158+ movies, 2,053+ nominations)
+- **Watchlist** with mood-based tagging (Morgan, Liam, Epic, Scary, Indie) - separate from main collection
 - "Buddy system" for tracking movies watched with specific people (e.g., Calen)
 - Dark theme with futuristic aesthetic
 - Mobile-responsive design
@@ -82,9 +96,22 @@ prisma/
 ### Core Tables
 - **movies**: TMDB movie data (title, director, release_date, poster_url, etc.)
 - **user_movies**: Personal tracking data (date_watched, rating, notes)
-- **oscar_data**: Academy Award nominations and wins
-- **tags**: Watch buddy tags (Calen, Solo, Family, etc.)
+- **oscar_data**: Academy Award nominations and wins (LEGACY - see unified Oscar system below)
+- **tags**: Watch buddy tags (Calen, Solo, Family, etc.) and mood tags (shared with watchlist)
 - **movie_tags**: Many-to-many relationship for tagging movies
+- **watchlist_movies**: Separate watchlist items with TMDB data
+- **watchlist_tags**: Many-to-many relationship for watchlist mood tags
+
+### Oscar System (Unified Architecture)
+- **oscar_categories**: Oscar category master data (Best Picture, Best Actor, etc.)
+- **oscar_movies**: Oscar-specific movie records with TMDB IDs
+- **oscar_nominations**: Complete historical data (1928-2025, 2,053+ nominations)
+
+**→ See [oscars.md](./oscars.md) for complete Oscar system architecture**
+
+### Utility Tables
+- **movie_match_analysis**: CSV import quality tracking
+- **best_picture_nominees**: Historical Best Picture data
 
 ## API Integration
 
@@ -97,9 +124,9 @@ prisma/
 ```bash
 TMDB_API_KEY=your_tmdb_api_key
 DATABASE_URL=your_postgresql_connection_string
-NEXTAUTH_SECRET=your_nextauth_secret
-NEXTAUTH_URL=http://localhost:3000
 ```
+
+**Note:** NextAuth configuration (NEXTAUTH_SECRET, NEXTAUTH_URL) planned for future authentication/login update.
 
 ## Development Guidelines
 
@@ -149,8 +176,27 @@ NEXTAUTH_URL=http://localhost:3000
 - Automatic deployments on main branch pushes
 
 ## Future Enhancements
+
+### Next Major Update: Authentication/Login System
+- User accounts and sessions (NextAuth.js)
+- Protected routes and role-based permissions
+- Multi-user support for shared collections
+
+**→ See [skills/setup-auth.md](./skills/setup-auth.md) for implementation guide**
+
+### Additional Planned Features
 - Statistics dashboard (movies per year, ratings distribution)
 - Recommendation engine based on viewing history
 - Social features for sharing lists with other users
 - Advanced search with multiple filter combinations
 - Import/export functionality for backup and sharing
+
+---
+
+## Related Documentation
+
+- **Quick Start:** [session-start/QUICK-START.md](./session-start/QUICK-START.md) - Rapid orientation guide
+- **Architecture:** [architecture.md](./architecture.md) - Detailed system architecture, components, API structure
+- **Oscar System:** [oscars.md](./oscars.md) - Complete Oscar tracking system documentation
+- **Development Process:** [process.md](./process.md) - Workflows, deployment, maintenance
+- **Skills:** [skills/](./skills/) - Claude Code skills for common tasks
