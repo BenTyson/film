@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import {
   X,
   Search,
@@ -214,13 +215,15 @@ export function AddToWatchlistModal({
                       onClick={() => handleAddToWatchlist(result)}
                     >
                       <div className="flex items-start gap-4">
-                        <img
+                        <Image
                           src={
                             result.poster_path
                               ? `https://image.tmdb.org/t/p/w92${result.poster_path}`
                               : '/placeholder-poster.svg'
                           }
                           alt={result.title}
+                          width={48}
+                          height={72}
                           className="w-12 h-18 object-cover rounded flex-shrink-0"
                         />
                         <div className="flex-1 min-w-0">

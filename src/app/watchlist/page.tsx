@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Grid3X3, LayoutGrid, Grip, Plus, Award, Users, Clapperboard, Film } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -79,7 +79,7 @@ export default function WatchlistPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const fetchMovies = async () => {
+  const fetchMovies = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -98,7 +98,7 @@ export default function WatchlistPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedTag]);
 
   const fetchTags = async () => {
     try {
@@ -118,7 +118,7 @@ export default function WatchlistPage() {
 
   useEffect(() => {
     fetchMovies();
-  }, [selectedTag]);
+  }, [fetchMovies]);
 
   useEffect(() => {
     fetchTags();

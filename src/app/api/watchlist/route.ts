@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 // GET all watchlist movies with optional tag filter
 export async function GET(request: NextRequest) {
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const tagId = searchParams.get('tagId');
 
-    const where: any = {
+    const where: Prisma.WatchlistMovieWhereInput = {
       user_id: user.id, // Filter by current user
     };
 

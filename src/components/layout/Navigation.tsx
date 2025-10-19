@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Award, Users, Plus, Clapperboard, LogOut, User } from 'lucide-react';
+import { Award, Users, Plus, Clapperboard } from 'lucide-react';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 
@@ -16,7 +16,7 @@ const navItems = [
 
 export function Navigation() {
   const pathname = usePathname();
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
 
   return (
     <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
