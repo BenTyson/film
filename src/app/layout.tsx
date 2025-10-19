@@ -15,7 +15,7 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: 'Film Collection - Personal Movie Tracker',
+  title: 'Cinematekka',
   description: 'Track and organize your personal movie collection with a premium streaming service interface',
   keywords: 'movies, tracking, collection, oscar, awards, personal, cinema',
   authors: [{ name: 'Your Name' }],
