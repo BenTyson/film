@@ -19,9 +19,11 @@ import {
   Save,
   Plus,
   Check,
+  Tv,
 } from 'lucide-react';
 import { cn, formatDate, formatYear } from '@/lib/utils';
 import { TagIcon } from '@/components/ui/TagIcon';
+import type { WatchProvidersData } from '@/lib/tmdb';
 
 interface WatchlistMovieModalProps {
   movieId: number | null;
@@ -64,7 +66,7 @@ interface WatchlistMovie {
   } | null;
 }
 
-type TabType = 'overview' | 'details';
+type TabType = 'overview' | 'details' | 'streaming';
 
 export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }: WatchlistMovieModalProps) {
   const [movie, setMovie] = useState<WatchlistMovie | null>(null);
@@ -75,6 +77,10 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
   const [showTrailer, setShowTrailer] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Watch providers state
+  const [watchProviders, setWatchProviders] = useState<WatchProvidersData | null>(null);
+  const [loadingProviders, setLoadingProviders] = useState(false);
 
   // Tags state
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
@@ -124,6 +130,23 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
     }
   }, []);
 
+  const fetchWatchProviders = useCallback(async (tmdbId: number) => {
+    setLoadingProviders(true);
+    try {
+      const response = await fetch(`/api/tmdb/watch-providers/${tmdbId}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setWatchProviders(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching watch providers:', error);
+      setWatchProviders(null);
+    } finally {
+      setLoadingProviders(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (movieId && isOpen) {
       fetchMovieDetails(movieId);
@@ -133,6 +156,13 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
       setShowTrailer(false);
     }
   }, [movieId, isOpen, fetchMovieDetails, fetchTags]);
+
+  // Fetch watch providers when movie data is loaded
+  useEffect(() => {
+    if (movie?.tmdb_id && isOpen) {
+      fetchWatchProviders(movie.tmdb_id);
+    }
+  }, [movie?.tmdb_id, isOpen, fetchWatchProviders]);
 
   const handleSave = async () => {
     if (!movie) return;
@@ -284,7 +314,7 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
           {!loading && movie && (
             <div className="px-4 lg:px-6 pb-2">
               <div className="flex gap-4 border-b border-white/10">
-                {(['overview', 'details'] as TabType[]).map((tab) => (
+                {(['overview', 'details', 'streaming'] as TabType[]).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -456,6 +486,72 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
                       </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {activeTab === 'streaming' && (
+                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6">
+                  <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <Tv className="w-6 h-6 text-blue-400" />
+                    Where to Watch
+                  </h2>
+
+                  {loadingProviders ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                    </div>
+                  ) : watchProviders && watchProviders.providers.length > 0 ? (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {watchProviders.providers.map((provider) => (
+                          <div
+                            key={provider.provider_id}
+                            className="flex flex-col items-center gap-2 p-4 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+                          >
+                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-white">
+                              <Image
+                                src={provider.logo_url}
+                                alt={provider.provider_name}
+                                width={64}
+                                height={64}
+                                className="object-cover"
+                              />
+                            </div>
+                            <span className="text-sm text-white text-center font-medium">
+                              {provider.provider_name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {watchProviders.link && (
+                        <div className="pt-4 border-t border-white/10">
+                          <a
+                            href={watchProviders.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-white/60 hover:text-white flex items-center gap-2 transition-colors"
+                          >
+                            View more options on TMDB
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                          <p className="text-xs text-white/40 mt-2">
+                            Streaming data provided by JustWatch
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Tv className="w-12 h-12 text-white/20 mx-auto mb-3" />
+                      <p className="text-white/60">
+                        No streaming platforms available for this movie in the US.
+                      </p>
+                      <p className="text-sm text-white/40 mt-2">
+                        Check back later or explore other regions on TMDB.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

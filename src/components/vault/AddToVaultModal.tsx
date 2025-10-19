@@ -158,7 +158,7 @@ export function AddToVaultModal({
                       setSearchResults([]);
                     }
                   }}
-                  placeholder="Search TMDB for movies..."
+                  placeholder="Search for movies..."
                   className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white placeholder-gray-400"
                 />
                 {searchLoading && (

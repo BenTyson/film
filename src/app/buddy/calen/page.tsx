@@ -30,10 +30,10 @@ interface MoviesResponse {
   error?: string;
 }
 
-const navItems = [
+const allNavItems = [
   { href: '/', label: 'Collection', icon: Clapperboard },
   { href: '/oscars', label: 'Oscars', icon: Award },
-  { href: '/buddy/calen', label: 'Calen', icon: Users },
+  { href: '/buddy/calen', label: 'Calen', icon: Users, adminOnly: true },
   { href: '/watchlist', label: 'Watchlist', icon: Film },
   { href: '/vaults', label: 'Vaults', icon: Archive },
   { href: '/add', label: 'Add', icon: Plus },
@@ -41,7 +41,8 @@ const navItems = [
 
 export default function CalenPage() {
   const pathname = usePathname();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
   const [movies, setMovies] = useState<MovieGridItem[]>([]);
   const [totalMovies, setTotalMovies] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -60,6 +61,41 @@ export default function CalenPage() {
   const [isAddToCalenModalOpen, setIsAddToCalenModalOpen] = useState(false);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // Check admin status from database
+  useEffect(() => {
+    async function checkAdminStatus() {
+      if (!isSignedIn) {
+        setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/user/me');
+        if (!response.ok) {
+          setIsAdmin(false);
+          return;
+        }
+
+        const data = await response.json();
+        setIsAdmin(data.success && data.data?.role === 'admin');
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      }
+    }
+
+    checkAdminStatus();
+  }, [isSignedIn, user?.id]);
+
+  // Filter nav items based on admin status
+  const navItems = allNavItems.filter(item => {
+    if (item.adminOnly) {
+      return isAdmin;
+    }
+    return true;
+  });
+
 
   // Debounce search query with improved cleanup
   useEffect(() => {

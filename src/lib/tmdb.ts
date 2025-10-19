@@ -83,6 +83,40 @@ interface TMDBVideosResponse {
   results: TMDBVideo[];
 }
 
+interface TMDBWatchProvider {
+  logo_path: string;
+  provider_id: number;
+  provider_name: string;
+  display_priority: number;
+}
+
+interface TMDBWatchProvidersResult {
+  link: string;
+  flatrate?: TMDBWatchProvider[];
+  rent?: TMDBWatchProvider[];
+  buy?: TMDBWatchProvider[];
+}
+
+interface TMDBWatchProvidersResponse {
+  id: number;
+  results: {
+    [countryCode: string]: TMDBWatchProvidersResult;
+  };
+}
+
+export interface WatchProvider {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string;
+  logo_url: string;
+  type: 'flatrate' | 'rent' | 'buy';
+}
+
+export interface WatchProvidersData {
+  providers: WatchProvider[];
+  link: string | null;
+}
+
 class TMDBClient {
   private readonly baseURL = 'https://api.themoviedb.org/3';
   private readonly apiKey: string;
@@ -290,6 +324,55 @@ class TMDBClient {
 
   async getMovieVideos(movieId: number): Promise<TMDBVideosResponse> {
     return this.makeRequest<TMDBVideosResponse>(`/movie/${movieId}/videos`);
+  }
+
+  async getWatchProviders(movieId: number, region: string = 'US'): Promise<WatchProvidersData> {
+    try {
+      const response = await this.makeRequest<TMDBWatchProvidersResponse>(
+        `/movie/${movieId}/watch/providers`
+      );
+
+      const regionData = response.results[region];
+
+      if (!regionData) {
+        return { providers: [], link: null };
+      }
+
+      const providers: WatchProvider[] = [];
+
+      // Combine all provider types (flatrate, rent, buy)
+      const addProviders = (providerList: TMDBWatchProvider[] | undefined, type: 'flatrate' | 'rent' | 'buy') => {
+        if (providerList) {
+          providerList.forEach((provider) => {
+            // Avoid duplicates - some movies appear in multiple categories
+            if (!providers.some(p => p.provider_id === provider.provider_id)) {
+              providers.push({
+                provider_id: provider.provider_id,
+                provider_name: provider.provider_name,
+                logo_path: provider.logo_path,
+                logo_url: this.getImageURL(provider.logo_path, 'w200') || '',
+                type,
+              });
+            }
+          });
+        }
+      };
+
+      addProviders(regionData.flatrate, 'flatrate');
+      addProviders(regionData.rent, 'rent');
+      addProviders(regionData.buy, 'buy');
+
+      // Sort by display priority if available, otherwise by name
+      providers.sort((a, b) => a.provider_name.localeCompare(b.provider_name));
+
+      return {
+        providers,
+        link: regionData.link || null,
+      };
+    } catch (error) {
+      console.error('Error fetching watch providers:', error);
+      return { providers: [], link: null };
+    }
   }
 
   getImageURL(path: string | null, size: 'w200' | 'w300' | 'w400' | 'w500' | 'w780' | 'w1280' | 'original' = 'w500'): string | null {

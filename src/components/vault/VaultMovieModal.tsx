@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -13,9 +13,11 @@ import {
   ExternalLink,
   Trash2,
   CheckCircle2,
+  Tv,
 } from 'lucide-react';
 import { cn, formatYear } from '@/lib/utils';
 import type { VaultMovieWithCollectionStatus } from '@/types/vault';
+import type { WatchProvidersData } from '@/lib/tmdb';
 
 interface VaultMovieModalProps {
   movie: VaultMovieWithCollectionStatus | null;
@@ -25,7 +27,7 @@ interface VaultMovieModalProps {
   onMovieRemoved?: () => void;
 }
 
-type TabType = 'overview' | 'details' | 'media';
+type TabType = 'overview' | 'details' | 'media' | 'streaming';
 
 export function VaultMovieModal({
   movie,
@@ -45,8 +47,12 @@ export function VaultMovieModal({
   const [showTrailer, setShowTrailer] = useState(false);
   const [loadingTrailer, setLoadingTrailer] = useState(false);
 
+  // Watch providers state
+  const [watchProviders, setWatchProviders] = useState<WatchProvidersData | null>(null);
+  const [loadingProviders, setLoadingProviders] = useState(false);
+
   // Fetch trailer when movie is available
-  useState(() => {
+  useEffect(() => {
     if (movie?.tmdb_id && !trailer && !loadingTrailer) {
       setLoadingTrailer(true);
       fetch(`/api/tmdb/trailer/${movie.tmdb_id}`)
@@ -59,7 +65,23 @@ export function VaultMovieModal({
         .catch((err) => console.error('Error fetching trailer:', err))
         .finally(() => setLoadingTrailer(false));
     }
-  });
+  }, [movie?.tmdb_id, trailer, loadingTrailer]);
+
+  // Fetch watch providers when movie is available
+  useEffect(() => {
+    if (movie?.tmdb_id && !watchProviders && !loadingProviders) {
+      setLoadingProviders(true);
+      fetch(`/api/tmdb/watch-providers/${movie.tmdb_id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.data) {
+            setWatchProviders(data.data);
+          }
+        })
+        .catch((err) => console.error('Error fetching watch providers:', err))
+        .finally(() => setLoadingProviders(false));
+    }
+  }, [movie?.tmdb_id, watchProviders, loadingProviders]);
 
   const handleDelete = async () => {
     if (!movie) return;
@@ -154,7 +176,7 @@ export function VaultMovieModal({
           {/* Tabs */}
           <div className="px-4 lg:px-6 pb-2">
             <div className="flex gap-4 border-b border-white/10">
-              {(['overview', 'details', 'media'] as TabType[]).map((tab) => (
+              {(['overview', 'details', 'media', 'streaming'] as TabType[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -320,6 +342,72 @@ export function VaultMovieModal({
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'streaming' && (
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6">
+                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                  <Tv className="w-6 h-6 text-blue-400" />
+                  Where to Watch
+                </h2>
+
+                {loadingProviders ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="w-8 h-8 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                  </div>
+                ) : watchProviders && watchProviders.providers.length > 0 ? (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {watchProviders.providers.map((provider) => (
+                        <div
+                          key={provider.provider_id}
+                          className="flex flex-col items-center gap-2 p-4 bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+                        >
+                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-white">
+                            <Image
+                              src={provider.logo_url}
+                              alt={provider.provider_name}
+                              width={64}
+                              height={64}
+                              className="object-cover"
+                            />
+                          </div>
+                          <span className="text-sm text-white text-center font-medium">
+                            {provider.provider_name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {watchProviders.link && (
+                      <div className="pt-4 border-t border-white/10">
+                        <a
+                          href={watchProviders.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-white/60 hover:text-white flex items-center gap-2 transition-colors"
+                        >
+                          View more options on TMDB
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                        <p className="text-xs text-white/40 mt-2">
+                          Streaming data provided by JustWatch
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Tv className="w-12 h-12 text-white/20 mx-auto mb-3" />
+                    <p className="text-white/60">
+                      No streaming platforms available for this movie in the US.
+                    </p>
+                    <p className="text-sm text-white/40 mt-2">
+                      Check back later or explore other regions on TMDB.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

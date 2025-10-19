@@ -241,7 +241,11 @@ App Layout (src/app/layout.tsx)
 - **MovieGrid.tsx** - Grid layout for movie cards
 - **MovieList.tsx** - List layout for movie items
 - **MovieListItem.tsx** - Individual list item view
-- **MovieDetailsModal.tsx** - Full movie details modal with backdrop, info, trailer
+- **MovieDetailsModal.tsx** - Full movie details modal with backdrop, info, trailer, and streaming availability
+  - Tabbed interface: Overview, Details, Media, Streaming
+  - **Streaming tab** shows where movie is available to watch (Netflix, Hulu, etc.) via TMDB watch provider API
+  - YouTube trailer embed with toggle
+  - Rating, runtime, director, and genre information
 - **FixMovieModal.tsx** - Modal for fixing movie TMDB matching issues
 - **AddToCalenModal.tsx** - Modal for adding movies to Calen buddy collection
 - **TrailerPlayer.tsx** - YouTube trailer embed component
@@ -259,6 +263,8 @@ App Layout (src/app/layout.tsx)
   - Mood tag selection (Morgan, Liam, Epic, Scary, Indie)
   - Poster preview
 - **WatchlistMovieModal.tsx** - View/edit watchlist movie details
+  - Tabbed interface: Overview, Details, Streaming
+  - **Streaming tab** shows where movie is available to watch (Netflix, Hulu, etc.)
   - Tag management
   - Move to collection option
   - Remove from watchlist
@@ -338,9 +344,14 @@ App Layout (src/app/layout.tsx)
 │   ├── GET/POST /                    # List watchlist or add movie to watchlist
 │   └── GET/POST/DELETE /[id]         # Get, update, or remove watchlist movie
 │
-├── /tmdb (2 endpoints)
+├── /tmdb (4 endpoints)
 │   ├── GET  /search                  # Search TMDB for movies
-│   └── GET  /movie/[id]              # Get TMDB movie details and credits
+│   ├── GET  /movie/[id]              # Get TMDB movie details and credits
+│   ├── GET  /watch-providers/[id]    # Get streaming availability for movie (US region)
+│   └── GET  /trailer/[id]            # Get best trailer for movie (YouTube embed URL)
+│
+├── /user (1 endpoint)
+│   └── GET  /me                      # Get current user's role and info (for client-side role checking)
 │
 ├── /tags (1 endpoint)
 │   └── GET/POST /                    # List all tags or create new tag
@@ -783,8 +794,9 @@ Response: {
 
 **VaultMovieModal.tsx** (`src/components/vault/`)
 - Display vault movie details (for movies NOT in collection)
-- Three tabs: Overview, Details, Media
+- Four tabs: Overview, Details, Media, Streaming
 - Shows TMDB info, director, runtime, genres
+- **Streaming tab** shows where movie is available to watch (Netflix, Hulu, etc.)
 - "In Collection" badge if movie exists in user's watched collection
 - Media tab: Shows trailer (embedded YouTube) and poster grid
 - Remove from vault option
@@ -1013,6 +1025,81 @@ export async function requireAdmin(): Promise<User> {
   return user;
 }
 ```
+
+### Client-Side Role Checking
+
+For conditional UI rendering based on user role (e.g., showing admin-only navigation links):
+
+**API Endpoint:** `/api/user/me`
+
+```typescript
+// GET /api/user/me
+export async function GET() {
+  const user = await getCurrentUser();
+  return NextResponse.json({
+    success: true,
+    data: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    }
+  });
+}
+```
+
+**Client-Side Pattern:**
+
+```typescript
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
+
+const allNavItems = [
+  { href: '/', label: 'Collection', icon: Clapperboard },
+  { href: '/buddy/calen', label: 'Calen', icon: Users, adminOnly: true },
+  // ... other nav items
+];
+
+export function MyPage() {
+  const { isSignedIn, user } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    async function checkAdminStatus() {
+      if (!isSignedIn) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const response = await fetch('/api/user/me');
+      if (!response.ok) return;
+
+      const data = await response.json();
+      setIsAdmin(data.success && data.data?.role === 'admin');
+    }
+
+    checkAdminStatus();
+  }, [isSignedIn, user?.id]);
+
+  // Filter nav items based on admin status
+  const navItems = allNavItems.filter(item => {
+    if (item.adminOnly) return isAdmin;
+    return true;
+  });
+
+  return (
+    <div>
+      {navItems.map(item => (
+        <Link key={item.href} href={item.href}>{item.label}</Link>
+      ))}
+    </div>
+  );
+}
+```
+
+**Usage:** Admin-only navigation links (like "Calen" buddy page) are hidden from non-admin users by filtering based on role fetched from `/api/user/me`.
 
 ### User Synchronization
 

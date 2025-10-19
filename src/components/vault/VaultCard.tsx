@@ -77,11 +77,6 @@ export function VaultCard({ vault, onClick }: VaultCardProps) {
             </p>
           )}
         </div>
-
-        {/* Icon badge */}
-        <div className="absolute top-4 left-4 w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-          <Archive className="w-5 h-5 text-white" />
-        </div>
       </div>
     </motion.div>
   );

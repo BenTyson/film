@@ -1,22 +1,75 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Award, Users, Plus, Clapperboard } from 'lucide-react';
+import { Award, Users, Plus, Clapperboard, Film, ArchiveIcon } from 'lucide-react';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 
-const navItems = [
+const allNavItems = [
   { href: '/', label: 'Collection', icon: Clapperboard },
   { href: '/oscars', label: 'Oscars', icon: Award },
-  { href: '/buddy/calen', label: 'Calen', icon: Users },
+  { href: '/buddy/calen', label: 'Calen', icon: Users, adminOnly: true },
+  { href: '/watchlist', label: 'Watchlist', icon: Film },
+  { href: '/vaults', label: 'Vaults', icon: ArchiveIcon },
   { href: '/add', label: 'Add', icon: Plus },
 ];
 
 export function Navigation() {
   const pathname = usePathname();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, user } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Check admin status from database
+  useEffect(() => {
+    async function checkAdminStatus() {
+      if (!isSignedIn) {
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/user/me');
+
+        console.log('Admin check response status:', response.status);
+
+        if (!response.ok) {
+          console.log('Admin check failed - not OK response');
+          setIsAdmin(false);
+          setLoading(false);
+          return;
+        }
+
+        const data = await response.json();
+        console.log('Admin check data:', data);
+
+        const adminStatus = data.success && data.data?.role === 'admin';
+        console.log('Is admin?', adminStatus);
+        setIsAdmin(adminStatus);
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    checkAdminStatus();
+  }, [isSignedIn, user?.id]);
+
+  // Filter nav items based on admin status
+  // During loading, hide admin-only items to prevent flashing
+  const navItems = allNavItems.filter(item => {
+    // If item is admin-only, only show if user is confirmed admin
+    if (item.adminOnly) {
+      return !loading && isAdmin;
+    }
+    return true;
+  });
 
   return (
     <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">

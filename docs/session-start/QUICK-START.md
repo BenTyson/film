@@ -26,10 +26,10 @@ A personal movie tracking web application for managing a collection of 3000+ mov
 
 ### Backend & Database
 - **Prisma ORM** with **PostgreSQL** (hosted on Railway)
-- **TMDB API** for movie data, posters, metadata
+- **TMDB API** for movie data, posters, metadata, streaming availability
 - **Clerk** for authentication and user management
 - 12 database models
-- 39 API endpoints
+- 42 API endpoints
 - 66+ source files
 
 ### Deployment
@@ -47,6 +47,7 @@ A personal movie tracking web application for managing a collection of 3000+ mov
 - Sorting: date watched, title, release date, rating
 - Search with debouncing
 - TMDB integration for metadata and imagery
+- **Streaming Availability:** View where movies are available to watch (Netflix, Hulu, etc.) with dedicated "Streaming" tab in movie modals
 
 ### Oscar Tracking
 Comprehensive Academy Award tracking system (1928-2025)
@@ -122,11 +123,13 @@ Tag-based collections for tracking movies watched with specific people
 │   │   │   └── calen/page.tsx  # Calen buddy collection page
 │   │   ├── add-movie/          # Add movie to collection
 │   │   ├── import/             # CSV import interface
-│   │   └── api/                # 39 API endpoints
+│   │   └── api/                # 42 API endpoints
 │   │       ├── movies/         # Movie CRUD + filtering (12 routes)
 │   │       ├── oscars/         # Oscar data (12 routes)
 │   │       ├── watchlist/      # Watchlist CRUD (2 routes)
-│   │       ├── tmdb/           # TMDB proxy (2 routes)
+│   │       ├── vaults/         # Vaults CRUD (3 routes)
+│   │       ├── tmdb/           # TMDB proxy (4 routes: search, movie, watch-providers, trailer)
+│   │       ├── user/           # User role & info (1 route)
 │   │       ├── tags/           # Tag management (1 route)
 │   │       ├── buddies/        # Buddy presets (1 route)
 │   │       ├── import/         # CSV import (4 routes)

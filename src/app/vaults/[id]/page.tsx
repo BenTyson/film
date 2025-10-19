@@ -19,6 +19,7 @@ import {
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import { AddToVaultModal } from '@/components/vault/AddToVaultModal';
 import { VaultMovieModal } from '@/components/vault/VaultMovieModal';
@@ -27,10 +28,10 @@ import { MovieDetailsModal } from '@/components/movie/MovieDetailsModal';
 import Image from 'next/image';
 import type { VaultWithMovies, VaultMovieWithCollectionStatus } from '@/types/vault';
 
-const navItems = [
+const allNavItems = [
   { href: '/', label: 'Collection', icon: Clapperboard },
   { href: '/oscars', label: 'Oscars', icon: Award },
-  { href: '/buddy/calen', label: 'Calen', icon: Users },
+  { href: '/buddy/calen', label: 'Calen', icon: Users, adminOnly: true },
   { href: '/watchlist', label: 'Watchlist', icon: Film },
   { href: '/vaults', label: 'Vaults', icon: Archive },
   { href: '/add', label: 'Add', icon: Plus },
@@ -41,6 +42,8 @@ export default function VaultDetailPage({ params }: { params: Promise<{ id: stri
   const vaultId = parseInt(unwrappedParams.id);
   const pathname = usePathname();
   const router = useRouter();
+  const { isSignedIn, user } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
   const [vault, setVault] = useState<VaultWithMovies | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,6 +57,41 @@ export default function VaultDetailPage({ params }: { params: Promise<{ id: stri
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showInCollectionOnly, setShowInCollectionOnly] = useState(false);
+
+  // Check admin status from database
+  useEffect(() => {
+    async function checkAdminStatus() {
+      if (!isSignedIn) {
+        setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/user/me');
+        if (!response.ok) {
+          setIsAdmin(false);
+          return;
+        }
+
+        const data = await response.json();
+        setIsAdmin(data.success && data.data?.role === 'admin');
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      }
+    }
+
+    checkAdminStatus();
+  }, [isSignedIn, user?.id]);
+
+  // Filter nav items based on admin status
+  const navItems = allNavItems.filter(item => {
+    if (item.adminOnly) {
+      return isAdmin;
+    }
+    return true;
+  });
+
 
   // Debounce search query
   useEffect(() => {

@@ -148,6 +148,91 @@ topCast.forEach(actor => {
 
 ---
 
+### Get Watch Providers (Streaming Availability)
+
+Get streaming availability for a movie in a specific region (e.g., Netflix, Hulu, Amazon Prime).
+
+```typescript
+const watchProviders = await tmdb.getWatchProviders(872585, 'US');
+
+interface WatchProvidersData {
+  providers: {
+    provider_id: number;
+    provider_name: string;
+    logo_url: string; // Full URL to provider logo (e.g., Netflix logo)
+  }[];
+  link: string; // JustWatch link for more options
+}
+```
+
+**Usage:**
+```typescript
+const providers = await tmdb.getWatchProviders(872585, 'US');
+
+console.log(`Available on ${providers.providers.length} platforms`);
+providers.providers.forEach(provider => {
+  console.log(`- ${provider.provider_name}`);
+  console.log(`  Logo: ${provider.logo_url}`);
+});
+
+// JustWatch link for more options
+console.log(`More info: ${providers.link}`);
+```
+
+**Response includes:**
+- **Subscription services** (flatrate): Netflix, Hulu, Disney+, etc.
+- **Rental options** (rent): iTunes, Google Play, YouTube, etc.
+- **Purchase options** (buy): iTunes, Amazon, Vudu, etc.
+
+**Note:** Returns all provider types combined. Empty array if movie not available in specified region.
+
+---
+
+### Get Movie Trailer
+
+Get the best trailer for a movie (prefers official YouTube trailers).
+
+```typescript
+const trailer = await tmdb.getMovieVideos(872585);
+const bestTrailer = tmdb.findBestTrailer(trailer.results);
+
+interface TrailerData {
+  key: string; // YouTube video ID
+  name: string; // Trailer name
+  type: string; // "Trailer", "Teaser", etc.
+  site: string; // "YouTube"
+  official: boolean;
+  youtube_url: string; // Full YouTube URL
+  embed_url: string; // YouTube embed URL for iframe
+  thumbnail_url: string; // YouTube thumbnail image
+}
+```
+
+**Usage:**
+```typescript
+const videosResponse = await tmdb.getMovieVideos(872585);
+const trailer = tmdb.findBestTrailer(videosResponse.results);
+
+if (trailer) {
+  console.log(`Trailer: ${trailer.name}`);
+  console.log(`Watch: ${trailer.youtube_url}`);
+  console.log(`Embed: ${trailer.embed_url}`);
+
+  // Use in iframe
+  // <iframe src={trailer.embed_url} />
+} else {
+  console.log('No trailer available');
+}
+```
+
+**Selection Priority:**
+1. Official trailers first
+2. YouTube videos only
+3. "Trailer" type preferred over "Teaser"
+4. Most recent trailer if multiple
+
+---
+
 ## Internal API Endpoints
 
 For client-side code, use the internal TMDB proxy endpoints instead of calling TMDB directly.
@@ -181,6 +266,81 @@ const data = await response.json();
   error?: string;
 }
 ```
+
+---
+
+### `/api/tmdb/watch-providers/[movieId]` - Get Streaming Availability
+
+```typescript
+const response = await fetch(`/api/tmdb/watch-providers/872585`);
+const data = await response.json();
+
+// Response:
+{
+  success: boolean;
+  data: {
+    providers: Array<{
+      provider_id: number;
+      provider_name: string;
+      logo_url: string; // Full URL to provider logo
+    }>;
+    link: string; // JustWatch link
+  };
+  error?: string;
+}
+```
+
+**Usage Example:**
+```typescript
+const response = await fetch(`/api/tmdb/watch-providers/${movieId}`);
+const { data } = await response.json();
+
+if (data && data.providers.length > 0) {
+  data.providers.forEach(provider => {
+    console.log(`Available on: ${provider.provider_name}`);
+  });
+}
+```
+
+**Note:** Currently hardcoded to US region. Returns empty array if not available.
+
+---
+
+### `/api/tmdb/trailer/[movieId]` - Get Movie Trailer
+
+```typescript
+const response = await fetch(`/api/tmdb/trailer/872585`);
+const data = await response.json();
+
+// Response:
+{
+  success: boolean;
+  data: {
+    key: string; // YouTube video ID
+    name: string; // Trailer name
+    type: string; // "Trailer"
+    site: string; // "YouTube"
+    official: boolean;
+    youtube_url: string; // Full YouTube URL
+    embed_url: string; // YouTube embed URL for iframe
+    thumbnail_url: string; // YouTube thumbnail
+  } | null; // null if no trailer available
+  error?: string;
+}
+```
+
+**Usage Example:**
+```typescript
+const response = await fetch(`/api/tmdb/trailer/${movieId}`);
+const { data } = await response.json();
+
+if (data) {
+  // Display trailer iframe
+  return <iframe src={data.embed_url} />;
+}
+```
+
+---
 
 **Why use internal API?**
 - Consistent error handling

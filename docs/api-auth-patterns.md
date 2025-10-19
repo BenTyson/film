@@ -298,6 +298,121 @@ curl http://localhost:3000/api/movies \
 - Can view Oscar data (public routes)
 - Can search TMDB (public routes)
 
+---
+
+## Pattern 5: Client-Side Role Checking
+
+For conditional UI rendering based on user role (e.g., hiding admin-only navigation items).
+
+### API Endpoint: `/api/user/me`
+
+```typescript
+import { getCurrentUser } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  try {
+    const user = await getCurrentUser();
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role, // 'user' or 'admin'
+      }
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+}
+```
+
+### Client-Side Usage
+
+```typescript
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
+
+const allNavItems = [
+  { href: '/', label: 'Collection', icon: Clapperboard },
+  { href: '/buddy/calen', label: 'Calen', icon: Users, adminOnly: true },
+  { href: '/watchlist', label: 'Watchlist', icon: Film },
+  // ... more items
+];
+
+export function MyPage() {
+  const { isSignedIn, user } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check admin status on mount
+  useEffect(() => {
+    async function checkAdminStatus() {
+      if (!isSignedIn) {
+        setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/user/me');
+        if (!response.ok) {
+          setIsAdmin(false);
+          return;
+        }
+
+        const data = await response.json();
+        setIsAdmin(data.success && data.data?.role === 'admin');
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      }
+    }
+
+    checkAdminStatus();
+  }, [isSignedIn, user?.id]);
+
+  // Filter navigation items based on admin status
+  const navItems = allNavItems.filter(item => {
+    if (item.adminOnly) {
+      return isAdmin; // Only show if user is admin
+    }
+    return true; // Show all non-admin items
+  });
+
+  return (
+    <nav>
+      {navItems.map(item => (
+        <Link key={item.href} href={item.href}>
+          {item.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+```
+
+### When to Use This Pattern
+
+✅ **DO use for:**
+- Conditional navigation items (showing/hiding links)
+- Conditional UI features (admin dashboard widgets)
+- Client-side role-based rendering
+
+❌ **DON'T use for:**
+- Security enforcement (always protect routes server-side with `requireAdmin()`)
+- Data access control (use server-side filtering)
+- API authorization (use `getCurrentUser()` or `requireAdmin()` in API routes)
+
+**Important:** This pattern is for UX only. Always enforce permissions server-side in API routes and protect pages with middleware/server components.
+
+---
+
 ## Example: Updating /api/movies
 
 Before:
