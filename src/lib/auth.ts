@@ -1,9 +1,10 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { prisma } from './prisma';
 
 /**
  * Get the current authenticated user from the database
  * Throws an error if the user is not authenticated
+ * Automatically creates the user in the database if they don't exist
  */
 export async function getCurrentUser() {
   const { userId } = await auth();
@@ -13,12 +14,27 @@ export async function getCurrentUser() {
   }
 
   // Find user in our database by Clerk ID
-  const user = await prisma.user.findUnique({
+  let user = await prisma.user.findUnique({
     where: { clerk_id: userId },
   });
 
+  // If user doesn't exist in database, create them
   if (!user) {
-    throw new Error('User not found in database');
+    // Get user details from Clerk
+    const client = await clerkClient();
+    const clerkUser = await client.users.getUser(userId);
+
+    // Create user in database
+    user = await prisma.user.create({
+      data: {
+        clerk_id: userId,
+        email: clerkUser.emailAddresses[0]?.emailAddress || '',
+        name: clerkUser.firstName && clerkUser.lastName
+          ? `${clerkUser.firstName} ${clerkUser.lastName}`
+          : clerkUser.firstName || clerkUser.emailAddresses[0]?.emailAddress || 'User',
+        role: 'user', // Default role for new users
+      },
+    });
   }
 
   return user;

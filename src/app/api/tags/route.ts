@@ -7,15 +7,10 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
 
-    // Get tags that are either:
-    // 1. Created by this user, OR
-    // 2. Global tags (user_id is null)
+    // Get only tags created by this user
     const tags = await prisma.tag.findMany({
       where: {
-        OR: [
-          { user_id: user.id },
-          { user_id: null }
-        ]
+        user_id: user.id
       },
       orderBy: { name: 'asc' }
     });

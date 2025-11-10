@@ -1,17 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+
     const { searchParams } = new URL(request.url);
     const tag = searchParams.get('tag') || '';
 
-    // Build where clause for filtering
+    // Build where clause for filtering (only user's movies)
     const where: any = {
       approval_status: 'approved',
       release_date: {
         not: null
+      },
+      user_movies: {
+        some: {
+          user_id: user.id
+        }
       }
     };
 
@@ -26,7 +35,7 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // Get all approved movies with their release dates
+    // Get user's approved movies with their release dates
     const movies = await prisma.movie.findMany({
       where,
       select: {

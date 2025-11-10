@@ -260,9 +260,13 @@ App Layout (src/app/layout.tsx)
 #### Watchlist Components (`src/components/watchlist/`)
 - **AddToWatchlistModal.tsx** - Search TMDB and add movies to watchlist
   - TMDB search integration
-  - Mood tag selection (Morgan, Liam, Epic, Scary, Indie)
+  - Mood tag selection (user's own tags)
   - Poster preview
 - **WatchlistMovieModal.tsx** - View/edit watchlist movie details
+  - Always-visible "Remove" button for quick deletion
+  - Tag editing with save functionality
+  - Tabs: Overview, Details, Streaming
+  - Delete confirmation modal
   - Tabbed interface: Overview, Details, Streaming
   - **Streaming tab** shows where movie is available to watch (Netflix, Hulu, etc.)
   - Tag management
@@ -579,12 +583,14 @@ model WatchlistTag {
 
 #### API Endpoints
 ```
-GET  /api/watchlist          - List all watchlist movies with tag filtering
-POST /api/watchlist          - Add movie to watchlist with TMDB data
-GET  /api/watchlist/[id]     - Get watchlist movie details
-POST /api/watchlist/[id]     - Update watchlist movie tags
-DELETE /api/watchlist/[id]   - Remove from watchlist
+GET    /api/watchlist          - List all watchlist movies with tag filtering (user-specific)
+POST   /api/watchlist          - Add movie to watchlist with TMDB data (user-specific)
+GET    /api/watchlist/[id]     - Get watchlist movie details (verifies user ownership)
+PATCH  /api/watchlist/[id]     - Update watchlist movie tags (verifies user ownership)
+DELETE /api/watchlist/[id]     - Remove from watchlist (verifies user ownership)
 ```
+
+**User Isolation:** All endpoints filter by `user_id` to ensure users only see/modify their own watchlist items.
 
 **Request/Response Pattern:**
 ```typescript
@@ -1174,6 +1180,15 @@ model MovieTag {
 
 #### API Endpoints for Tagging
 ```typescript
+// GET /api/tags
+// Returns only the current user's tags (user isolation)
+Response: {
+  success: true,
+  data: [
+    { id: 1, name: "My Custom Tag", user_id: 123, color: "#6366f1", icon: "tag" }
+  ]
+}
+
 // POST /api/movies/[id]/tags
 {
   "tags": ["Calen"]
@@ -1187,10 +1202,20 @@ model MovieTag {
 // Response: Movie with specified tags removed
 ```
 
-#### Calen Page Features
+**Tag Isolation (User-Specific Tags):**
+- `/api/tags` returns **only** tags created by the current user (`user_id = current_user.id`)
+- Global tags (`user_id = NULL`) are no longer returned for non-admin users
+- Each user has their own isolated tag collection
+- Tags created by one user are invisible to other users
+- Ensures complete tag privacy and independence per user
+
+#### Calen Page Features (Admin-Only)
 - **Exact Layout Replication**: Mirrors main collection page design
 - **Tag-Filtered API Calls**: `GET /api/movies?tag=Calen`
 - **Add to Calen Modal**: Search existing collection and tag movies
+- **Admin-Only Access**: The Calen page and tag are only visible to admin users
+- **MovieCard Filtering**: Non-admin users never see "Calen" tag badges on movie thumbnails
+- **Navigation**: Calen nav link only appears for admin users (`role === 'admin'`)
 - **Real-time Updates**: Immediate reflection of tagged movies
 - **Empty State Handling**: Helpful onboarding for new collections
 

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Star, Calendar, Award, Users, User, Heart, Home, RotateCcw } from 'lucide-react';
@@ -23,6 +24,30 @@ const iconMap = {
 };
 
 export function MovieCard({ movie, onSelect, className }: MovieCardProps) {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check admin status
+  useEffect(() => {
+    async function checkAdminStatus() {
+      try {
+        const response = await fetch('/api/user/me');
+        if (!response.ok) {
+          setIsAdmin(false);
+          return;
+        }
+        const data = await response.json();
+        setIsAdmin(data.success && data.data?.role === 'admin');
+      } catch (error) {
+        setIsAdmin(false);
+      }
+    }
+    checkAdminStatus();
+  }, []);
+
+  // Filter out Calen tag for non-admin users
+  const displayTags = isAdmin
+    ? movie.tags
+    : movie.tags.filter(tag => tag.name !== 'Calen');
   const hasOscarWins = movie.oscar_badges.wins > 0;
   const hasOscarNominations = movie.oscar_badges.nominations > 0;
   const posterUrl = movie.poster_path
@@ -123,9 +148,9 @@ export function MovieCard({ movie, onSelect, className }: MovieCardProps) {
         </div>
 
         {/* Tags */}
-        {movie.tags.length > 0 && (
+        {displayTags.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {movie.tags.slice(0, 3).map((tag, index) => {
+            {displayTags.slice(0, 3).map((tag, index) => {
               const IconComponent = iconMap[tag.icon as keyof typeof iconMap] || User;
               return (
                 <div
@@ -143,9 +168,9 @@ export function MovieCard({ movie, onSelect, className }: MovieCardProps) {
                 </div>
               );
             })}
-            {movie.tags.length > 3 && (
+            {displayTags.length > 3 && (
               <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-                +{movie.tags.length - 3}
+                +{displayTags.length - 3}
               </div>
             )}
           </div>

@@ -1128,23 +1128,6 @@ export function MovieDetailsModal({ movieId, isOpen, onClose, onMovieUpdate }: M
                               </div>
                             ))}
                           </div>
-
-                          {watchProviders.link && (
-                            <div className="pt-4 border-t border-white/10">
-                              <a
-                                href={watchProviders.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-white/60 hover:text-white flex items-center gap-2 transition-colors"
-                              >
-                                View more options on TMDB
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                              <p className="text-xs text-white/40 mt-2">
-                                Streaming data provided by JustWatch
-                              </p>
-                            </div>
-                          )}
                         </div>
                       ) : (
                         <div className="text-center py-12">

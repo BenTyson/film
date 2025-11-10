@@ -24,7 +24,7 @@ async function checkTags() {
       nameCount[tag.name] = (nameCount[tag.name] || 0) + 1;
     });
 
-    const duplicates = Object.entries(nameCount).filter(([_, count]) => count > 1);
+    const duplicates = Object.entries(nameCount).filter(([, count]) => count > 1);
     if (duplicates.length > 0) {
       console.log('\nDuplicate tag names found:');
       duplicates.forEach(([name, count]) => {

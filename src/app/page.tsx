@@ -419,7 +419,7 @@ export default function HomePage() {
 
                       return sortedYears.map(year => {
                         const count = yearCounts[year.toString()] || 0;
-                        if (count > 0 || year >= currentYear - 4) {
+                        if (count > 0) {
                           const formatCount = (num: number) => {
                             return num.toString().split('').map(digit => {
                               const subscripts = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
@@ -429,7 +429,7 @@ export default function HomePage() {
 
                           return (
                             <option key={year} value={year.toString()} className="bg-gray-800 text-white">
-                              {year}{count > 0 ? ` · ${formatCount(count)}` : ''}
+                              {year} · {formatCount(count)}
                             </option>
                           );
                         }

@@ -62,11 +62,12 @@ Comprehensive Academy Award tracking system (1928-2025)
 ### Watchlist
 Mood-based movie watchlist system (separate from main collection)
 - TMDB integration for adding movies
-- Default mood tags: Morgan, Epic, Indie, Funny, Drama, Classic
+- User-specific tags: Each user creates and sees only their own tags
 - Custom tag creation: Users can add their own tags via input field + Add button
 - Dedicated watchlist page at `/watchlist`
 - Tag-based filtering and organization
-- User-specific tags (owned by individual users) and global tags (shared)
+- Quick remove button in movie modal for easy cleanup
+- Complete tag privacy: Tags are isolated per user
 
 **→ See [architecture.md § Watchlist](../architecture.md#watchlist-feature-october-2024) for detailed architecture**
 

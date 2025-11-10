@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
   // File watching optimizations are handled by webpack config
 
   // Webpack optimizations for development
-  webpack: (config, { dev, isServer }) => {
+  webpack: (config, { dev }) => {
     if (dev) {
       // Reduce memory usage in development
       config.optimization.splitChunks = {

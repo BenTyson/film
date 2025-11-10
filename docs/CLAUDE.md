@@ -24,7 +24,7 @@ This is a personal movie tracking web application built with Next.js, designed t
 - Visual movie library with poster grid layout
 - **User data isolation** - each user sees only their own collection
 - Oscar nominations and wins tracking with dedicated pages (1928-2025, 1,158+ movies, 2,053+ nominations)
-- **Watchlist** with mood-based tagging (Morgan, Liam, Epic, Scary, Indie) - separate from main collection
+- **Watchlist** with user-specific tagging system - separate from main collection with quick remove functionality
 - **Vaults** for creating thematic movie collections (e.g., "Best Action Films", "Childhood Favorites") - separate from watched collection
 - "Buddy system" for tracking movies watched with specific people (e.g., Calen)
 - Clerk UserButton avatar in all page headers for authentication management
@@ -198,10 +198,13 @@ CLERK_SECRET_KEY=sk_test_...
 - ✅ User accounts and sessions (Clerk)
 - ✅ Protected routes with middleware
 - ✅ Multi-user support with data isolation
+- ✅ Automatic user creation on first sign-in (no webhook needed)
+- ✅ Year filtering by user's movies only
+- ✅ Tag isolation per user (each user has private tag collection)
 - ⏸️ Role-based permissions (admin routes pending)
-- ⏸️ Clerk webhook for automatic user sync
 
 **→ See [architecture.md § Multi-User Architecture](./architecture.md#multi-user-architecture-january-2025) for details**
+**→ See [api-auth-patterns.md](./api-auth-patterns.md) for auto-user creation implementation**
 
 ### Additional Planned Features
 - Statistics dashboard (movies per year, ratings distribution)

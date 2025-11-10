@@ -10,6 +10,55 @@ Location: `/src/lib/auth.ts`
 import { getCurrentUser, requireAdmin } from '@/lib/auth';
 ```
 
+### Auto-User Creation
+
+**Important:** The `getCurrentUser()` function **automatically creates users** in the database when they sign up through Clerk. This ensures new users can immediately use the app without manual database setup.
+
+**How it works:**
+1. User signs up via Clerk (Google OAuth, etc.)
+2. User exists in Clerk but not in your database
+3. `getCurrentUser()` detects missing user
+4. Fetches user details from Clerk API
+5. Creates user in database with default `role: 'user'`
+6. Returns the user for use in the API route
+
+**Implementation in `/src/lib/auth.ts`:**
+```typescript
+export async function getCurrentUser() {
+  const { userId } = await auth();
+
+  if (!userId) {
+    throw new Error('Unauthorized');
+  }
+
+  // Find user in database
+  let user = await prisma.user.findUnique({
+    where: { clerk_id: userId },
+  });
+
+  // Auto-create if doesn't exist
+  if (!user) {
+    const client = await clerkClient();
+    const clerkUser = await client.users.getUser(userId);
+
+    user = await prisma.user.create({
+      data: {
+        clerk_id: userId,
+        email: clerkUser.emailAddresses[0]?.emailAddress || '',
+        name: clerkUser.firstName && clerkUser.lastName
+          ? `${clerkUser.firstName} ${clerkUser.lastName}`
+          : clerkUser.firstName || clerkUser.emailAddresses[0]?.emailAddress || 'User',
+        role: 'user', // Default role
+      },
+    });
+  }
+
+  return user;
+}
+```
+
+This pattern eliminates the need for Clerk webhooks or manual user creation scripts.
+
 ## Pattern 1: Require Any Authenticated User
 
 ```typescript
@@ -229,16 +278,18 @@ These routes are **PROTECTED** and filter by user_id:
 - ✅ `/api/movies` - Filters user_movies by current user (Pattern 4b - reuses Movie records)
 - ✅ `/api/movies/[id]` - Verifies user ownership
 - ✅ `/api/movies/[id]/tags` - POST/DELETE requires ownership
+- ✅ `/api/movies/years` - Filters year counts by current user
 - ✅ `/api/watchlist` - Filters by user_id
+- ✅ `/api/watchlist/[id]` - GET/PATCH/DELETE verifies user ownership
 - ✅ `/api/vaults` - Filters vaults by user_id
 - ✅ `/api/vaults/[id]` - Verifies vault ownership
 - ✅ `/api/vaults/[id]/movies` - POST checks vault ownership
 - ✅ `/api/search/movies` - Pattern 4 - checks UserMovie for "In Collection" status
+- ✅ `/api/tags` - Returns only user's own tags (user isolation)
 
 ### ⏸️ Pending Routes (Mutation operations)
 These routes should verify ownership:
 - ⏸️ `/api/movies/[id]/update-tmdb` - PUT requires ownership
-- ⏸️ `/api/watchlist/[id]` - PUT/DELETE requires ownership
 
 ### 🔒 Admin Routes (Not yet implemented)
 These routes need admin check:

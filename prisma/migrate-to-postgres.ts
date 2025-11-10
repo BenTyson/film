@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { PrismaClient as PrismaClientSQLite } from '../node_modules/.prisma/client-sqlite';
 import { PrismaClient as PrismaClientPostgres } from '@prisma/client';
 

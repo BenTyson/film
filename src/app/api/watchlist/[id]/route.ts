@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 
 // GET single watchlist movie
 export async function GET(
@@ -7,6 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+
     const { id: paramId } = await params;
     const movieId = parseInt(paramId);
 
@@ -20,8 +24,11 @@ export async function GET(
       );
     }
 
-    const watchlistMovie = await prisma.watchlistMovie.findUnique({
-      where: { id: movieId },
+    const watchlistMovie = await prisma.watchlistMovie.findFirst({
+      where: {
+        id: movieId,
+        user_id: user.id, // Ensure user owns this watchlist movie
+      },
       include: {
         tags: {
           include: {
@@ -63,6 +70,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+
     const { id: paramId } = await params;
     const movieId = parseInt(paramId);
 
@@ -73,6 +83,24 @@ export async function PATCH(
           error: 'Invalid movie ID',
         },
         { status: 400 }
+      );
+    }
+
+    // Verify ownership
+    const existingMovie = await prisma.watchlistMovie.findFirst({
+      where: {
+        id: movieId,
+        user_id: user.id,
+      },
+    });
+
+    if (!existingMovie) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Watchlist movie not found',
+        },
+        { status: 404 }
       );
     }
 
@@ -134,6 +162,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+
     const { id: paramId } = await params;
     const movieId = parseInt(paramId);
 
@@ -144,6 +175,24 @@ export async function DELETE(
           error: 'Invalid movie ID',
         },
         { status: 400 }
+      );
+    }
+
+    // Verify ownership before deleting
+    const existingMovie = await prisma.watchlistMovie.findFirst({
+      where: {
+        id: movieId,
+        user_id: user.id,
+      },
+    });
+
+    if (!existingMovie) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Watchlist movie not found',
+        },
+        { status: 404 }
       );
     }
 

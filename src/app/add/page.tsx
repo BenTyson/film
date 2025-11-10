@@ -86,6 +86,7 @@ export default function AddMoviePage() {
   const [showForm, setShowForm] = useState(false);
   const [addedSuccessfully, setAddedSuccessfully] = useState(false);
   const [buddyPresets, setBuddyPresets] = useState<BuddyPreset[]>([]);
+  const [availableTags, setAvailableTags] = useState<Array<{ id: number; name: string; color: string | null; icon: string | null }>>([]);
 
   // Form data
   const [personalRating, setPersonalRating] = useState<number | null>(null);
@@ -114,6 +115,23 @@ export default function AddMoviePage() {
     };
 
     fetchBuddyPresets();
+  }, []);
+
+  // Fetch available tags on mount
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const response = await fetch('/api/tags');
+        const data = await response.json();
+        if (data.success) {
+          setAvailableTags(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching tags:', error);
+      }
+    };
+
+    fetchTags();
   }, []);
 
   // Auto-focus search on mount
@@ -241,23 +259,9 @@ export default function AddMoviePage() {
         // Show success message
         setAddedSuccessfully(true);
 
-        // Reset form
+        // Redirect to home page after success
         setTimeout(() => {
-          setSelectedMovie(null);
-          setShowForm(false);
-          setPersonalRating(null);
-          setDateWatched('');
-          setIsFavorite(false);
-          setBuddies([]);
-          setBuddyInput('');
-          setTags([]);
-          setNotes('');
-          setSearchQuery('');
-          setSearchResults([]);
-          setAddedSuccessfully(false);
-
-          // Refocus search
-          searchInputRef.current?.focus();
+          router.push('/');
         }, 2000);
       } else {
         console.error('Error adding movie:', data.error);
@@ -331,7 +335,7 @@ export default function AddMoviePage() {
           </div>
 
           <p className="text-muted-foreground">
-            Search for movies to add to your collection
+            Search for movies to add to your watched collection
           </p>
         </div>
       </div>
@@ -673,7 +677,7 @@ export default function AddMoviePage() {
                   />
                   <button
                     onClick={() => handleAddBuddy()}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:bg-cinema-gold/90 transition-colors font-medium"
+                    className="px-6 py-3 border-2 border-white/20 text-white rounded-lg hover:bg-white/10 hover:border-white/40 transition-colors font-medium"
                   >
                     Add
                   </button>
@@ -726,6 +730,7 @@ export default function AddMoviePage() {
                   Tags
                 </label>
                 <div className="flex flex-wrap gap-2 mb-3">
+                  {/* Hardcoded suggestions */}
                   {TAG_SUGGESTIONS.map((suggestion) => (
                     <button
                       key={suggestion}
@@ -741,6 +746,18 @@ export default function AddMoviePage() {
                       {suggestion}
                     </button>
                   ))}
+                  {/* User's custom tags from database */}
+                  {availableTags
+                    .filter(tag => !TAG_SUGGESTIONS.includes(tag.name) && !tags.includes(tag.name))
+                    .map((tag) => (
+                      <button
+                        key={tag.id}
+                        onClick={() => handleAddTag(tag.name)}
+                        className="px-3 py-1 text-sm rounded-lg border border-border/50 hover:border-primary/50 hover:bg-primary/10 transition-colors"
+                      >
+                        {tag.name}
+                      </button>
+                    ))}
                 </div>
                 <div className="flex gap-2">
                   <input
@@ -753,7 +770,7 @@ export default function AddMoviePage() {
                   />
                   <button
                     onClick={() => handleAddTag()}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:bg-cinema-gold/90 transition-colors font-medium"
+                    className="px-6 py-3 border-2 border-white/20 text-white rounded-lg hover:bg-white/10 hover:border-white/40 transition-colors font-medium"
                   >
                     Add
                   </button>
