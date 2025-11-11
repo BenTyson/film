@@ -171,14 +171,26 @@ model OscarCategory {
   @@map("oscar_categories")
 }
 
+enum ReviewStatus {
+  pending
+  auto_verified
+  needs_manual_review
+  manually_reviewed
+}
+
 model OscarMovie {
-  id          Int               @id @default(autoincrement())
-  tmdb_id     Int?              @unique
-  imdb_id     String?           @unique
-  title       String
-  created_at  DateTime          @default(now())
-  updated_at  DateTime          @updatedAt
-  nominations OscarNomination[]
+  id                  Int               @id @default(autoincrement())
+  tmdb_id             Int?              @unique
+  imdb_id             String?           @unique
+  title               String
+  review_status       ReviewStatus      @default(pending)
+  verification_notes  String?
+  confidence_score    Float?
+  reviewed_at         DateTime?
+  reviewed_by         String?
+  created_at          DateTime          @default(now())
+  updated_at          DateTime          @updatedAt
+  nominations         OscarNomination[]
 
   @@map("oscar_movies")
 }

@@ -23,5 +23,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "prisma/migrate-to-postgres.ts", "prisma/migrate-oscar-data.ts", "prisma/verify-migration.ts", "test-railway-query.ts"]
+  "exclude": ["node_modules", "prisma/migrate-to-postgres.ts", "prisma/migrate-oscar-data.ts", "prisma/verify-migration.ts", "test-railway-query.ts", "scripts/archive/**/*"]
 }

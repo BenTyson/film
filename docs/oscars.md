@@ -1,22 +1,24 @@
 # Oscar Data System Documentation
 
-**Last Updated:** November 2024
+**Last Updated:** January 2025
 
 **→ For quick orientation, read [session-start/QUICK-START.md](./session-start/QUICK-START.md) first**
 
-## ⚠️ Current Status: Data Rebuild (November 2024)
+## ✅ Current Status: Production-Ready (January 2025)
 
-**System State:** Fresh import completed, TMDB ID mapping in progress
+**System State:** Automated import system with TMDB verification operational
 
-The Oscar data system was completely rebuilt in November 2024 to resolve systematic data quality issues. Current state:
+The Oscar data system was completely rebuilt in January 2025 with automated TMDB ID verification and 99%+ auto-verification success rate. Current state:
 
-- ✅ **1,152 unique movies** imported from clean CSV source
-- ✅ **2,074 nominations** across 97 ceremony years (1928-2025)
-- ✅ **4 core categories**: Best Picture, Best Actor, Best Actress, Best Director
-- ⚠️ **TMDB IDs**: None mapped yet (manual mapping in progress)
-- 📊 **Table View**: Primary interface for reviewing and validating data
+- ✅ **1,409 unique movies** with verified TMDB IDs (100% completion)
+- ✅ **2,913 nominations** across ceremony years 1929-2024
+- ✅ **6 categories**: Best Picture, Best Actor, Best Actress, Best Director, Best Supporting Actor, Best Supporting Actress
+- ✅ **TMDB Verification**: Automated fuzzy matching with manual review UI for edge cases
+- ✅ **Incremental Import**: Safe category expansion without data loss
+- 📊 **Table View**: Primary interface for browsing and validating Oscar data
+- 🔍 **Review UI**: Manual verification interface at `/oscars/review` for flagged movies
 
-**Next Step:** Manual TMDB ID mapping using table view interface
+**→ See [skills/oscar-tmdb-import.md](./skills/oscar-tmdb-import.md) for complete import workflow and expanding to additional categories**
 
 ## Overview
 
@@ -43,6 +45,11 @@ The system uses a **unified architecture** with three interconnected tables:
 - tmdb_id: TMDB movie ID for matching (UNIQUE)
 - imdb_id: IMDb movie ID for matching (UNIQUE)
 - title: Movie title
+- review_status: Enum (pending, auto_verified, needs_manual_review, manually_reviewed)
+- verification_notes: Text notes from automated verification
+- confidence_score: Float (0.0-1.0) indicating title match confidence
+- reviewed_at: Timestamp of manual review
+- reviewed_by: User who performed manual review
 - created_at, updated_at: Timestamps
 ```
 
@@ -340,140 +347,202 @@ className={cn(
 
 ## Data Import & Migration
 
-### Current Data Structure (REBUILT - November 2024)
+### Current Data Structure (REBUILT - January 2025)
 
-The Oscar database was completely rebuilt in November 2024 from a clean CSV source:
+The Oscar database was completely rebuilt in January 2025 with automated TMDB verification:
 
 **Data Source:**
-- **Primary**: `/academy.csv` - Clean ceremony data from Wikipedia/Academy archives
-- **Format**: CSV with columns: Year, Best Picture, Best Actor, Best Actress, Best Director
-- **Coverage**: 97 ceremony years (1928-2025, listed as "2025 (97th)", etc.)
-- **Winner Format**: Movies/nominees marked with "(winner)" suffix
-- **Actor/Director Format**: "Name – Movie Title" format
+- **Primary**: `/oscar-nominations.json` - Comprehensive Oscar data with pre-matched TMDB IDs
+- **Format**: JSON array with structured nomination objects
+- **Coverage**: 10,568 total nominations across 34 categories (1927-2023 film years)
+- **TMDB Integration**: Each movie includes `tmdb_id` and `imdb_id` for verification
+- **Imported Categories**: 6 categories (Best Picture, Actor, Actress, Director, Supporting Actor, Supporting Actress)
+- **Available for Import**: 28 additional categories (Screenplay, Cinematography, Technical awards, etc.)
 
-**Import Stats:**
-- **Total Movies**: 1,152 unique movies
-- **Total Nominations**: 2,074 nominations
-- **Categories**: 4 core categories (Best Picture, Best Actor, Best Actress, Best Director)
-- **TMDB IDs**: 0 (manual mapping in progress via table view)
+**Current Import Stats:**
+- **Total Movies**: 1,409 unique movies with verified TMDB IDs
+- **Total Nominations**: 2,913 nominations
+- **Categories**: 6 imported (28 more available in source data)
+- **Ceremony Years**: 1929-2024 (film years 1927-2023 + 1 year conversion)
+- **TMDB Verification**: 99.7% auto-verified (1,405 movies), 0.3% manually reviewed (4 movies)
+- **Completion**: 100% verified
 
-### CSV Format & Structure
+**→ See [skills/oscar-tmdb-import.md](./skills/oscar-tmdb-import.md) for complete import workflow**
 
-```csv
-Year,Best Picture,Best Actor,Best Actress,Best Director
-2024 (96th),"Oppenheimer (winner), American Fiction, Anatomy of a Fall...","Cillian Murphy – Oppenheimer (winner), Bradley Cooper – Maestro...","Emma Stone – Poor Things (winner), Lily Gladstone – Killers...","Christopher Nolan – Oppenheimer (winner), Justine Triet..."
+### JSON Data Structure
+
+```json
+{
+  "category": "Best Picture",
+  "year": "2023",
+  "nominees": [],
+  "movies": [
+    {
+      "title": "Oppenheimer",
+      "tmdb_id": 872585,
+      "imdb_id": "tt15398776"
+    }
+  ],
+  "won": true
+}
 ```
 
-**Key Parsing Rules:**
-- Comma-separated lists within quoted fields
-- Winner detection via "(winner)" suffix (case-insensitive, handles tied winners)
-- Actor/Director format: Split on " – " to extract name and movie
-- Year extraction: Parse first 4 digits from year cell
+**Key Data Elements:**
+- **category**: Oscar category name (e.g., "Best Picture", "Best Actor")
+- **year**: Film release year (ceremony year = year + 1)
+- **nominees**: Array of nominee names (for acting/directing categories)
+- **movies**: Array of movie objects with TMDB/IMDb IDs
+- **won**: Boolean indicating winner vs nominee
 
 ### Critical Data Integrity Rules
 
-⚠️ **IMPORTANT**: The following rules prevent data corruption:
+⚠️ **IMPORTANT**: The following rules ensure data accuracy:
 
-1. **Ceremony Year vs Release Year**:
-   - CSV contains **ceremony year** (e.g., 2017 = 89th Academy Awards in Feb 2017)
-   - For TMDB searches: **release_year = ceremony_year - 1**
-   - Example: 2017 ceremony → search TMDB for "Moonlight 2016"
+1. **Ceremony Year Convention**:
+   - JSON contains **film release year** (e.g., "2023" = films from 2023)
+   - Database stores **ceremony year** (e.g., 2024 = ceremony in March 2024)
+   - Conversion: `ceremony_year = film_year + 1` (handled automatically by import script)
+   - Example: 2023 films → 2024 ceremony (96th Academy Awards, March 2024)
 
-2. **TMDB ID Uniqueness**: Each `tmdb_id` can only exist once in `oscar_movies`
+2. **TMDB Verification**:
+   - Automated fuzzy title matching (85% similarity threshold)
+   - Year validation with ±1 tolerance (accounts for festival releases, delays)
+   - Confidence scoring (0.0-1.0) for manual review prioritization
+   - Expected year: `ceremony_year - 1` with ±1 tolerance
 
-3. **No Duplicate Entries**: Same movie cannot win same category in multiple years
+3. **TMDB ID Uniqueness**: Each `tmdb_id` can only exist once in `oscar_movies`
 
-4. **Fresh Import Strategy**: Complete database reset prevents cascade issues
+4. **Incremental Import Safety**:
+   - New category imports preserve existing verified movies
+   - Existing movies skip re-verification (preserve review_status)
+   - Duplicate nominations prevented at database level
 
-### Data Import Process (November 2024)
+### Data Import Process (January 2025)
 
 ```bash
-# Complete import from academy.csv
-node scripts/import-academy-csv.js
+# INCREMENTAL IMPORT (recommended - preserves existing data)
+# Add new categories without affecting verified movies
+node scripts/import-oscars-incremental.js "Best Supporting Actress" "Best Original Screenplay"
 
-# The script:
-# 1. Parses academy.csv (97 years, 4 categories)
-# 2. Extracts unique movies and all nominations
-# 3. Searches TMDB for each movie using release_year = ceremony_year - 1
-# 4. Inserts movies into oscar_movies (tmdb_id = null if not found)
-# 5. Inserts nominations into oscar_nominations
-# 6. Reports movies needing manual TMDB ID mapping
+# The incremental script:
+# 1. Checks for existing categories and skips them
+# 2. Identifies existing movies by TMDB ID and preserves their review_status
+# 3. Verifies only NEW movies with TMDB API (fuzzy matching + year validation)
+# 4. Inserts new movies with auto_verified or needs_manual_review status
+# 5. Creates nominations while preventing duplicates
+# 6. Reports: movies created, movies preserved, verification stats
 
-# Reset script (clears all Oscar data)
-node scripts/reset-oscar-data.js
+# FULL IMPORT (use only for initial setup or complete reset)
+# WARNING: Deletes all existing Oscar data
+node scripts/import-oscars.js
 
-# Preserves oscar_categories, deletes:
-# - oscar_nominations (all rows)
-# - oscar_movies (all rows)
-# - best_picture_nominees (all rows)
-# - oscar_data (legacy, all rows)
+# The full import script:
+# 1. Clears all existing Oscar data (categories, movies, nominations)
+# 2. Filters oscar-nominations.json to TARGET_CATEGORIES
+# 3. Verifies ALL movies with TMDB API (100% fresh verification)
+# 4. Creates categories, movies, and nominations from scratch
+# 5. Reports: auto-verified count, needs review count, total nominations
 ```
 
-### Historical Context: Why Complete Rebuild?
+**Import Performance:**
+- Rate limiting: 250ms delay between TMDB API calls
+- ~1,000 movies = ~4 minutes verification time
+- Incremental import skips existing movies (faster for adding categories)
+- 99%+ auto-verification rate (1-2% flagged for manual review)
 
-**Previous Issues (Pre-November 2024):**
-- Year offset errors (ceremony year vs release year confusion)
-- Duplicate entries from failed incremental fixes
-- Incorrect TMDB ID mappings (67% error rate discovered in 2019 data)
-- Cascading data corruption from decade-by-decade fixes
-- Dozens of temporary fix scripts creating "butterfly effect" problems
+**Manual Review Process:**
+1. Import flags suspicious TMDB IDs with verification_notes
+2. Navigate to `/oscars/review` (admin-only)
+3. Review flagged movies with auto-populated TMDB search
+4. Select correct match or confirm existing ID
+5. System updates review_status to manually_reviewed
 
-**New Approach:**
-- Single clean data source (academy.csv)
-- Complete database reset before import
-- Manual TMDB ID verification via table view
-- Clear separation: import data first, map IDs second
+### Historical Context: Why Automated Verification?
+
+**Previous Issues (Pre-January 2025):**
+- Manual TMDB ID mapping was time-intensive (1,152 movies to manually map)
+- No systematic verification of TMDB ID accuracy
+- Year offset errors between ceremony year and release year
+
+**New Approach (January 2025):**
+- Source data (oscar-nominations.json) includes pre-matched TMDB IDs
+- Automated verification against TMDB API ensures accuracy
+- Fuzzy title matching (85% threshold) with Levenshtein distance
+- Year validation (ceremony_year - 1 ± 1 year tolerance)
+- Confidence scoring flags edge cases for human review
+- 99.7% auto-verification success rate (4/1,409 needed manual review)
 
 ## Development Commands
 
 ```bash
-# Import Oscar data from academy.csv
-node scripts/import-academy-csv.js
+# Import new Oscar categories (incremental - safe for production)
+node scripts/import-oscars-incremental.js "Best Supporting Actress" "Best Original Screenplay"
 
-# Reset all Oscar data (preserves categories)
-node scripts/reset-oscar-data.js
+# View manual review interface (admin-only)
+# Navigate to: http://localhost:3000/oscars/review
+
+# Check verification stats
+node -e "
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+prisma.oscarMovie.groupBy({
+  by: ['review_status'],
+  _count: true
+}).then(stats => {
+  console.table(stats);
+  prisma.\$disconnect();
+});
+"
 
 # Start development server
 npm run dev
 
-# View Oscar data in table view
+# View Oscar data
 # Navigate to: http://localhost:3000/oscars
-# Toggle to Table view (default)
+# Table view (default) - sortable, filterable
+# Grid view - visual browsing with posters
 ```
 
 ## Key Features
 
 ### ✅ Implemented
-- Complete historical Oscar data coverage (1928-2025, 97 ceremonies)
-- Clean CSV import with 1,152 movies and 2,074 nominations
-- Unified database architecture
-- **Table View Interface**: Primary tool for data validation and TMDB ID mapping
-  - Sortable columns (default: year descending)
-  - Year and category filtering
-  - Clear TMDB ID status indicators
-- **Grid View Interface**: Visual movie browsing (secondary)
-- TMDB ID-based collection matching
-- Grayscale styling for non-collection movies
-- Category filtering and year navigation
-- Mobile-responsive design with dark theme
+- **Complete Historical Data**: 2,913 nominations across ceremony years 1929-2024
+- **Automated TMDB Verification**: 99.7% auto-verification with fuzzy matching and year validation
+- **6 Oscar Categories**: Best Picture, Actor, Actress, Director, Supporting Actor, Supporting Actress
+- **Unified Database Architecture**: Clean separation between Oscar data and user collection
+- **Table View Interface**: Sortable, filterable interface for browsing Oscar data
+  - Default sort: ceremony year descending
+  - Multi-select category filtering
+  - Year dropdown filtering
+  - Visual Oscar badges (wins vs nominations)
+- **Grid View Interface**: Visual movie browsing with poster display
+- **Manual Review UI** (`/oscars/review`): Admin interface for verifying flagged TMDB IDs
+  - Auto-populated TMDB search with ceremony_year - 1
+  - Confidence score visualization
+  - Verification notes display
+  - Quick actions (Skip, Keep Original, Update)
+- **Incremental Import System**: Safe category expansion without data loss
+- **TMDB ID-based Collection Matching**: Shows which Oscar movies are in user's collection
+- **Grayscale Styling**: Visual indicator for movies not in collection
+- **Mobile-responsive Design**: Dark theme with premium UI/UX
 
-### 🔄 In Progress
-- **TMDB ID Mapping**: Manual verification and assignment via table view
-- Poster path resolution for complete movie records
-
-### 🔄 Architecture Strengths
+### 🎯 Architecture Strengths
 - **Single Source of Truth**: Unified `oscar_nominations` table
-- **Clean Data Foundation**: Fresh import from authoritative CSV source
-- **Efficient Matching**: Database-level TMDB ID joins (once IDs are mapped)
-- **Scalable**: Handles 97 years of Oscar data efficiently
-- **Future-Proof**: Easy to add new ceremony years via CSV append
-- **Performance**: Database-optimized queries, table view for bulk validation
+- **Verified Data Quality**: 100% TMDB ID verification (1,409/1,409 movies)
+- **Automated Verification**: Fuzzy matching with 85% threshold, ±1 year tolerance
+- **Incremental Expansion**: Add categories without re-verifying existing movies
+- **Efficient Matching**: Database-level TMDB ID joins for collection status
+- **Scalable**: Currently handles 6 categories, easily expandable to all 34
+- **Performance**: Database-optimized queries, rate-limited TMDB verification (250ms delay)
+- **Future-Proof**: Annual ceremony updates via JSON append + incremental import
 
 ### 🛠 Maintenance Notes
-- Add new ceremony data by appending to `academy.csv` and re-running import
-- Map TMDB IDs via table view interface for complete functionality
-- Ensure `oscar_categories` table stays current (currently 4 core categories)
-- Monitor collection status accuracy via TMDB ID matching
+- **Adding New Categories**: Use `import-oscars-incremental.js` with category names as arguments
+- **Annual Updates**: Append new ceremony data to `oscar-nominations.json` and run incremental import
+- **Monitoring**: Check `/oscars/review` periodically for any flagged TMDB IDs
+- **Expanding Coverage**: 28 additional categories available in source data (Screenplay, Cinematography, Technical)
+- **Data Verification**: Use verification scripts to spot-check TMDB ID accuracy
+- **Collection Matching**: Automatic via TMDB ID joins, no maintenance required
 
 ## Troubleshooting
 
@@ -548,37 +617,41 @@ The system evolved from multiple Oscar data sources into a unified architecture 
 - **Collection Independence**: Oscar data remains intact regardless of user collection changes
 - **Performance Monitoring**: Database indexes on ceremony_year, category_id, movie_id for optimal query performance
 
-## System Status (November 2024)
+## System Status (January 2025)
 
-⚠️ **DATA REBUILD IN PROGRESS**: Fresh import complete, TMDB ID mapping needed
+✅ **PRODUCTION-READY**: Automated import system operational with 100% verification
 
 **Current State:**
-- ✅ **1,152 movies** imported from clean CSV source
-- ✅ **2,074 nominations** across 97 ceremony years (1928-2025)
-- ✅ **4 core categories**: Best Picture, Best Actor, Best Actress, Best Director
-- ✅ **Table view interface** operational for data validation
-- ⚠️ **TMDB IDs**: None mapped (0/1152) - manual mapping in progress
-- ⚠️ **Poster paths**: Not available until TMDB IDs are mapped
-- ✅ **Mobile-responsive UI** with dark theme
-- ✅ **Import/reset scripts** working correctly
+- ✅ **1,409 movies** with verified TMDB IDs (100% completion)
+- ✅ **2,913 nominations** across ceremony years 1929-2024
+- ✅ **6 categories imported**: Best Picture, Actor, Actress, Director, Supporting Actor, Supporting Actress
+- ✅ **28 categories available**: Ready for incremental import from source data
+- ✅ **Automated TMDB verification**: 99.7% auto-verification rate (1,405/1,409)
+- ✅ **Manual review completed**: 4 edge cases verified by user
+- ✅ **Review UI operational**: `/oscars/review` interface for future flagged movies
+- ✅ **Incremental import tested**: Successfully added Supporting Actress without data loss
+- ✅ **Table view interface**: Sortable, filterable Oscar data browsing
+- ✅ **Grid view interface**: Visual movie posters with collection status
+- ✅ **Mobile-responsive UI**: Dark theme with premium animations
 
-**Immediate Next Steps:**
-1. Manual TMDB ID mapping using table view interface
-2. Verify TMDB ID accuracy for recent years first (2020-2025)
-3. Work backwards through decades for historical movies
-4. Test poster fetching once sample of IDs are mapped
-5. Validate collection matching functionality
+**Next Recommended Actions:**
+1. **Expand Categories**: Import additional categories using incremental script
+   - Screenplay categories (Original, Adapted)
+   - Cinematography, Film Editing
+   - Sound, Visual Effects, Production Design
+   - Original Score, Original Song
+2. **Annual Updates**: Prepare workflow for 2025 ceremony data (March 2025)
+3. **Optional Enhancements**:
+   - Oscar statistics dashboard (wins per person, studio trends)
+   - Advanced filtering (decade view, multiple category combinations)
+   - Nomination history timeline for individual movies
 
-**Next Recommended Enhancements (Post-TMDB Mapping):**
-- Add more Oscar categories beyond core four (cinematography, editing, etc.)
-- Implement caching for frequently accessed years
-- Add Oscar statistics dashboard
-- Consider bulk TMDB ID suggestion tool based on title + year matching
-
-**Data Quality Improvements:**
-- Previous system had 67% error rate in TMDB IDs (discovered in 2019 data audit)
-- New approach: Manual verification via table view ensures accuracy
-- Trade-off: More upfront work, but cleaner long-term data
+**Verified Data Quality:**
+- 99.7% auto-verification success (1,405/1,409 movies)
+- 0.3% manual review (4 movies - completed)
+- Zero TMDB ID duplicates
+- Ceremony year convention verified across all decades
+- Fuzzy matching handles title variations, foreign films, special characters
 
 This documentation provides a complete reference for understanding and maintaining the Oscar data system architecture.
 

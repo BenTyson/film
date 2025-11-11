@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { tmdb } from '@/lib/tmdb';
 import { NextRequest, NextResponse } from 'next/server';
+import { ReviewStatus } from '@prisma/client';
 
 export async function PATCH(
   request: NextRequest,
@@ -18,7 +19,12 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { tmdb_id } = body;
+    const { tmdb_id, review_status, verification_notes, reviewed_by } = body as {
+      tmdb_id: number;
+      review_status?: ReviewStatus;
+      verification_notes?: string | null;
+      reviewed_by?: string;
+    };
 
     if (!tmdb_id || typeof tmdb_id !== 'number') {
       return NextResponse.json({
@@ -37,14 +43,37 @@ export async function PATCH(
       }, { status: 404 });
     }
 
+    // Prepare update data
+    const updateData: {
+      tmdb_id: number;
+      imdb_id: string | null;
+      title: string;
+      review_status?: ReviewStatus;
+      verification_notes?: string | null;
+      reviewed_at?: Date;
+      reviewed_by?: string;
+    } = {
+      tmdb_id: tmdbMovie.id,
+      imdb_id: tmdbMovie.imdb_id || null,
+      title: tmdbMovie.title,
+    };
+
+    // Add review tracking fields if provided
+    if (review_status) {
+      updateData.review_status = review_status;
+      updateData.reviewed_at = new Date();
+    }
+    if (verification_notes !== undefined) {
+      updateData.verification_notes = verification_notes;
+    }
+    if (reviewed_by) {
+      updateData.reviewed_by = reviewed_by;
+    }
+
     // Update the Oscar movie with new TMDB data
     const updatedOscarMovie = await prisma.oscarMovie.update({
       where: { id: oscarMovieId },
-      data: {
-        tmdb_id: tmdbMovie.id,
-        imdb_id: tmdbMovie.imdb_id || null,
-        title: tmdbMovie.title,
-      }
+      data: updateData
     });
 
     return NextResponse.json({

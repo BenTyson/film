@@ -92,6 +92,7 @@ interface MovieWithOscars {
 const allNavItems = [
   { href: '/', label: 'Collection', icon: Clapperboard },
   { href: '/oscars', label: 'Oscars', icon: Award },
+  { href: '/oscars/review', label: 'Review', icon: Edit, adminOnly: true },
   { href: '/buddy/calen', label: 'Calen', icon: Users, adminOnly: true },
   { href: '/watchlist', label: 'Watchlist', icon: Film },
   { href: '/vaults', label: 'Vaults', icon: Archive },

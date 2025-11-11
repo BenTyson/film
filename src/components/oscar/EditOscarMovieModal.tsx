@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @next/next/no-img-element */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -24,20 +24,41 @@ interface EditOscarMovieModalProps {
     title: string;
     tmdb_id: number | null;
     imdb_id: string | null;
+    review_status?: string;
+    verification_notes?: string | null;
+    confidence_score?: number | null;
   };
+  ceremonyYear?: number; // For auto-calculating search year
   onMovieUpdated: () => void;
+  reviewMode?: boolean; // Enable review-specific features
 }
 
 export function EditOscarMovieModal({
   isOpen,
   onClose,
   oscarMovie,
-  onMovieUpdated
+  ceremonyYear,
+  onMovieUpdated,
+  reviewMode = false
 }: EditOscarMovieModalProps) {
-  const [tmdbSearchQuery, setTmdbSearchQuery] = useState('');
+  // Auto-populate search with ceremony year context
+  const defaultSearchYear = ceremonyYear ? ceremonyYear - 1 : null;
+  const initialSearch = reviewMode && defaultSearchYear
+    ? `${oscarMovie.title} year:${defaultSearchYear}`
+    : '';
+
+  const [tmdbSearchQuery, setTmdbSearchQuery] = useState(initialSearch);
   const [tmdbSearchResults, setTmdbSearchResults] = useState<any[]>([]);
   const [tmdbSearchLoading, setTmdbSearchLoading] = useState(false);
   const [updatingMovie, setUpdatingMovie] = useState<number | null>(null);
+
+  // Auto-search on modal open in review mode
+  useEffect(() => {
+    if (isOpen && reviewMode && initialSearch) {
+      searchTMDB(initialSearch);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const searchTMDB = async (query: string) => {
     if (!query.trim()) {
@@ -81,7 +102,48 @@ export function EditOscarMovieModal({
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ tmdb_id: newTmdbId })
+        body: JSON.stringify({
+          tmdb_id: newTmdbId,
+          review_status: reviewMode ? 'manually_reviewed' : undefined
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        onMovieUpdated();
+        onClose();
+      } else {
+        alert(`Failed to update Oscar movie: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error updating Oscar movie:', error);
+      alert('Failed to update Oscar movie');
+    } finally {
+      setUpdatingMovie(null);
+    }
+  };
+
+  const handleSkip = () => {
+    // Close modal without making changes
+    onClose();
+  };
+
+  const handleKeepOriginal = async () => {
+    if (!oscarMovie.tmdb_id) return;
+
+    setUpdatingMovie(oscarMovie.tmdb_id);
+    try {
+      const response = await fetch(`/api/oscars/movies/${oscarMovie.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tmdb_id: oscarMovie.tmdb_id,
+          review_status: 'manually_reviewed',
+          verification_notes: null
+        })
       });
 
       const data = await response.json();
@@ -149,6 +211,43 @@ export function EditOscarMovieModal({
                 )}
               </div>
             </div>
+
+            {/* Review Context (only in review mode) */}
+            {reviewMode && (
+              <div className="space-y-3">
+                {ceremonyYear && (
+                  <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <p className="text-sm text-blue-300">
+                      <span className="font-medium">Ceremony:</span> {ceremonyYear} → <span className="font-medium">Expected Release:</span> {defaultSearchYear}
+                    </p>
+                  </div>
+                )}
+
+                {oscarMovie.verification_notes && (
+                  <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <p className="text-sm font-medium text-yellow-400 mb-1">Verification Notes:</p>
+                    <p className="text-sm text-yellow-200">{oscarMovie.verification_notes}</p>
+                  </div>
+                )}
+
+                {oscarMovie.confidence_score !== null && oscarMovie.confidence_score !== undefined && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-400">Confidence:</span>
+                    <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className={cn("h-full", {
+                          "bg-green-500": oscarMovie.confidence_score >= 0.9,
+                          "bg-yellow-500": oscarMovie.confidence_score >= 0.7 && oscarMovie.confidence_score < 0.9,
+                          "bg-red-500": oscarMovie.confidence_score < 0.7
+                        })}
+                        style={{ width: `${oscarMovie.confidence_score * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-300">{(oscarMovie.confidence_score * 100).toFixed(0)}%</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Search Section */}
             <div className="space-y-4">
@@ -235,6 +334,40 @@ export function EditOscarMovieModal({
                 </div>
               )}
             </div>
+
+            {/* Review Action Buttons (only in review mode) */}
+            {reviewMode && (
+              <div className="flex items-center justify-between pt-4 border-t border-gray-800">
+                <button
+                  onClick={handleSkip}
+                  className="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  Skip for Now
+                </button>
+
+                <div className="flex items-center gap-3">
+                  {oscarMovie.tmdb_id && (
+                    <button
+                      onClick={handleKeepOriginal}
+                      disabled={updatingMovie === oscarMovie.tmdb_id}
+                      className="px-4 py-2 bg-green-500/20 text-green-400 hover:bg-green-500/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {updatingMovie === oscarMovie.tmdb_id ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Confirming...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Keep Original
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

@@ -6,7 +6,6 @@ require('dotenv').config();
 
 const prisma = new PrismaClient();
 
-const TARGET_CATEGORIES = ['Best Picture', 'Best Actor', 'Best Actress', 'Best Director', 'Best Supporting Actor'];
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const RATE_LIMIT_DELAY = 250; // ms between TMDB API calls
 
@@ -185,10 +184,20 @@ async function verifyMovieWithTMDB(movie, ceremonyYear) {
 }
 
 async function main() {
-  console.log('🎬 Starting Oscar nominations import...');
-  console.log(`📂 Target categories: ${TARGET_CATEGORIES.join(', ')}`);
+  console.log('🎬 Starting INCREMENTAL Oscar nominations import...');
 
-  // Load the Oscar nominations data from root directory
+  // Get list of categories to import from command line args
+  const targetCategories = process.argv.slice(2);
+
+  if (targetCategories.length === 0) {
+    console.error('❌ Please specify categories to import as arguments');
+    console.error('Example: node scripts/import-oscars-incremental.js "Best Supporting Actor" "Best Supporting Actress"');
+    process.exit(1);
+  }
+
+  console.log(`📂 Target categories: ${targetCategories.join(', ')}`);
+
+  // Load the Oscar nominations data
   const dataPath = path.join(__dirname, '..', 'oscar-nominations.json');
   if (!fs.existsSync(dataPath)) {
     console.error('❌ Oscar nominations data file not found at:', dataPath);
@@ -196,15 +205,39 @@ async function main() {
   }
 
   const allOscarData = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-  const oscarData = allOscarData.filter(nomination => TARGET_CATEGORIES.includes(nomination.category));
+  const oscarData = allOscarData.filter(nomination => targetCategories.includes(nomination.category));
 
   console.log(`📊 Loaded ${allOscarData.length} total nominations, filtered to ${oscarData.length} for target categories`);
 
-  // Clear existing data
-  console.log('🗑️  Clearing existing Oscar data...');
-  await prisma.oscarNomination.deleteMany();
-  await prisma.oscarMovie.deleteMany();
-  await prisma.oscarCategory.deleteMany();
+  // Check which categories already exist
+  const existingCategories = await prisma.oscarCategory.findMany({
+    where: {
+      name: {
+        in: targetCategories
+      }
+    }
+  });
+
+  if (existingCategories.length > 0) {
+    console.log(`⚠️  Warning: ${existingCategories.length} categories already exist:`);
+    existingCategories.forEach(cat => console.log(`   - ${cat.name}`));
+    console.log('Skipping these categories to preserve existing data.');
+
+    const existingNames = existingCategories.map(c => c.name);
+    const newCategories = targetCategories.filter(name => !existingNames.includes(name));
+
+    if (newCategories.length === 0) {
+      console.log('✅ No new categories to import. Exiting.');
+      await prisma.$disconnect();
+      return;
+    }
+
+    console.log(`📂 Will import only: ${newCategories.join(', ')}`);
+    // Filter to only new categories
+    const filteredData = oscarData.filter(nom => newCategories.includes(nom.category));
+    oscarData.length = 0;
+    oscarData.push(...filteredData);
+  }
 
   const stats = {
     categories_created: 0,
@@ -212,34 +245,41 @@ async function main() {
     movies_verified: 0,
     movies_auto_verified: 0,
     movies_needs_review: 0,
+    movies_skipped_existing: 0,
     nominations_created: 0,
     errors: 0,
     processed: 0
   };
 
   try {
-    // Create categories
-    console.log('📁 Creating categories...');
+    // Create new categories only
+    console.log('📁 Creating new categories...');
     const uniqueCategories = [...new Set(oscarData.map(n => n.category))];
     const categoryData = uniqueCategories.map(categoryName => ({
       name: categoryName,
       category_group: categorizeCategory(categoryName)
     }));
 
-    await prisma.oscarCategory.createMany({ data: categoryData });
+    for (const catData of categoryData) {
+      await prisma.oscarCategory.upsert({
+        where: { name: catData.name },
+        create: catData,
+        update: {} // Don't update if exists
+      });
+      stats.categories_created++;
+    }
+
     const createdCategories = await prisma.oscarCategory.findMany();
     const categoryMap = new Map();
     createdCategories.forEach(category => {
       categoryMap.set(category.name, category.id);
     });
-    stats.categories_created = uniqueCategories.length;
-    console.log(`✅ Created ${stats.categories_created} categories`);
+    console.log(`✅ Created ${stats.categories_created} new categories`);
 
-    // Create movies with TMDB verification
+    // Extract unique movies and check which ones already exist
     console.log('🎭 Extracting unique movies...');
     const uniqueMoviesWithContext = new Map();
 
-    // Build unique movies map with ceremony year context
     oscarData.forEach(nomination => {
       nomination.movies.forEach(movie => {
         const key = movie.tmdb_id || `no-tmdb-${movie.title}`;
@@ -253,65 +293,103 @@ async function main() {
     });
 
     const totalMovies = uniqueMoviesWithContext.size;
-    console.log(`📊 Found ${totalMovies} unique movies to verify`);
+    console.log(`📊 Found ${totalMovies} unique movies (some may already exist)`);
 
-    // Verify each movie with TMDB
-    console.log('🔍 Verifying movies with TMDB...');
+    // Check which movies already exist
+    const tmdbIds = Array.from(uniqueMoviesWithContext.values())
+      .map(({ movie }) => movie.tmdb_id)
+      .filter(id => id);
+
+    const existingMovies = await prisma.oscarMovie.findMany({
+      where: {
+        tmdb_id: {
+          in: tmdbIds
+        }
+      },
+      select: {
+        tmdb_id: true,
+        id: true,
+        review_status: true
+      }
+    });
+
+    const existingMovieMap = new Map();
+    existingMovies.forEach(movie => {
+      existingMovieMap.set(movie.tmdb_id, movie);
+    });
+
+    console.log(`✅ Found ${existingMovies.length} movies already in database (will skip verification)`);
+
+    // Verify and create only NEW movies
+    console.log('🔍 Verifying NEW movies with TMDB...');
     const verificationResults = new Map();
+    const moviesToCreate = [];
     let verifiedCount = 0;
 
     for (const [key, { movie, ceremonyYear }] of uniqueMoviesWithContext) {
-      verifiedCount++;
+      const existingMovie = movie.tmdb_id ? existingMovieMap.get(movie.tmdb_id) : null;
 
-      if (verifiedCount % 50 === 0) {
-        console.log(`   Progress: ${verifiedCount}/${totalMovies} movies verified (${Math.round(verifiedCount/totalMovies*100)}%)`);
-      }
-
-      const verification = await verifyMovieWithTMDB(movie, ceremonyYear);
-      verificationResults.set(key, verification);
-
-      if (verification.review_status === 'auto_verified') {
-        stats.movies_auto_verified++;
+      if (existingMovie) {
+        // Movie already exists - skip verification, preserve existing status
+        stats.movies_skipped_existing++;
+        verificationResults.set(key, {
+          id: existingMovie.id,
+          existing: true
+        });
       } else {
-        stats.movies_needs_review++;
-      }
+        // New movie - verify with TMDB
+        verifiedCount++;
 
-      // Rate limiting
-      if (verifiedCount < totalMovies) {
+        if (verifiedCount % 50 === 0) {
+          console.log(`   Progress: ${verifiedCount}/${totalMovies - existingMovies.length} new movies verified`);
+        }
+
+        const verification = await verifyMovieWithTMDB(movie, ceremonyYear);
+        verificationResults.set(key, verification);
+
+        if (verification.review_status === 'auto_verified') {
+          stats.movies_auto_verified++;
+        } else {
+          stats.movies_needs_review++;
+        }
+
+        moviesToCreate.push({
+          title: movie.title,
+          tmdb_id: movie.tmdb_id,
+          imdb_id: movie.imdb_id,
+          review_status: verification.review_status,
+          confidence_score: verification.confidence_score,
+          verification_notes: verification.verification_notes
+        });
+
+        // Rate limiting
         await delay(RATE_LIMIT_DELAY);
       }
     }
 
     stats.movies_verified = verifiedCount;
-    console.log(`✅ Verified ${stats.movies_verified} movies`);
+    console.log(`✅ Verified ${stats.movies_verified} new movies`);
     console.log(`   Auto-verified: ${stats.movies_auto_verified}`);
     console.log(`   Needs review: ${stats.movies_needs_review}`);
+    console.log(`   Skipped (existing): ${stats.movies_skipped_existing}`);
 
-    // Create movies with verification data
-    console.log('💾 Inserting movies into database...');
-    const movieData = Array.from(uniqueMoviesWithContext.entries()).map(([key, { movie }]) => {
-      const verification = verificationResults.get(key);
-      return {
-        title: movie.title,
-        tmdb_id: movie.tmdb_id,
-        imdb_id: movie.imdb_id,
-        review_status: verification.review_status,
-        confidence_score: verification.confidence_score,
-        verification_notes: verification.verification_notes
-      };
-    });
+    // Insert new movies
+    if (moviesToCreate.length > 0) {
+      console.log('💾 Inserting new movies into database...');
+      await prisma.oscarMovie.createMany({ data: moviesToCreate });
+      stats.movies_created = moviesToCreate.length;
+      console.log(`✅ Created ${stats.movies_created} new movies`);
+    }
 
-    await prisma.oscarMovie.createMany({ data: movieData });
-    const createdMovies = await prisma.oscarMovie.findMany();
+    // Get updated movie map (including newly created movies)
+    const allMovies = await prisma.oscarMovie.findMany();
     const movieMap = new Map();
-    createdMovies.forEach(movie => {
+    allMovies.forEach(movie => {
       const key = movie.tmdb_id || `no-tmdb-${movie.title}`;
       movieMap.set(key, movie.id);
     });
-    stats.movies_created = createdMovies.length;
-    console.log(`✅ Created ${stats.movies_created} movies in database`);
 
-    // Create nominations
+    // Create nominations (check for duplicates)
     console.log('🏆 Creating nominations...');
     const nominationData = [];
 
@@ -341,29 +419,44 @@ async function main() {
           movieId = movieMap.get(movieKey);
         }
 
-        nominationData.push({
-          ceremony_year: ceremonyYear,
-          category_id: categoryId,
-          movie_id: movieId,
-          nominee_name: nominee,
-          is_winner: nomination.won
+        // Check if this nomination already exists
+        const existingNomination = await prisma.oscarNomination.findFirst({
+          where: {
+            ceremony_year: ceremonyYear,
+            category_id: categoryId,
+            movie_id: movieId,
+            nominee_name: nominee
+          }
         });
+
+        if (!existingNomination) {
+          nominationData.push({
+            ceremony_year: ceremonyYear,
+            category_id: categoryId,
+            movie_id: movieId,
+            nominee_name: nominee,
+            is_winner: nomination.won
+          });
+        }
       }
     }
 
     // Insert all nominations at once
-    console.log(`💾 Inserting ${nominationData.length} nominations...`);
-    await prisma.oscarNomination.createMany({ data: nominationData });
-    stats.nominations_created = nominationData.length;
+    if (nominationData.length > 0) {
+      console.log(`💾 Inserting ${nominationData.length} new nominations...`);
+      await prisma.oscarNomination.createMany({ data: nominationData });
+      stats.nominations_created = nominationData.length;
+    }
 
     console.log('🎉 Import completed successfully!');
     console.log('📈 Final Stats:');
-    console.log(`   Categories: ${stats.categories_created}`);
+    console.log(`   Categories: ${stats.categories_created} new`);
     console.log(`   Movies Created: ${stats.movies_created}`);
     console.log(`   Movies Verified: ${stats.movies_verified}`);
-    console.log(`     ✓ Auto-verified: ${stats.movies_auto_verified} (${Math.round(stats.movies_auto_verified/stats.movies_verified*100)}%)`);
-    console.log(`     ⚠ Needs Review: ${stats.movies_needs_review} (${Math.round(stats.movies_needs_review/stats.movies_verified*100)}%)`);
-    console.log(`   Nominations: ${stats.nominations_created}`);
+    console.log(`     ✓ Auto-verified: ${stats.movies_auto_verified}`);
+    console.log(`     ⚠ Needs Review: ${stats.movies_needs_review}`);
+    console.log(`   Movies Preserved: ${stats.movies_skipped_existing} (existing)`);
+    console.log(`   Nominations: ${stats.nominations_created} new`);
     console.log(`   Errors: ${stats.errors}`);
 
   } catch (error) {

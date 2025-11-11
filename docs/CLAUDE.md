@@ -109,9 +109,9 @@ prisma/
 - **watchlist_tags**: Many-to-many relationship for watchlist mood tags
 
 ### Oscar System (Unified Architecture)
-- **oscar_categories**: Oscar category master data (Best Picture, Best Actor, etc.)
-- **oscar_movies**: Oscar-specific movie records with TMDB IDs
-- **oscar_nominations**: Complete historical data (1928-2025, 2,053+ nominations)
+- **oscar_categories**: Oscar category master data (6 imported, 28 more available)
+- **oscar_movies**: Oscar-specific movie records with verified TMDB IDs (1,409 movies, 100% verified)
+- **oscar_nominations**: Complete historical data (ceremony years 1929-2024, 2,913 nominations)
 
 **→ See [oscars.md](./oscars.md) for complete Oscar system architecture**
 
