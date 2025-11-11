@@ -94,3 +94,23 @@ export interface PaginationParams {
   sortOrder?: 'asc' | 'desc';
   tag?: string;
 }
+
+export interface OscarTableNomination {
+  category: string;
+  ceremony_year: number;
+  is_winner: boolean;
+  nominee_name: string | null;
+}
+
+export interface OscarTableMovie {
+  oscar_movie_id: number;
+  tmdb_id: number | null;
+  imdb_id: string | null;
+  title: string;
+  ceremony_years: number[];
+  nominations: OscarTableNomination[];
+  win_count: number;
+  nomination_count: number;
+  in_collection: boolean;
+  collection_id: number | null;
+}

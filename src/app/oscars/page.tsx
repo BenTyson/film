@@ -4,13 +4,14 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Award, Search, RefreshCw, Clapperboard, Users, Plus, Edit, Film, Archive } from 'lucide-react';
+import { Award, Search, RefreshCw, Clapperboard, Users, Plus, Edit, Film, Archive, LayoutGrid, Table } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import { MovieDetailsModal } from '@/components/movie/MovieDetailsModal';
 import { EditOscarMovieModal } from '@/components/oscar/EditOscarMovieModal';
+import OscarTableView from '@/components/oscar/OscarTableView';
 
 interface OscarOverview {
   overview: {
@@ -120,6 +121,7 @@ export default function OscarsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOscarMovie, setEditingOscarMovie] = useState<{id: number; title: string; tmdb_id: number | null; imdb_id: string | null} | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
 
   // Check admin status from database
   useEffect(() => {
@@ -695,6 +697,32 @@ export default function OscarsPage() {
                     </button>
                   </form>
 
+                  {/* View Toggle */}
+                  <div className="flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${
+                        viewMode === 'grid'
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+                          : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                      }`}
+                      title="Grid view"
+                    >
+                      <LayoutGrid className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('table')}
+                      className={`p-3 transition-all min-h-[44px] min-w-[44px] ${
+                        viewMode === 'table'
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+                          : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                      }`}
+                      title="Table view"
+                    >
+                      <Table className="w-5 h-5" />
+                    </button>
+                  </div>
+
                   {/* Refresh Button */}
                   <div className="flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
                     <button
@@ -750,6 +778,32 @@ export default function OscarsPage() {
                   </span>
                 )}
 
+                {/* View Toggle */}
+                <div className="flex border border-gray-700 rounded-lg overflow-hidden bg-gray-800">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 transition-all ${
+                      viewMode === 'grid'
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+                        : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                    }`}
+                    title="Grid view"
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('table')}
+                    className={`p-2 transition-all ${
+                      viewMode === 'table'
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+                        : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                    }`}
+                    title="Table view"
+                  >
+                    <Table className="w-4 h-4" />
+                  </button>
+                </div>
+
                 {/* Refresh Button */}
                 <button
                   onClick={refreshCollectionStatus}
@@ -775,6 +829,10 @@ export default function OscarsPage() {
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+          </div>
+        ) : viewMode === 'table' ? (
+          <div className="mt-8">
+            <OscarTableView />
           </div>
         ) : (
           <div className="space-y-8 mt-8">

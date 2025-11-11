@@ -51,13 +51,16 @@ A personal movie tracking web application for managing a collection of 3000+ mov
 
 ### Oscar Tracking
 Comprehensive Academy Award tracking system (1928-2025)
-- 1,158+ unique Oscar movies with TMDB IDs
-- 2,053+ verified nominations
-- Category filtering (Best Picture, Actor, Actress, Director)
-- Grayscale styling for non-collection movies
+- **1,152 unique Oscar movies** (TMDB ID mapping in progress)
+- **2,074 nominations** across 97 ceremony years
+- **4 core categories**: Best Picture, Best Actor, Best Actress, Best Director
+- **Table view interface**: Primary tool for data validation (sortable, filterable)
+- **Grid view interface**: Visual browsing with posters (once TMDB IDs mapped)
 - Year navigation with decade grouping
 
-**→ Detailed architecture in [oscars.md](../oscars.md)**
+**Current Status (November 2024):** Data freshly imported from clean CSV source. TMDB ID mapping is next priority.
+
+**→ Detailed architecture and rebuild status in [oscars.md](../oscars.md)**
 
 ### Watchlist
 Mood-based movie watchlist system (separate from main collection)
