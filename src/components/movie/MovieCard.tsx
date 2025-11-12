@@ -158,9 +158,10 @@ export function MovieCard({ movie, onSelect, className }: MovieCardProps) {
                   className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
                   style={{
                     backgroundColor: tag.color ? `${tag.color}20` : 'rgba(255,255,255,0.1)',
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
                     borderColor: tag.color || 'rgba(255,255,255,0.2)',
-                    color: tag.color || 'inherit',
-                    border: '1px solid'
+                    color: tag.color || 'inherit'
                   }}
                 >
                   <IconComponent className="w-3 h-3" />

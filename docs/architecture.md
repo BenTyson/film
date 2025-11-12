@@ -251,6 +251,14 @@ App Layout (src/app/layout.tsx)
 - **TrailerPlayer.tsx** - YouTube trailer embed component
 
 #### Oscar Components (`src/components/oscar/`)
+- **OscarTableView.tsx** - Dual-mode Oscar browsing interface
+  - **Table Mode:** Traditional table with ceremony years, categories, nominations
+  - **Grid Mode:** 8-column responsive grid (3/5/6/8 columns for mobile/md/lg/xl)
+    - Smart thumbnails: Shows person photos for actor/director categories, movie posters otherwise
+    - Hover effect: Crossfade from person photo to movie poster on hover (300ms transition)
+    - Person selection: Prioritizes winners over nominees for display
+  - Category filtering with real-time thumbnail adaptation
+  - Year filtering and search functionality
 - **EditOscarMovieModal.tsx** - Edit Oscar movie metadata (TMDB ID, poster path)
   - Used for correcting TMDB ID mismatches
   - Poster path override functionality
@@ -286,6 +294,9 @@ App Layout (src/app/layout.tsx)
 /oscars
 ├── Streamlined Header (matches main collection design)
 ├── Year Filter & Category Tabs
+├── Grid/Table View Toggle (dual display modes)
+├── Smart Thumbnail Display (person photos for actor/director categories)
+├── Hover Effects (crossfade between person photo and movie poster)
 ├── Lazy Loading (initial 3 years)
 ├── Infinite Scroll Oscar Movies
 └── Performance Optimized Grid

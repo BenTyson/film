@@ -826,7 +826,7 @@ export default function OscarsPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 pb-12">
+      <div className="mx-auto px-4 md:px-6 lg:px-8 pb-12">
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>

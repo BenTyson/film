@@ -45,6 +45,7 @@ The system uses a **unified architecture** with three interconnected tables:
 - tmdb_id: TMDB movie ID for matching (UNIQUE)
 - imdb_id: IMDb movie ID for matching (UNIQUE)
 - title: Movie title
+- poster_path: TMDB poster path for grid view display (String, nullable)
 - review_status: Enum (pending, auto_verified, needs_manual_review, manually_reviewed)
 - verification_notes: Text notes from automated verification
 - confidence_score: Float (0.0-1.0) indicating title match confidence
@@ -60,6 +61,8 @@ The system uses a **unified architecture** with three interconnected tables:
 - category_id: Foreign key to oscar_categories
 - movie_id: Foreign key to oscar_movies (nullable)
 - nominee_name: Name of nominee (for acting/directing categories)
+- person_id: TMDB person ID for actors/actresses/directors (Int, nullable)
+- profile_path: TMDB profile image path for person thumbnails (String, nullable)
 - is_winner: Boolean flag for wins vs nominations
 - created_at, updated_at: Timestamps
 ```
@@ -199,17 +202,23 @@ const [movieData, setMovieData] = useState<Record<number, MovieWithOscars>>({});
 
 #### `OscarTableView.tsx` (`src/components/oscar/`)
 
-**Purpose:** Primary data validation and review interface for Oscar movies
+**Purpose:** Dual-mode interface for Oscar data - data validation (Table) and visual browsing (Grid)
+
+**View Modes:**
+
+##### Table Mode (Data Validation)
+**Primary interface for data review and validation**
 
 **Features:**
 - **Sortable Columns**: Click headers to sort by Title, TMDB ID, Oscar Years, Wins, or Nominations
 - **Default Sort**: Ceremony year descending (most recent first)
 - **Year Filter**: Dropdown to filter by specific ceremony year
-- **Category Filter**: Multi-select buttons for Best Picture, Best Actor, Best Actress, Best Director
+- **Category Filter**: Multi-select buttons for all available categories
 - **AND Logic**: Filters work together (year AND category)
 - **TMDB ID Status**: Clear visual indicators for missing IDs (red "Missing" badge)
-- **Nomination Display**: Color-coded badges showing wins (W) vs nominations (N) by category
+- **Nomination Display**: Clean stacked rows with person thumbnails for acting/directing categories
 - **Movie Count**: Real-time count of filtered results
+- **Movie Posters**: 40x60px vertical thumbnails in first column
 
 **Use Cases:**
 1. Identify movies needing TMDB ID mapping (red "Missing" indicators)
@@ -217,27 +226,62 @@ const [movieData, setMovieData] = useState<Record<number, MovieWithOscars>>({});
 3. Review category-specific nominations (e.g., all Best Picture winners)
 4. Spot-check data integrity (multiple years, duplicate entries)
 
+##### Grid Mode (Visual Browsing)
+**Visual interface for exploring Oscar nominees with smart thumbnail display**
+
+**Features:**
+- **Responsive Grid**: 3/5/6/8 columns (mobile/md/lg/xl screens)
+- **Smart Thumbnails**: Displays person photos when filtering by actor/director categories
+- **Hover Interaction**: Person photo crossfades to movie poster on hover (300ms transition)
+- **Person Categories**: Best Actor, Best Actress, Best Supporting Actor, Best Supporting Actress, Best Director
+- **Winner Priority**: Shows winner's photo if multiple nominees, otherwise first nominee
+- **Visual Indicators**:
+  - Trophy badge (🏆) for wins with count
+  - Green checkmark for movies in collection
+  - Hover overlay with person name, movie title, years, stats
+- **Movie Posters**: For non-person categories, always shows movie poster
+- **Fallback Icons**: User icon for missing person photos, Film icon for missing posters
+
 **Technical Implementation:**
 ```typescript
 // API endpoint provides aggregated data
 const response = await fetch('/api/oscars/table');
 // Returns: { movies: OscarTableMovie[], success: boolean }
 
-// Table view aggregates:
-// - ceremony_years: Array of years movie was nominated
-// - nominations: All nominations with category, winner status, year
-// - win_count: Total wins across all categories
-// - nomination_count: Total nominations
-// - in_collection: Whether user has this movie
+// Data structure:
+interface OscarTableMovie {
+  oscar_movie_id: number;
+  tmdb_id: number | null;
+  title: string;
+  poster_path: string | null;              // From oscar_movies table
+  ceremony_years: number[];
+  nominations: OscarTableNomination[];     // Includes person_id, profile_path
+  win_count: number;
+  nomination_count: number;
+  in_collection: boolean;
+  collection_id: number | null;
+}
+
+// Person thumbnail logic (Grid mode):
+const isShowingPersonCategories = selectedCategories.every(
+  cat => personCategories.includes(cat)
+);
+
+// Smart thumbnail selection:
+if (isShowingPersonCategories) {
+  // Show person photo (default) → movie poster on hover
+  const primaryPerson = getPrimaryPerson(movie); // Winner or first nominee
+  // Crossfade transition between person.profile_path and movie.poster_path
+}
 ```
 
-**Workflow for TMDB ID Mapping (Next Session):**
-1. Open table view (default on /oscars page)
+**Workflow for Data Validation:**
+1. Open table view (toggle in top-right)
 2. Movies sort by year descending (2025 first)
 3. Identify "Missing" TMDB ID badges
 4. For each movie, search TMDB using ceremony_year - 1 as release year
 5. Update oscar_movies record with correct TMDB ID
-6. Verify poster appears in grid view
+6. Switch to grid view to verify poster appears
 
 #### `EditOscarMovieModal.tsx` (`src/components/oscar/`)
 
@@ -457,6 +501,66 @@ node scripts/import-oscars.js
 4. Select correct match or confirm existing ID
 5. System updates review_status to manually_reviewed
 
+### Poster Population Process
+
+After importing Oscar movies with TMDB IDs, posters must be populated from TMDB to enable grid view display.
+
+**Script:** `scripts/populate-oscar-posters.js`
+
+**Purpose:** Fetch and store poster paths from TMDB for all Oscar movies
+
+**Process:**
+1. Query all Oscar movies with `tmdb_id IS NOT NULL` and `poster_path IS NULL`
+2. Fetch movie details from TMDB API for each movie
+3. Extract `poster_path` from TMDB response
+4. Update `oscar_movies.poster_path` with the fetched path
+5. Log progress and failures for review
+
+**Features:**
+- **Batch Processing**: Processes 50 movies at a time with progress updates
+- **Rate Limiting**: 250ms delay between TMDB requests (safe for API limits)
+- **Incremental**: Only processes movies with NULL poster_path (safe to re-run)
+- **Error Handling**: Retries and logs failures to CSV
+- **Progress Tracking**: Real-time console output and log file
+
+**Usage:**
+```bash
+# Run poster population (incremental - only NULL poster paths)
+node scripts/populate-oscar-posters.js
+
+# Expected output:
+# === Populating Oscar Movies with Poster Paths ===
+# Found 1409 movies to process
+#
+# --- Batch 1/29 (1-50/1409) ---
+# [1/1409] ✅ Wings - /kEl6KCBgdmT1Nex3ka0EIWAOmtm.jpg
+# [2/1409] ✅ The Racket - /2EuE65PU92QAZ3xEnC9z0iAWzQA.jpg
+# ...
+#
+# === FINAL SUMMARY ===
+# Total processed: 1409
+# Successful: 1409
+# No poster available: 0
+# Failed: 0
+# Success rate: 100.0%
+```
+
+**Performance:**
+- **~1,400 movies** ≈ 6-7 minutes processing time
+- **Rate limit**: 250ms between requests = ~240 movies/minute
+- **Success rate**: Typically 99%+ (TMDB has posters for nearly all Oscar nominees)
+
+**When to Run:**
+1. **After initial import**: Populate all movies after running `import-oscars.js`
+2. **After adding categories**: When incremental import adds new movies
+3. **Periodic refresh**: Re-run occasionally to fetch updated posters from TMDB
+
+**Integration with Grid View:**
+- Grid mode checks `movie.poster_path` first (from oscar_movies table)
+- Falls back to collection poster if Oscar movie has no poster
+- Displays Film icon if both are NULL
+- Person categories use `profile_path` from nominations for actor/director thumbnails
+
 ### Historical Context: Why Automated Verification?
 
 **Previous Issues (Pre-January 2025):**
@@ -478,6 +582,12 @@ node scripts/import-oscars.js
 # Import new Oscar categories (incremental - safe for production)
 node scripts/import-oscars-incremental.js "Best Supporting Actress" "Best Original Screenplay"
 
+# Populate Oscar movie posters (run after import)
+node scripts/populate-oscar-posters.js
+
+# Populate person data for actors/directors (run after import)
+node scripts/populate-oscar-people.js
+
 # View manual review interface (admin-only)
 # Navigate to: http://localhost:3000/oscars/review
 
@@ -494,13 +604,28 @@ prisma.oscarMovie.groupBy({
 });
 "
 
+# Check poster population status
+node -e "
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+prisma.oscarMovie.aggregate({
+  _count: { poster_path: true }
+}).then(result => {
+  prisma.oscarMovie.count().then(total => {
+    console.log('Movies with posters:', result._count.poster_path, '/', total);
+    prisma.\$disconnect();
+  });
+});
+"
+
 # Start development server
 npm run dev
 
 # View Oscar data
 # Navigate to: http://localhost:3000/oscars
-# Table view (default) - sortable, filterable
-# Grid view - visual browsing with posters
+# Click Grid/Table toggle (top-right) to switch views:
+# - Grid view: Visual browsing with person thumbnails, hover effects
+# - Table view: Data validation, sortable, filterable
 ```
 
 ## Key Features

@@ -183,6 +183,7 @@ model OscarMovie {
   tmdb_id             Int?              @unique
   imdb_id             String?           @unique
   title               String
+  poster_path         String?
   review_status       ReviewStatus      @default(pending)
   verification_notes  String?
   confidence_score    Float?
@@ -201,6 +202,8 @@ model OscarNomination {
   category_id   Int
   movie_id      Int?
   nominee_name  String?
+  person_id     Int?          // TMDB person ID for actors/actresses/directors
+  profile_path  String?       // TMDB profile image path
   is_winner     Boolean       @default(false)
   created_at    DateTime      @default(now())
   updated_at    DateTime      @updatedAt

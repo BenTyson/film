@@ -104,6 +104,34 @@ interface TMDBWatchProvidersResponse {
   };
 }
 
+interface TMDBPerson {
+  id: number;
+  name: string;
+  profile_path: string | null;
+  known_for_department: string;
+  popularity: number;
+  known_for: TMDBMovie[];
+}
+
+interface TMDBPersonSearchResponse {
+  page: number;
+  results: TMDBPerson[];
+  total_pages: number;
+  total_results: number;
+}
+
+interface TMDBPersonDetails {
+  id: number;
+  name: string;
+  biography: string;
+  birthday: string | null;
+  deathday: string | null;
+  place_of_birth: string | null;
+  profile_path: string | null;
+  known_for_department: string;
+  popularity: number;
+}
+
 export interface WatchProvider {
   provider_id: number;
   provider_name: string;
@@ -318,6 +346,25 @@ class TMDBClient {
     return this.makeRequest<TMDBCredits>(`/movie/${movieId}/credits`);
   }
 
+  async searchPerson(name: string, page = 1): Promise<TMDBPersonSearchResponse> {
+    const params: Record<string, string> = {
+      query: name,
+      page: page.toString(),
+      include_adult: 'false',
+    };
+
+    return this.makeRequest<TMDBPersonSearchResponse>('/search/person', params);
+  }
+
+  async getPersonDetails(personId: number): Promise<TMDBPersonDetails> {
+    return this.makeRequest<TMDBPersonDetails>(`/person/${personId}`);
+  }
+
+  getProfileURL(path: string | null, size: 'w45' | 'w185' | 'h632' | 'original' = 'w185'): string | null {
+    if (!path) return null;
+    return `https://image.tmdb.org/t/p/${size}${path}`;
+  }
+
   async getConfiguration(): Promise<TMDBConfiguration> {
     return this.makeRequest<TMDBConfiguration>('/configuration');
   }
@@ -477,4 +524,7 @@ export type {
   TMDBConfiguration,
   TMDBVideo,
   TMDBVideosResponse,
+  TMDBPerson,
+  TMDBPersonSearchResponse,
+  TMDBPersonDetails,
 };

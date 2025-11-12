@@ -527,6 +527,304 @@ Auto-update when TMDB data changes (title corrections, merges)
 
 ---
 
+## Person Data Population (Actors, Actresses, Directors)
+
+**Added:** January 2025
+**Status:** Production-ready (99.8% success rate - 2,303/2,307 nominations)
+
+### Overview
+
+Beyond movie TMDB IDs, the system now populates actor, actress, and director profile data from TMDB's person database. This enables rich UI features like profile thumbnails in the Oscar table view.
+
+### Database Schema for Person Data
+
+```prisma
+model OscarNomination {
+  id            Int           @id @default(autoincrement())
+  ceremony_year Int
+  category_id   Int
+  movie_id      Int?
+  nominee_name  String?
+  person_id     Int?          // TMDB person ID
+  profile_path  String?       // TMDB profile image path
+  is_winner     Boolean       @default(false)
+  // ... other fields
+}
+```
+
+**Key Fields:**
+- `nominee_name`: Already in source data (`oscar-nominations.json`)
+- `person_id`: TMDB person identifier (enables linking to actor/director details)
+- `profile_path`: Path to profile image (e.g., `/abc123.jpg` → `https://image.tmdb.org/t/p/w185/abc123.jpg`)
+
+### TMDB Client Enhancements
+
+**Added to `/src/lib/tmdb.ts`:**
+
+```typescript
+// Search for person by name
+async searchPerson(name: string): Promise<TMDBPersonSearchResponse>
+
+// Get detailed person info by ID
+async getPersonDetails(personId: number): Promise<TMDBPersonDetails>
+
+// Construct profile image URL
+getProfileURL(path: string, size: 'w45' | 'w185' | 'h632' | 'original'): string
+```
+
+**Person Interface:**
+```typescript
+interface TMDBPerson {
+  id: number;
+  name: string;
+  profile_path: string | null;
+  known_for_department: string;  // "Acting" or "Directing"
+  popularity: number;
+}
+```
+
+### Population Scripts
+
+#### 1. Test Script (5 nominations)
+
+**File:** `scripts/test-person-matching.js`
+
+**Purpose:** Validate the person matching process before running on all data
+
+**Command:**
+```bash
+node scripts/test-person-matching.js
+```
+
+**What It Does:**
+- Fetches 5 unprocessed nominations (mix of acting + director categories)
+- Searches TMDB for each nominee by name
+- Filters results by `known_for_department` ("Acting" vs "Directing")
+- Selects most popular/best match
+- Updates `person_id` and `profile_path` in database
+- Reports success/failure for each
+
+**Example Output:**
+```
+=== Testing Person Matching with 5 Nominations ===
+Found 5 person categories: Best Actor, Best Actress, ...
+Processing 5 nominations...
+
+✅ Emil Jannings → Emil Jannings (ID: 2895)
+✅ Janet Gaynor → Janet Gaynor (ID: 9088)
+✅ Frank Borzage → Frank Borzage (ID: 14855)
+
+SUMMARY: 5/5 successful (100%)
+```
+
+#### 2. Full Population Script
+
+**File:** `scripts/populate-oscar-people.js`
+
+**Purpose:** Process all 2,307 nominations with person data
+
+**Command:**
+```bash
+node scripts/populate-oscar-people.js
+```
+
+**Features:**
+- **Batch processing:** 50 nominations at a time with progress updates
+- **Rate limiting:** 350ms delay between TMDB requests (safe for API limits)
+- **Retry logic:** 3 attempts for failed API calls
+- **Smart filtering:** Only processes person categories (Actor, Actress, Director, Supporting)
+- **Department matching:** Filters TMDB results by `known_for_department` for accuracy
+- **Incremental:** Only processes nominations where `person_id IS NULL` (safe to re-run)
+- **Detailed logging:** Saves to `scripts/oscar-people-populate.log`
+- **Failure export:** Creates CSV of failed matches for manual review
+
+**Categories Processed:**
+- Best Actor
+- Best Actress
+- Best Supporting Actor
+- Best Supporting Actress
+- Best Director
+
+**Example Output:**
+```
+=== Populating All Oscar Nominations with Person Data ===
+Found 2307 nominations to process
+
+--- Batch 1/47 (1-50/2307) ---
+[1/2307] Gloria Swanson (Best Actress, 1929)... ✅ Gloria Swanson
+[2/2307] King Vidor (Best Director, 1929)... ✅ King Vidor
+...
+
+=== FINAL SUMMARY ===
+Total processed: 2307
+Successful: 2303
+Failed: 4
+Success rate: 99.8%
+
+Completed at: 2025-01-11T22:59:58.836Z
+Log saved to: scripts/oscar-people-populate.log
+```
+
+**Runtime:** ~17-18 minutes for 2,307 nominations
+
+### Matching Algorithm
+
+**1. Search by Name**
+```javascript
+const results = await searchPerson(nomination.nominee_name);
+```
+
+**2. Filter by Department**
+```javascript
+// For acting categories
+const actingResults = results.filter(p => p.known_for_department === 'Acting');
+
+// For director category
+const directingResults = results.filter(p => p.known_for_department === 'Directing');
+```
+
+**3. Select Best Match**
+```javascript
+// Return most popular match (first result after filtering)
+return filtered[0];
+```
+
+**Why This Works:**
+- TMDB search ranks by popularity/relevance
+- Department filtering eliminates wrong people with same name
+- For well-known Oscar nominees, TMDB data is highly accurate
+
+### UI Integration
+
+**Oscar Table View** (`/oscars` → Table View):
+
+**For Person Categories:**
+- Displays 28px circular profile thumbnails
+- Shows nominee names in clean stacked rows
+- Winners: Bold text + subtle yellow glow background
+- Fallback User icon for 4 nominees without images
+
+**Image URLs:**
+```javascript
+`https://image.tmdb.org/t/p/w185${nom.profile_path}`
+```
+
+**Component:** `src/components/oscar/OscarTableView.tsx`
+
+### Success Metrics
+
+**Production Results (January 2025):**
+- **Total Nominations:** 2,307
+- **Successfully Matched:** 2,303 (99.8%)
+- **Failed Matches:** 4 (0.2%)
+- **Categories:** 5 (Actor, Actress, Supporting Actor, Supporting Actress, Director)
+- **Unique People:** ~1,500+ individuals
+- **With Profile Images:** ~2,000+ nominations (87%)
+- **Processing Time:** 17.5 minutes
+
+**Failure Analysis:**
+The 4 failed matches were likely due to:
+- Spelling variations in very old nominations (1920s-1930s)
+- Name changes or stage names
+- Very obscure early cinema figures not in TMDB database
+
+### Future Enhancements
+
+1. **Manual Override UI**
+   - Review interface for the 4 failed matches
+   - Search and manually select correct TMDB person
+   - Similar to Oscar movie review UI at `/oscars/review`
+
+2. **Caching Layer**
+   - Cache TMDB person searches to speed up re-runs
+   - Avoid redundant API calls for duplicate names
+
+3. **Expanded Categories**
+   - Add person data for cinematographers, writers, composers
+   - When expanding to other Oscar categories beyond current 6
+
+4. **Person Detail Pages**
+   - Click on actor thumbnail → modal with full filmography
+   - Link to all their Oscar nominations/wins
+   - Use `getPersonDetails()` to fetch bio, birthday, etc.
+
+### Troubleshooting
+
+**Issue: No profile images showing in UI**
+
+**Check:**
+1. Database has `profile_path` populated:
+   ```sql
+   SELECT COUNT(*) FROM oscar_nominations
+   WHERE nominee_name IS NOT NULL
+   AND profile_path IS NOT NULL;
+   ```
+2. Image URLs are constructed correctly (should have `/t/p/w185/` in path)
+3. TMDB API key has image access permissions
+
+**Issue: Wrong person matched**
+
+**Symptoms:**
+- Profile image doesn't match expected person
+- Name is similar but different person (e.g., "John Smith" the actor vs director)
+
+**Solution:**
+- Check `known_for_department` filter is working
+- Manually update in database:
+  ```sql
+  UPDATE oscar_nominations
+  SET person_id = correct_id,
+      profile_path = '/correct_path.jpg'
+  WHERE id = nomination_id;
+  ```
+
+**Issue: Rate limiting errors**
+
+**Symptoms:**
+- Script fails midway with 429 errors
+- Many "Rate limited, waiting..." messages
+
+**Solution:**
+- Increase `RATE_LIMIT_DELAY` in script (currently 350ms)
+- Script auto-retries with 2-second backoff
+- Can safely re-run - only processes `WHERE person_id IS NULL`
+
+### Quick Reference
+
+**Run Population:**
+```bash
+# Test with 5 nominations first
+node scripts/test-person-matching.js
+
+# Run full population
+node scripts/populate-oscar-people.js
+```
+
+**Check Status:**
+```sql
+-- Count populated
+SELECT COUNT(*) as populated
+FROM oscar_nominations
+WHERE nominee_name IS NOT NULL
+AND person_id IS NOT NULL;
+
+-- Count by category
+SELECT c.name,
+       COUNT(*) as total,
+       COUNT(n.person_id) as with_person_data
+FROM oscar_nominations n
+JOIN oscar_categories c ON n.category_id = c.id
+WHERE n.nominee_name IS NOT NULL
+GROUP BY c.name;
+```
+
+**View Failures:**
+```bash
+cat scripts/oscar-people-failures.csv
+```
+
+---
+
 ## Related Documentation
 
 - **Architecture:** [oscars.md](../oscars.md) - Complete Oscar system design

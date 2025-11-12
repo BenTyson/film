@@ -17,10 +17,10 @@ export async function GET() {
       }
     });
 
-    // Get user's movie collection for TMDB ID matching
+    // Get user's movie collection for TMDB ID matching and poster paths
     const userMovies = await prisma.movie.findMany({
       where: { approval_status: 'approved' },
-      select: { tmdb_id: true, id: true }
+      select: { tmdb_id: true, id: true, poster_path: true }
     });
 
     // Create lookup map for fast TMDB ID matching
@@ -39,12 +39,14 @@ export async function GET() {
       const collectionMovie = movie.tmdb_id ? userMovieMap.get(movie.tmdb_id) : null;
       const inCollection = !!collectionMovie;
 
-      // Format nominations with category and win status
+      // Format nominations with category, win status, and person data
       const formattedNominations = movie.nominations.map(nom => ({
         category: nom.category?.name || 'Unknown',
         ceremony_year: nom.ceremony_year,
         is_winner: nom.is_winner,
-        nominee_name: nom.nominee_name
+        nominee_name: nom.nominee_name,
+        person_id: nom.person_id,
+        profile_path: nom.profile_path
       }));
 
       return {
@@ -52,6 +54,7 @@ export async function GET() {
         tmdb_id: movie.tmdb_id,
         imdb_id: movie.imdb_id,
         title: movie.title,
+        poster_path: movie.poster_path || collectionMovie?.poster_path || null,
         ceremony_years: ceremonyYears,
         nominations: formattedNominations,
         win_count: winCount,

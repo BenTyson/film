@@ -100,6 +100,8 @@ export interface OscarTableNomination {
   ceremony_year: number;
   is_winner: boolean;
   nominee_name: string | null;
+  person_id: number | null;
+  profile_path: string | null;
 }
 
 export interface OscarTableMovie {
@@ -107,6 +109,7 @@ export interface OscarTableMovie {
   tmdb_id: number | null;
   imdb_id: string | null;
   title: string;
+  poster_path: string | null;
   ceremony_years: number[];
   nominations: OscarTableNomination[];
   win_count: number;
