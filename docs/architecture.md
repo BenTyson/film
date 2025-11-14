@@ -281,6 +281,35 @@ App Layout (src/app/layout.tsx)
   - Move to collection option
   - Remove from watchlist
 
+#### Admin Components (`src/components/admin/`)
+- **UserStatsCards.tsx** - Dashboard cards showing user, content, and Oscar statistics
+  - Total users, new this month, active this week
+  - Total movies, watchlist, vaults, tags, avg collection size
+  - Oscar movies and nominations counts
+- **UserTable.tsx** - Sortable table of all users with statistics
+  - Search by name or email
+  - Sort by name, email, role, last login, created date
+  - Edit user modal trigger
+  - Color-coded role badges
+- **EditUserModal.tsx** - Modal for updating user role and name
+  - Role dropdown (admin/user)
+  - Name input field
+  - Save and cancel actions
+- **ActivityFeed.tsx** - Timeline view of user activity
+  - Color-coded action types with icons
+  - Search by user, action description, or metadata
+  - Expandable metadata JSON viewer
+  - Relative timestamps (e.g., "2 hours ago")
+- **ErrorStatsCards.tsx** - Error statistics dashboard
+  - Error counts: Last 24h, Last 7d, Last 30d, Total
+  - Trend indicators (increasing/decreasing/stable)
+  - Color-coded by severity
+- **ErrorTable.tsx** - Sortable error log table
+  - Search by endpoint, error message
+  - Status code badges (color-coded: 4xx yellow, 5xx red)
+  - Expandable stack traces
+  - User attribution with null safety
+
 #### Layout Components (`src/components/layout/`)
 - **Navigation.tsx** - Main navigation header with links to pages
 
@@ -320,10 +349,18 @@ App Layout (src/app/layout.tsx)
 
 ### Next.js API Routes Structure
 
-**Total: 39 API endpoints**
+**Total: 45 API endpoints**
 
 ```
 /api
+├── /admin (6 endpoints)
+│   ├── GET  /users                       # List all users with statistics
+│   ├── PATCH /users/[id]                 # Update user role or name
+│   ├── GET  /stats                       # System-wide statistics
+│   ├── GET  /activity                    # Activity feed with filtering
+│   ├── GET  /errors                      # Error logs with filtering
+│   └── GET  /errors/stats                # Error statistics and trends
+│
 ├── /movies (12 endpoints)
 │   ├── GET  /                        # List movies with filters & sorting
 │   ├── POST /                        # Add new movie
@@ -1150,6 +1187,241 @@ CLERK_SECRET_KEY=sk_test_...
 ```
 
 **→ See [api-auth-patterns.md](./api-auth-patterns.md) for detailed authentication patterns**
+
+---
+
+## Admin Dashboard (January 2025)
+
+### Overview
+Complete admin monitoring and user management system for overseeing the multi-user application. Role-based access control restricts admin features to users with `role = 'admin'`.
+
+### Core Features
+
+#### 1. User Management
+- **User List Table** with search and sorting
+  - Search by name or email
+  - Sort by name, email, role, last login, created date
+  - View user statistics (movies, watchlist items, vaults, tags)
+  - Edit user roles and names
+- **User Statistics Cards**
+  - Total users, new this month, active this week
+  - Content totals: movies, watchlist items, vaults, tags
+  - Average collection size
+  - Oscar data statistics
+
+#### 2. Activity Monitoring
+- **Activity Feed** showing all user actions
+  - 15 tracked action types: movie_added, csv_import, vault_created, watchlist_added, etc.
+  - Search by user, action type, or metadata
+  - Expandable metadata viewer for detailed context
+  - Color-coded action icons (green for adds, red for deletes, blue for updates)
+  - Relative timestamps ("2 hours ago")
+- **Automatic Activity Logging** via `logActivity()` helper
+  - Non-blocking: Never throws errors to prevent breaking user operations
+  - Tracks: user_id, action_type, target_type, target_id, metadata, IP, user_agent
+  - Indexed for fast queries
+
+#### 3. Error Monitoring
+- **Error Statistics Dashboard**
+  - Error counts: Last 24h, Last 7d, Last 30d, Total
+  - Trend analysis (increasing/decreasing/stable)
+  - Top error endpoints
+  - Error distribution by status code
+- **Error Log Table**
+  - Search by endpoint or error message
+  - Status code badges (color-coded: 4xx yellow, 5xx red)
+  - Expandable stack traces
+  - User attribution (nullable for system errors)
+- **Automatic Error Logging** via `logError()` helper
+  - Captures: endpoint, method, status_code, error_message, stack_trace
+  - Request body/params for debugging
+  - Prevents error loops with try-catch on database writes
+
+### Database Models
+
+```typescript
+// Activity Logging
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  action_type String   // "movie_added", "csv_import", etc.
+  target_type String?  // "movie", "vault", "watchlist"
+  target_id   Int?
+  metadata    Json?    // Flexible context: { title, count, tmdb_id, etc. }
+  ip_address  String?
+  user_agent  String?
+  created_at  DateTime @default(now())
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([action_type])
+  @@index([created_at])
+}
+
+// Error Monitoring
+model ErrorLog {
+  id             Int      @id @default(autoincrement())
+  user_id        Int?     // Nullable for system errors
+  endpoint       String
+  method         String
+  status_code    Int
+  error_message  String
+  stack_trace    String?  @db.Text
+  request_body   Json?
+  request_params Json?
+  created_at     DateTime @default(now())
+  user           User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([endpoint])
+  @@index([created_at])
+}
+```
+
+### API Endpoints
+
+```
+/api/admin (6 endpoints)
+├── GET  /users                       # List all users with statistics
+├── PATCH /users/[id]                 # Update user role or name
+├── GET  /stats                       # System-wide statistics
+├── GET  /activity                    # Activity feed with filtering
+│   Query params: user_id, action_type, limit, offset
+├── GET  /errors                      # Error logs with filtering
+│   Query params: endpoint, status_code, limit, offset
+└── GET  /errors/stats                # Error statistics and trends
+```
+
+**Authentication:** All endpoints use `requireAdmin()` - throws 403 if user role ≠ 'admin'
+
+### Components
+
+All admin components located in `src/components/admin/`:
+
+1. **UserStatsCards.tsx** - Dashboard statistics cards
+2. **UserTable.tsx** - Sortable user list with search
+3. **EditUserModal.tsx** - User role/name editor
+4. **ActivityFeed.tsx** - Timeline view of user actions
+5. **ErrorStatsCards.tsx** - Error trend cards
+6. **ErrorTable.tsx** - Sortable error log table
+
+### Admin Page Structure
+
+```typescript
+// src/app/admin/page.tsx
+- Tabbed interface: Users | Activity | Errors
+- Parallel data fetching (Promise.all)
+- Auto-refresh capability
+- Error state handling
+- Loading skeletons
+
+// src/app/admin/layout.tsx
+- Server-side protection via requireAdmin()
+- Redirects non-admins to home page
+```
+
+### Helper Libraries
+
+**Activity Logger** (`src/lib/activity-logger.ts`)
+```typescript
+export type ActivityType =
+  | 'movie_added'
+  | 'movie_updated'
+  | 'movie_removed'
+  | 'csv_import'
+  | 'watchlist_added'
+  | 'watchlist_removed'
+  | 'vault_created'
+  | 'vault_updated'
+  | 'vault_deleted'
+  | 'vault_movie_added'
+  | 'vault_movie_removed'
+  | 'tag_created'
+  | 'movie_tagged'
+  | 'user_login';
+
+export async function logActivity({
+  userId,
+  actionType,
+  targetType,
+  targetId,
+  metadata,
+  ipAddress,
+  userAgent,
+}: ActivityLogParams): Promise<void>
+```
+
+**Error Logger** (`src/lib/error-logger.ts`)
+```typescript
+export async function logError({
+  userId,
+  endpoint,
+  method,
+  statusCode,
+  errorMessage,
+  stackTrace,
+  requestBody,
+  requestParams,
+}: ErrorLogParams): Promise<void>
+
+// Higher-order function wrapper
+export function withErrorLogging<T>(
+  handler: (request: Request, ...args: unknown[]) => Promise<T>,
+  endpoint: string
+): (request: Request, ...args: unknown[]) => Promise<T>
+```
+
+### Security
+
+- **Role-Based Access Control:** Only users with `role = 'admin'` can access
+- **Server-Side Protection:** Admin layout uses `requireAdmin()` before rendering
+- **Client-Side Enforcement:** Admin links hidden in navigation for non-admins
+- **Middleware:** Next.js middleware protects all routes requiring authentication
+
+### Performance
+
+- **Parallel Fetching:** Admin dashboard uses `Promise.all()` for 5 simultaneous API calls
+- **Indexed Queries:** ActivityLog and ErrorLog tables indexed on user_id, action_type, endpoint, created_at
+- **Pagination:** All list endpoints support limit/offset params (default: 50 items)
+- **Efficient Filtering:** WHERE clauses use indexed columns
+
+### Usage
+
+**Accessing Admin Dashboard:**
+1. Set user role to 'admin' in database
+2. Navigate to `/admin`
+3. View tabbed interface: Users, Activity, Errors
+
+**Adding Activity Logging to New Features:**
+```typescript
+import { logActivity } from '@/lib/activity-logger';
+
+// In API route after successful operation
+await logActivity({
+  userId: user.id,
+  actionType: 'movie_added',
+  targetType: 'movie',
+  targetId: movie.id,
+  metadata: { title: movie.title, tmdb_id: movie.tmdb_id },
+});
+```
+
+**Adding Error Logging to API Routes:**
+```typescript
+import { logError } from '@/lib/error-logger';
+
+// In catch block
+await logError({
+  userId: user?.id,
+  endpoint: '/api/movies',
+  method: 'POST',
+  statusCode: 500,
+  errorMessage: error.message,
+  stackTrace: error.stack,
+});
+```
+
+**→ See [skills/admin-operations.md](./skills/admin-operations.md) for detailed admin guide**
 
 ---
 

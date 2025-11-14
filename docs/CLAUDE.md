@@ -26,6 +26,7 @@ This is a personal movie tracking web application built with Next.js, designed t
 - Oscar nominations and wins tracking with dedicated pages (1928-2025, 1,158+ movies, 2,053+ nominations)
 - **Watchlist** with user-specific tagging system - separate from main collection with quick remove functionality
 - **Vaults** for creating thematic movie collections (e.g., "Best Action Films", "Childhood Favorites") - separate from watched collection
+- **Admin Dashboard** for user management, activity monitoring, and error tracking with role-based access control
 - "Buddy system" for tracking movies watched with specific people (e.g., Calen)
 - Clerk UserButton avatar in all page headers for authentication management
 - Dark theme with futuristic aesthetic
@@ -119,6 +120,12 @@ prisma/
 - **movie_match_analysis**: CSV import quality tracking
 - **best_picture_nominees**: Historical Best Picture data
 
+### Admin & Monitoring (January 2025)
+- **activity_logs**: User action tracking (15 action types, metadata in JSON)
+- **error_logs**: Error monitoring and debugging (endpoint, status_code, stack_trace)
+- **vaults**: User-created thematic movie collections
+- **vault_movies**: Many-to-many relationship for vault contents
+
 ## API Integration
 
 ### TMDB API
@@ -201,10 +208,22 @@ CLERK_SECRET_KEY=sk_test_...
 - ✅ Automatic user creation on first sign-in (no webhook needed)
 - ✅ Year filtering by user's movies only
 - ✅ Tag isolation per user (each user has private tag collection)
-- ⏸️ Role-based permissions (admin routes pending)
+- ✅ Role-based permissions with admin dashboard
 
 **→ See [architecture.md § Multi-User Architecture](./architecture.md#multi-user-architecture-january-2025) for details**
 **→ See [api-auth-patterns.md](./api-auth-patterns.md) for auto-user creation implementation**
+
+### ✅ Completed: Admin Dashboard (January 2025)
+- ✅ User management with search and role editing
+- ✅ Activity monitoring (15 tracked action types)
+- ✅ Error logging and monitoring with trends
+- ✅ System-wide statistics and analytics
+- ✅ Role-based access control (requireAdmin)
+- ✅ Real-time activity feed with metadata viewer
+- ✅ Error statistics dashboard with status code filtering
+
+**→ See [architecture.md § Admin Dashboard](./architecture.md#admin-dashboard-january-2025) for complete architecture**
+**→ See [skills/admin-operations.md](./skills/admin-operations.md) for admin guide**
 
 ### Additional Planned Features
 - Statistics dashboard (movies per year, ratings distribution)

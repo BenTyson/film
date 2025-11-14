@@ -41,3 +41,16 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# database backups
+/backups/*.sql
+/backups/*.sql.schema
+
+# archive and temporary scripts
+/scripts/archive/
+/scripts/check-*.js
+/scripts/find-*.js
+/scripts/make-*.js
+/scripts/test-*.js
+/scripts/*.csv
+/scripts/*.log

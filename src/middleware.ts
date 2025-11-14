@@ -12,6 +12,9 @@ export default clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
     await auth.protect();
   }
+
+  // Note: Admin routes (/admin, /api/admin) use requireAdmin() in their server components
+  // and API handlers for role-based access control
 });
 
 export const config = {

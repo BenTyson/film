@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   Edit,
   CheckCircle2,
+  Shield,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -35,6 +36,7 @@ const allNavItems = [
   { href: '/watchlist', label: 'Watchlist', icon: Film },
   { href: '/vaults', label: 'Vaults', icon: Archive },
   { href: '/add', label: 'Add', icon: Plus },
+  { href: '/admin', label: 'Admin', icon: Shield, adminOnly: true },
 ];
 
 export default function VaultDetailPage({ params }: { params: Promise<{ id: string }> }) {

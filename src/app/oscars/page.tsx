@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Award, Search, RefreshCw, Clapperboard, Users, Plus, Edit, Film, Archive, LayoutGrid, Table } from 'lucide-react';
+import { Award, Search, RefreshCw, Clapperboard, Users, Plus, Edit, Film, Archive, LayoutGrid, Table, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
@@ -97,6 +97,7 @@ const allNavItems = [
   { href: '/watchlist', label: 'Watchlist', icon: Film },
   { href: '/vaults', label: 'Vaults', icon: Archive },
   { href: '/add', label: 'Add', icon: Plus },
+  { href: '/admin', label: 'Admin', icon: Shield, adminOnly: true },
 ];
 
 export default function OscarsPage() {

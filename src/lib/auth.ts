@@ -33,8 +33,16 @@ export async function getCurrentUser() {
           ? `${clerkUser.firstName} ${clerkUser.lastName}`
           : clerkUser.firstName || clerkUser.emailAddresses[0]?.emailAddress || 'User',
         role: 'user', // Default role for new users
+        last_login_at: new Date(),
       },
     });
+  } else {
+    // Update last login time for existing users
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { last_login_at: new Date() },
+    });
+    user.last_login_at = new Date();
   }
 
   return user;

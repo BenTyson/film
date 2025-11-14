@@ -7,127 +7,56 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Movie {
-  id              Int                 @id @default(autoincrement())
-  tmdb_id         Int                 @unique
-  title           String
-  original_title  String?
-  release_date    DateTime?
-  director        String?
-  overview        String?
-  poster_path     String?
-  backdrop_path   String?
-  runtime         Int?
-  genres          Json?
-  vote_average    Float?
-  vote_count      Int?
-  popularity      Float?
-  budget          BigInt?
-  revenue         BigInt?
-  tagline         String?
-  imdb_id         String?
-  imdb_rating     Float?
-  csv_row_number  Int?
-  csv_title       String?
-  csv_director    String?
-  csv_year        String?
-  csv_notes       String?
-  approval_status String              @default("pending")
-  approved_at     DateTime?
-  approved_by     String?
-  created_at      DateTime            @default(now())
-  updated_at      DateTime            @updatedAt
-  match_analysis  MovieMatchAnalysis?
-  movie_tags      MovieTag[]
-  oscar_data      OscarData[]
-  user_movies     UserMovie[]
+model activity_logs {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  action_type String
+  target_type String?
+  target_id   Int?
+  metadata    Json?
+  ip_address  String?
+  user_agent  String?
+  created_at  DateTime @default(now())
+  users       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@map("movies")
-}
-
-model User {
-  id            Int       @id @default(autoincrement())
-  clerk_id      String    @unique
-  email         String    @unique
-  name          String?
-  role          String    @default("user") // "user" or "admin"
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-
-  // Relations
-  user_movies      UserMovie[]
-  watchlist_movies WatchlistMovie[]
-  tags             Tag[]
-  vaults           Vault[]
-
-  @@map("users")
-}
-
-model UserMovie {
-  id                 Int       @id @default(autoincrement())
-  movie_id           Int
-  user_id            Int
-  date_watched       DateTime?
-  personal_rating    Int?
-  notes              String?
-  is_favorite        Boolean   @default(false)
-  buddy_watched_with Json?     // Array of buddy names: ["Calen", "Morgan"]
-  watch_location     String?
-  created_at         DateTime  @default(now())
-  updated_at         DateTime  @updatedAt
-  movie              Movie     @relation(fields: [movie_id], references: [id], onDelete: Cascade)
-  user               User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
+  @@index([action_type])
+  @@index([created_at])
   @@index([user_id])
-  @@map("user_movies")
 }
 
-model OscarData {
+model best_picture_nominees {
   id            Int      @id @default(autoincrement())
-  movie_id      Int
+  tmdb_id       Int?
   ceremony_year Int
-  category      String
+  movie_title   String
+  release_year  Int?
   is_winner     Boolean  @default(false)
-  nominee_name  String?
   created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-  movie         Movie    @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+  updated_at    DateTime
+  director      String?
 
-  @@unique([movie_id, ceremony_year, category])
-  @@index([movie_id])
-  @@index([ceremony_year])
-  @@map("oscar_data")
+  @@unique([ceremony_year, movie_title])
 }
 
-model Tag {
-  id            Int             @id @default(autoincrement())
-  name          String
-  color         String?
-  icon          String?
-  user_id       Int?
-  created_at    DateTime        @default(now())
-  user          User?           @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  movie_tags    MovieTag[]
-  watchlist_tags WatchlistTag[]
+model error_logs {
+  id             Int      @id @default(autoincrement())
+  user_id        Int?
+  endpoint       String
+  method         String
+  status_code    Int
+  error_message  String
+  stack_trace    String?
+  request_body   Json?
+  request_params Json?
+  created_at     DateTime @default(now())
+  users          users?   @relation(fields: [user_id], references: [id])
 
-  @@unique([name, user_id])
+  @@index([created_at])
+  @@index([endpoint])
   @@index([user_id])
-  @@map("tags")
 }
 
-model MovieTag {
-  id         Int      @id @default(autoincrement())
-  movie_id   Int
-  tag_id     Int
-  created_at DateTime @default(now())
-  tag        Tag      @relation(fields: [tag_id], references: [id], onDelete: Cascade)
-  movie      Movie    @relation(fields: [movie_id], references: [id], onDelete: Cascade)
-
-  @@unique([movie_id, tag_id])
-  @@map("movie_tags")
-}
-
-model MovieMatchAnalysis {
+model movie_match_analysis {
   id                  Int      @id @default(autoincrement())
   movie_id            Int      @unique
   confidence_score    Int
@@ -138,135 +67,169 @@ model MovieMatchAnalysis {
   year_difference     Int?
   analysis_date       DateTime @default(now())
   created_at          DateTime @default(now())
-  updated_at          DateTime @updatedAt
-  movie               Movie    @relation(fields: [movie_id], references: [id], onDelete: Cascade)
-
-  @@map("movie_match_analysis")
+  updated_at          DateTime
+  movies              movies   @relation(fields: [movie_id], references: [id], onDelete: Cascade)
 }
 
-model BestPictureNominee {
+model movie_tags {
+  id         Int      @id @default(autoincrement())
+  movie_id   Int
+  tag_id     Int
+  created_at DateTime @default(now())
+  movies     movies   @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+  tags       tags     @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@unique([movie_id, tag_id])
+}
+
+model movies {
+  id                   Int                   @id @default(autoincrement())
+  tmdb_id              Int                   @unique
+  title                String
+  original_title       String?
+  release_date         DateTime?
+  director             String?
+  overview             String?
+  poster_path          String?
+  backdrop_path        String?
+  runtime              Int?
+  genres               Json?
+  vote_average         Float?
+  vote_count           Int?
+  popularity           Float?
+  budget               BigInt?
+  revenue              BigInt?
+  tagline              String?
+  imdb_id              String?
+  imdb_rating          Float?
+  csv_row_number       Int?
+  csv_title            String?
+  csv_director         String?
+  csv_year             String?
+  csv_notes            String?
+  approval_status      String                @default("pending")
+  approved_at          DateTime?
+  approved_by          String?
+  created_at           DateTime              @default(now())
+  updated_at           DateTime
+  movie_match_analysis movie_match_analysis?
+  movie_tags           movie_tags[]
+  oscar_data           oscar_data[]
+  user_movies          user_movies[]
+}
+
+model oscar_categories {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique
+  category_group    String?
+  is_active         Boolean             @default(true)
+  created_at        DateTime            @default(now())
+  updated_at        DateTime
+  oscar_nominations oscar_nominations[]
+}
+
+model oscar_data {
   id            Int      @id @default(autoincrement())
-  tmdb_id       Int?
+  movie_id      Int
   ceremony_year Int
-  movie_title   String
-  release_year  Int?
+  category      String
   is_winner     Boolean  @default(false)
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-  director      String?
-
-  @@unique([ceremony_year, movie_title])
-  @@map("best_picture_nominees")
-}
-
-model OscarCategory {
-  id             Int               @id @default(autoincrement())
-  name           String            @unique
-  category_group String?
-  is_active      Boolean           @default(true)
-  created_at     DateTime          @default(now())
-  updated_at     DateTime          @updatedAt
-  nominations    OscarNomination[]
-
-  @@map("oscar_categories")
-}
-
-enum ReviewStatus {
-  pending
-  auto_verified
-  needs_manual_review
-  manually_reviewed
-}
-
-model OscarMovie {
-  id                  Int               @id @default(autoincrement())
-  tmdb_id             Int?              @unique
-  imdb_id             String?           @unique
-  title               String
-  poster_path         String?
-  review_status       ReviewStatus      @default(pending)
-  verification_notes  String?
-  confidence_score    Float?
-  reviewed_at         DateTime?
-  reviewed_by         String?
-  created_at          DateTime          @default(now())
-  updated_at          DateTime          @updatedAt
-  nominations         OscarNomination[]
-
-  @@map("oscar_movies")
-}
-
-model OscarNomination {
-  id            Int           @id @default(autoincrement())
-  ceremony_year Int
-  category_id   Int
-  movie_id      Int?
   nominee_name  String?
-  person_id     Int?          // TMDB person ID for actors/actresses/directors
-  profile_path  String?       // TMDB profile image path
-  is_winner     Boolean       @default(false)
-  created_at    DateTime      @default(now())
-  updated_at    DateTime      @updatedAt
-  movie         OscarMovie?   @relation(fields: [movie_id], references: [id], onDelete: Cascade)
-  category      OscarCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  created_at    DateTime @default(now())
+  updated_at    DateTime
+  movies        movies   @relation(fields: [movie_id], references: [id], onDelete: Cascade)
 
+  @@unique([movie_id, ceremony_year, category])
   @@index([ceremony_year])
-  @@index([category_id])
   @@index([movie_id])
-  @@map("oscar_nominations")
 }
 
-model WatchlistMovie {
-  id            Int            @id @default(autoincrement())
-  tmdb_id       Int
-  user_id       Int
-  title         String
-  director      String?
-  release_date  DateTime?
-  poster_path   String?
-  backdrop_path String?
-  overview      String?
-  runtime       Int?
-  genres        Json?
-  vote_average  Float?
-  imdb_id       String?
-  created_at    DateTime       @default(now())
-  updated_at    DateTime       @updatedAt
-  user          User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  tags          WatchlistTag[]
+model oscar_movies {
+  id                 Int                 @id @default(autoincrement())
+  tmdb_id            Int?                @unique
+  imdb_id            String?             @unique
+  title              String
+  created_at         DateTime            @default(now())
+  updated_at         DateTime
+  confidence_score   Float?
+  review_status      ReviewStatus        @default(pending)
+  reviewed_at        DateTime?
+  reviewed_by        String?
+  verification_notes String?
+  poster_path        String?
+  oscar_nominations  oscar_nominations[]
+}
 
-  @@unique([tmdb_id, user_id])
+model oscar_nominations {
+  id               Int              @id @default(autoincrement())
+  ceremony_year    Int
+  category_id      Int
+  movie_id         Int?
+  nominee_name     String?
+  is_winner        Boolean          @default(false)
+  created_at       DateTime         @default(now())
+  updated_at       DateTime
+  person_id        Int?
+  profile_path     String?
+  oscar_categories oscar_categories @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  oscar_movies     oscar_movies?    @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+
+  @@index([category_id])
+  @@index([ceremony_year])
+  @@index([movie_id])
+}
+
+model tags {
+  id             Int              @id @default(autoincrement())
+  name           String
+  color          String?
+  icon           String?
+  created_at     DateTime         @default(now())
+  user_id        Int?
+  movie_tags     movie_tags[]
+  users          users?           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  watchlist_tags watchlist_tags[]
+
+  @@unique([name, user_id])
   @@index([user_id])
-  @@map("watchlist_movies")
 }
 
-model WatchlistTag {
-  id                 Int            @id @default(autoincrement())
-  watchlist_movie_id Int
-  tag_id             Int
-  created_at         DateTime       @default(now())
-  watchlist_movie    WatchlistMovie @relation(fields: [watchlist_movie_id], references: [id], onDelete: Cascade)
-  tag                Tag            @relation(fields: [tag_id], references: [id], onDelete: Cascade)
-
-  @@unique([watchlist_movie_id, tag_id])
-  @@map("watchlist_tags")
-}
-
-model Vault {
-  id          Int          @id @default(autoincrement())
-  user_id     Int
-  name        String
-  description String?
-  created_at  DateTime     @default(now())
-  updated_at  DateTime     @updatedAt
-  user        User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  movies      VaultMovie[]
+model user_movies {
+  id                 Int       @id @default(autoincrement())
+  movie_id           Int
+  user_id            Int
+  date_watched       DateTime?
+  personal_rating    Int?
+  notes              String?
+  is_favorite        Boolean   @default(false)
+  watch_location     String?
+  created_at         DateTime  @default(now())
+  updated_at         DateTime
+  buddy_watched_with Json?
+  movies             movies    @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+  users              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id])
-  @@map("vaults")
 }
 
-model VaultMovie {
+model users {
+  id               Int                @id @default(autoincrement())
+  clerk_id         String             @unique
+  email            String             @unique
+  name             String?
+  role             String             @default("user")
+  created_at       DateTime           @default(now())
+  updated_at       DateTime
+  last_login_at    DateTime?
+  activity_logs    activity_logs[]
+  error_logs       error_logs[]
+  tags             tags[]
+  user_movies      user_movies[]
+  vaults           vaults[]
+  watchlist_movies watchlist_movies[]
+}
+
+model vault_movies {
   id            Int       @id @default(autoincrement())
   vault_id      Int
   tmdb_id       Int
@@ -281,10 +244,63 @@ model VaultMovie {
   vote_average  Float?
   imdb_id       String?
   created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  vault         Vault     @relation(fields: [vault_id], references: [id], onDelete: Cascade)
+  updated_at    DateTime
+  vaults        vaults    @relation(fields: [vault_id], references: [id], onDelete: Cascade)
 
   @@unique([vault_id, tmdb_id])
   @@index([vault_id])
-  @@map("vault_movies")
+}
+
+model vaults {
+  id           Int            @id @default(autoincrement())
+  user_id      Int
+  name         String
+  description  String?
+  created_at   DateTime       @default(now())
+  updated_at   DateTime
+  vault_movies vault_movies[]
+  users        users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model watchlist_movies {
+  id             Int              @id @default(autoincrement())
+  tmdb_id        Int
+  title          String
+  director       String?
+  release_date   DateTime?
+  poster_path    String?
+  backdrop_path  String?
+  overview       String?
+  runtime        Int?
+  genres         Json?
+  vote_average   Float?
+  imdb_id        String?
+  created_at     DateTime         @default(now())
+  updated_at     DateTime
+  user_id        Int
+  users          users            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  watchlist_tags watchlist_tags[]
+
+  @@unique([tmdb_id, user_id])
+  @@index([user_id])
+}
+
+model watchlist_tags {
+  id                 Int              @id @default(autoincrement())
+  watchlist_movie_id Int
+  tag_id             Int
+  created_at         DateTime         @default(now())
+  tags               tags             @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+  watchlist_movies   watchlist_movies @relation(fields: [watchlist_movie_id], references: [id], onDelete: Cascade)
+
+  @@unique([watchlist_movie_id, tag_id])
+}
+
+enum ReviewStatus {
+  pending
+  auto_verified
+  needs_manual_review
+  manually_reviewed
 }

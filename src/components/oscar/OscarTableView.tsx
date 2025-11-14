@@ -14,6 +14,15 @@ interface SortState {
   direction: SortDirection;
 }
 
+// Categories that should show person thumbnails instead of movie posters
+const PERSON_CATEGORIES = [
+  'Best Actor',
+  'Best Actress',
+  'Best Supporting Actor',
+  'Best Supporting Actress',
+  'Best Director'
+];
+
 export default function OscarTableView() {
   const [movies, setMovies] = useState<OscarTableMovie[]>([]);
   const [sortedMovies, setSortedMovies] = useState<OscarTableMovie[]>([]);
@@ -81,18 +90,10 @@ export default function OscarTableView() {
   }, [movies]);
 
   // Determine if we should show person thumbnails
-  const personCategories = [
-    'Best Actor',
-    'Best Actress',
-    'Best Supporting Actor',
-    'Best Supporting Actress',
-    'Best Director'
-  ];
-
   const isShowingPersonCategories = useMemo(() => {
     return selectedCategories.length > 0 &&
-           selectedCategories.every(cat => personCategories.includes(cat));
-  }, [selectedCategories, personCategories]);
+           selectedCategories.every(cat => PERSON_CATEGORIES.includes(cat));
+  }, [selectedCategories]);
 
   // Filter movies based on selected filters
   const filteredMovies = useMemo(() => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Plus, Award, Users, Clapperboard, Film, Archive } from 'lucide-react';
+import { Search, Plus, Award, Users, Clapperboard, Film, Archive, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -19,6 +19,7 @@ const allNavItems = [
   { href: '/watchlist', label: 'Watchlist', icon: Film },
   { href: '/vaults', label: 'Vaults', icon: Archive },
   { href: '/add', label: 'Add', icon: Plus },
+  { href: '/admin', label: 'Admin', icon: Shield, adminOnly: true },
 ];
 
 export default function VaultsPage() {

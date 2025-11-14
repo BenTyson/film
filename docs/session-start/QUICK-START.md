@@ -28,9 +28,9 @@ A personal movie tracking web application for managing a collection of 3000+ mov
 - **Prisma ORM** with **PostgreSQL** (hosted on Railway)
 - **TMDB API** for movie data, posters, metadata, streaming availability
 - **Clerk** for authentication and user management
-- 12 database models
-- 42 API endpoints
-- 66+ source files
+- 14 database models (including activity logging and error tracking)
+- 45 API endpoints (including admin dashboard APIs)
+- 31 component files + admin dashboard components
 
 ### Deployment
 - **Railway** for hosting and database
@@ -99,13 +99,15 @@ Tag-based collections for tracking movies watched with specific people
 - Horizontal scrolling rows
 - Mobile-first approach
 
-### Next Major Update
-**Authentication/Login System** - Planned implementation with NextAuth
-- User accounts and sessions
-- Protected routes
-- Role-based permissions
+### Admin Dashboard (January 2025)
+**Complete admin monitoring and user management system**
+- User management with role-based access control
+- Activity logging system tracking all user actions
+- Error monitoring dashboard with statistics and trends
+- System-wide analytics and insights
+- Real-time data with auto-refresh capability
 
-**→ See [skills/setup-auth.md](../skills/setup-auth.md) for implementation guide**
+**→ See [skills/admin-operations.md](../skills/admin-operations.md) for admin guide**
 
 ---
 
@@ -118,6 +120,9 @@ Tag-based collections for tracking movies watched with specific people
 │   │   ├── page.tsx            # Homepage (main movie collection)
 │   │   ├── layout.tsx          # Root layout with navigation
 │   │   ├── globals.css         # Global styles, dark theme
+│   │   ├── admin/              # Admin dashboard (NEW)
+│   │   │   ├── page.tsx        # Admin dashboard with tabs
+│   │   │   └── layout.tsx      # Admin-only layout
 │   │   ├── oscars/             # Oscar pages
 │   │   │   ├── page.tsx        # Oscar overview with category filter
 │   │   │   └── [year]/page.tsx # Year-specific Oscar page
@@ -127,7 +132,8 @@ Tag-based collections for tracking movies watched with specific people
 │   │   │   └── calen/page.tsx  # Calen buddy collection page
 │   │   ├── add-movie/          # Add movie to collection
 │   │   ├── import/             # CSV import interface
-│   │   └── api/                # 42 API endpoints
+│   │   └── api/                # 45 API endpoints
+│   │       ├── admin/          # Admin dashboard (3 routes: users, activity, errors)
 │   │       ├── movies/         # Movie CRUD + filtering (12 routes)
 │   │       ├── oscars/         # Oscar data (12 routes)
 │   │       ├── watchlist/      # Watchlist CRUD (2 routes)
@@ -145,6 +151,13 @@ Tag-based collections for tracking movies watched with specific people
 │   │   │   ├── MovieDetailsModal.tsx
 │   │   │   ├── AddToCalenModal.tsx
 │   │   │   └── TrailerPlayer.tsx
+│   │   ├── admin/              # Admin dashboard components (NEW)
+│   │   │   ├── UserStatsCards.tsx
+│   │   │   ├── UserTable.tsx
+│   │   │   ├── EditUserModal.tsx
+│   │   │   ├── ActivityFeed.tsx
+│   │   │   ├── ErrorStatsCards.tsx
+│   │   │   └── ErrorTable.tsx
 │   │   ├── oscar/              # Oscar components
 │   │   │   └── EditOscarMovieModal.tsx
 │   │   ├── watchlist/          # Watchlist components
@@ -157,6 +170,8 @@ Tag-based collections for tracking movies watched with specific people
 │   ├── lib/                    # Utility functions and clients
 │   │   ├── prisma.ts           # Prisma database client
 │   │   ├── tmdb.ts             # TMDB API client
+│   │   ├── activity-logger.ts  # Activity logging helper (NEW)
+│   │   ├── error-logger.ts     # Error tracking helper (NEW)
 │   │   └── utils.ts            # Helper functions (cn, etc.)
 │   └── types/                  # TypeScript type definitions
 │       ├── movie.ts            # Movie-related types
@@ -187,7 +202,7 @@ Example: `import { prisma } from '@/lib/prisma'`
 
 ## 5. Database Schema Quick Reference
 
-### 12 Core Models
+### 14 Core Models
 
 #### Movie Collection
 ```
@@ -247,6 +262,25 @@ WatchlistMovie (watchlist items)
 WatchlistTag (mood-based tags)
 ├── watchlist_movie_id → WatchlistMovie
 └── tag_id → Tag (shared with MovieTag)
+```
+
+#### Monitoring & Admin (January 2025)
+```
+ActivityLog (activity tracking)
+├── user_id → User
+├── action_type (string: movie_added, csv_import, etc.)
+├── target_type (string: movie, vault, watchlist)
+├── target_id (int, nullable)
+├── metadata (JSON: flexible additional context)
+├── ip_address, user_agent (tracking)
+└── created_at
+
+ErrorLog (error monitoring)
+├── user_id → User (nullable for system errors)
+├── endpoint, method, status_code
+├── error_message, stack_trace
+├── request_body, request_params (JSON)
+└── created_at
 ```
 
 #### Legacy & Utility
@@ -402,6 +436,7 @@ git push origin main
 
 | If you're working on... | Read this next... |
 |------------------------|-------------------|
+| **Admin dashboard** | [skills/admin-operations.md](../skills/admin-operations.md) for admin guide |
 | **Oscar features** | [oscars.md](../oscars.md) for complete architecture |
 | **Watchlist features** | [architecture.md § Watchlist](../architecture.md#watchlist-feature-october-2024) |
 | **New components** | [architecture.md § Components](../architecture.md#component-architecture) |
@@ -424,12 +459,12 @@ git push origin main
 
 ## 10. Project Stats (As of January 2025)
 
-- **Total Source Files:** 66+ TypeScript/TSX files
-- **API Endpoints:** 39 routes
-- **Database Models:** 12 models
+- **Total Source Files:** 70+ TypeScript/TSX files
+- **API Endpoints:** 45 routes
+- **Database Models:** 14 models
 - **Active Scripts:** 4 utility scripts
-- **Components:** 15+ reusable components
-- **Pages:** 8+ distinct pages/routes
+- **Components:** 20+ reusable components
+- **Pages:** 9+ distinct pages/routes
 - **Oscar Movies:** 1,158 unique movies
 - **Oscar Nominations:** 2,053+ nominations (1928-2025)
 - **Documentation Files:** 10 markdown files
