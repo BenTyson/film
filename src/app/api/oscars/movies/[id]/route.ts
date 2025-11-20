@@ -71,7 +71,7 @@ export async function PATCH(
     }
 
     // Update the Oscar movie with new TMDB data
-    const updatedOscarMovie = await prisma.oscarMovie.update({
+    const updatedOscarMovie = await prisma.oscar_movies.update({
       where: { id: oscarMovieId },
       data: updateData
     });
@@ -105,12 +105,12 @@ export async function GET(
       }, { status: 400 });
     }
 
-    const oscarMovie = await prisma.oscarMovie.findUnique({
+    const oscarMovie = await prisma.oscar_movies.findUnique({
       where: { id: oscarMovieId },
       include: {
-        nominations: {
+        oscar_nominations: {
           include: {
-            category: true
+            oscar_categories: true
           }
         }
       }

@@ -24,15 +24,15 @@ export async function GET(
       );
     }
 
-    const watchlistMovie = await prisma.watchlistMovie.findFirst({
+    const watchlistMovie = await prisma.watchlist_movies.findFirst({
       where: {
         id: movieId,
         user_id: user.id, // Ensure user owns this watchlist movie
       },
       include: {
-        tags: {
+        watchlist_tags: {
           include: {
-            tag: true,
+            tags: true,
           },
         },
       },
@@ -87,7 +87,7 @@ export async function PATCH(
     }
 
     // Verify ownership
-    const existingMovie = await prisma.watchlistMovie.findFirst({
+    const existingMovie = await prisma.watchlist_movies.findFirst({
       where: {
         id: movieId,
         user_id: user.id,
@@ -118,23 +118,23 @@ export async function PATCH(
     }
 
     // Delete existing tags and create new ones
-    await prisma.watchlistTag.deleteMany({
+    await prisma.watchlist_tags.deleteMany({
       where: { watchlist_movie_id: movieId },
     });
 
-    const updatedMovie = await prisma.watchlistMovie.update({
+    const updatedMovie = await prisma.watchlist_movies.update({
       where: { id: movieId },
       data: {
-        tags: {
+        watchlist_tags: {
           create: tag_ids.map((tagId: number) => ({
             tag_id: tagId,
           })),
         },
       },
       include: {
-        tags: {
+        watchlist_tags: {
           include: {
-            tag: true,
+            tags: true,
           },
         },
       },
@@ -179,7 +179,7 @@ export async function DELETE(
     }
 
     // Verify ownership before deleting
-    const existingMovie = await prisma.watchlistMovie.findFirst({
+    const existingMovie = await prisma.watchlist_movies.findFirst({
       where: {
         id: movieId,
         user_id: user.id,
@@ -196,7 +196,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.watchlistMovie.delete({
+    await prisma.watchlist_movies.delete({
       where: { id: movieId },
     });
 

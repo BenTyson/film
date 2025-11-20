@@ -6,6 +6,16 @@ Welcome! This guide provides rapid orientation to the Film project codebase. Rea
 
 ---
 
+## 🔥 Recent Session (Start Here)
+
+**IMPORTANT:** Before diving into the codebase, read the most recent session note to understand the latest changes and current development context:
+
+**Latest Session:** [`docs/sessions/2025-01-20.md`](../sessions/2025-01-20.md)
+
+This will give you immediate context on recent work, decisions made, and any ongoing tasks.
+
+---
+
 ## 1. What Is This?
 
 A personal movie tracking web application for managing a collection of 3000+ movies with premium streaming service-quality UI/UX. Built with Next.js, this app tracks watched movies, Oscar nominations, watchlist items, and "buddy" viewing companions (like Calen). Features a dark futuristic theme with cinematic backgrounds, glass morphism effects, and smooth animations.
@@ -43,11 +53,15 @@ A personal movie tracking web application for managing a collection of 3000+ mov
 
 ### Movie Collection
 - Visual library with poster grid layout
+- **Dedicated movie detail pages** at `/movies/[id]` with page-based navigation (January 2025)
+- **SEO-optimized** with Open Graph tags, Twitter Cards, and JSON-LD structured data for rich search results
 - Advanced filtering: year, rating, genre, Oscar status
 - Sorting: date watched, title, release date, rating
 - Search with debouncing
 - TMDB integration for metadata and imagery
-- **Streaming Availability:** View where movies are available to watch (Netflix, Hulu, etc.) with dedicated "Streaming" tab in movie modals
+- **Personal tracking prominently displayed** on Overview tab (rating, watch date, buddies, tags, notes)
+- **Streaming Availability:** View where movies are available to watch (Netflix, Hulu, etc.) with dedicated "Streaming" tab
+- **Smart back navigation** with context preservation (returns to collection, Oscar pages, or vaults)
 
 ### Oscar Tracking
 Comprehensive Academy Award tracking system (1928-2025)
@@ -120,7 +134,11 @@ Tag-based collections for tracking movies watched with specific people
 │   │   ├── page.tsx            # Homepage (main movie collection)
 │   │   ├── layout.tsx          # Root layout with navigation
 │   │   ├── globals.css         # Global styles, dark theme
-│   │   ├── admin/              # Admin dashboard (NEW)
+│   │   ├── movies/             # Movie detail pages (NEW - January 2025)
+│   │   │   └── [id]/           # Dynamic movie page by ID
+│   │   │       ├── page.tsx    # Full movie detail page with tabs
+│   │   │       └── layout.tsx  # SEO metadata generation
+│   │   ├── admin/              # Admin dashboard
 │   │   │   ├── page.tsx        # Admin dashboard with tabs
 │   │   │   └── layout.tsx      # Admin-only layout
 │   │   ├── oscars/             # Oscar pages
@@ -130,6 +148,9 @@ Tag-based collections for tracking movies watched with specific people
 │   │   │   └── page.tsx        # Watchlist page
 │   │   ├── buddy/
 │   │   │   └── calen/page.tsx  # Calen buddy collection page
+│   │   ├── vaults/             # Vault feature
+│   │   │   ├── page.tsx        # Vaults listing
+│   │   │   └── [id]/page.tsx   # Vault detail page
 │   │   ├── add-movie/          # Add movie to collection
 │   │   ├── import/             # CSV import interface
 │   │   └── api/                # 45 API endpoints
@@ -145,10 +166,11 @@ Tag-based collections for tracking movies watched with specific people
 │   │       ├── import/         # CSV import (4 routes)
 │   │       └── search/         # Search utilities (2 routes)
 │   ├── components/             # React components
-│   │   ├── movie/              # Movie cards, grids, modals (8 files)
-│   │   │   ├── MovieCard.tsx
-│   │   │   ├── MovieGrid.tsx
-│   │   │   ├── MovieDetailsModal.tsx
+│   │   ├── movie/              # Movie cards, grids, modals
+│   │   │   ├── MovieCard.tsx           # Card with Link navigation
+│   │   │   ├── MovieGrid.tsx           # Grid layout with context support
+│   │   │   ├── MovieStructuredData.tsx # SEO JSON-LD data (NEW)
+│   │   │   ├── MovieDetailsModal.tsx   # Legacy modal (being phased out)
 │   │   │   ├── AddToCalenModal.tsx
 │   │   │   └── TrailerPlayer.tsx
 │   │   ├── admin/              # Admin dashboard components (NEW)

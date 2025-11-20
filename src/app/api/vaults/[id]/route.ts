@@ -22,13 +22,13 @@ export async function GET(
       );
     }
 
-    const vault = await prisma.vault.findFirst({
+    const vault = await prisma.vaults.findFirst({
       where: {
         id: vaultId,
         user_id: user.id, // Ensure user owns this vault
       },
       include: {
-        movies: {
+        vault_movies: {
           orderBy: {
             created_at: 'desc',
           },
@@ -47,18 +47,18 @@ export async function GET(
     }
 
     // Check which movies are in the user's collection
-    const tmdbIds = vault.movies.map((m) => m.tmdb_id);
-    const userMovies = await prisma.userMovie.findMany({
+    const tmdbIds = vault.vault_movies.map((m) => m.tmdb_id);
+    const userMovies = await prisma.user_movies.findMany({
       where: {
         user_id: user.id,
-        movie: {
+        movies: {
           tmdb_id: {
             in: tmdbIds,
           },
         },
       },
       include: {
-        movie: {
+        movies: {
           select: {
             id: true,
             tmdb_id: true,
@@ -69,11 +69,11 @@ export async function GET(
 
     // Create a map of tmdb_id to movie_id for collection movies
     const collectionMovieMap = new Map(
-      userMovies.map((um) => [um.movie.tmdb_id, um.movie.id])
+      userMovies.map((um) => [um.movies.tmdb_id, um.movies.id])
     );
 
     // Add in_collection flag and collection_movie_id to movies
-    const moviesWithCollectionStatus = vault.movies.map((movie) => ({
+    const moviesWithCollectionStatus = vault.vault_movies.map((movie) => ({
       ...movie,
       in_collection: collectionMovieMap.has(movie.tmdb_id),
       collection_movie_id: collectionMovieMap.get(movie.tmdb_id) || null,
@@ -122,7 +122,7 @@ export async function PATCH(
     const { name, description } = body;
 
     // Verify vault ownership
-    const vault = await prisma.vault.findFirst({
+    const vault = await prisma.vaults.findFirst({
       where: {
         id: vaultId,
         user_id: user.id,
@@ -159,7 +159,7 @@ export async function PATCH(
       updateData.description = description?.trim() || null;
     }
 
-    const updatedVault = await prisma.vault.update({
+    const updatedVault = await prisma.vaults.update({
       where: { id: vaultId },
       data: updateData,
     });
@@ -201,7 +201,7 @@ export async function DELETE(
     }
 
     // Verify vault ownership
-    const vault = await prisma.vault.findFirst({
+    const vault = await prisma.vaults.findFirst({
       where: {
         id: vaultId,
         user_id: user.id,
@@ -219,7 +219,7 @@ export async function DELETE(
     }
 
     // Delete vault (cascade will delete all vault movies)
-    await prisma.vault.delete({
+    await prisma.vaults.delete({
       where: { id: vaultId },
     });
 

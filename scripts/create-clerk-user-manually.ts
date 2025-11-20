@@ -32,7 +32,7 @@ async function createClerkUserManually() {
       console.log(`  - Clerk ID: ${clerkUser.id}\n`);
 
       // Check if already exists in our database
-      const existingUser = await prisma.user.findUnique({
+      const existingUser = await prisma.users.findUnique({
         where: { clerk_id: clerkUser.id }
       });
 
@@ -42,12 +42,13 @@ async function createClerkUserManually() {
       }
 
       // Create in our database
-      const newUser = await prisma.user.create({
+      const newUser = await prisma.users.create({
         data: {
           clerk_id: clerkUser.id,
           email: email || 'unknown@example.com',
           name: name,
           role: 'admin', // Make you an admin
+          updated_at: new Date(),
         }
       });
 

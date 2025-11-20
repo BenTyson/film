@@ -16,11 +16,11 @@ async function testMultiUserIsolation() {
 
   try {
     // Get both users
-    const user1 = await prisma.user.findUnique({
+    const user1 = await prisma.users.findUnique({
       where: { email: 'ideaswithben@gmail.com' }
     });
 
-    const user2 = await prisma.user.findUnique({
+    const user2 = await prisma.users.findUnique({
       where: { email: 'tyson.ben@gmail.com' }
     });
 
@@ -37,7 +37,7 @@ async function testMultiUserIsolation() {
     console.log('📋 Test 1: Movie Collection Isolation');
     console.log('─'.repeat(50));
 
-    const user1Movies = await prisma.movie.findMany({
+    const user1Movies = await prisma.movies.findMany({
       where: {
         user_movies: {
           some: {
@@ -47,7 +47,7 @@ async function testMultiUserIsolation() {
       }
     });
 
-    const user2Movies = await prisma.movie.findMany({
+    const user2Movies = await prisma.movies.findMany({
       where: {
         user_movies: {
           some: {
@@ -70,11 +70,11 @@ async function testMultiUserIsolation() {
     console.log('📝 Test 2: Watchlist Isolation');
     console.log('─'.repeat(50));
 
-    const user1Watchlist = await prisma.watchlistMovie.findMany({
+    const user1Watchlist = await prisma.watchlist_movies.findMany({
       where: { user_id: user1.id }
     });
 
-    const user2Watchlist = await prisma.watchlistMovie.findMany({
+    const user2Watchlist = await prisma.watchlist_movies.findMany({
       where: { user_id: user2.id }
     });
 
@@ -91,11 +91,11 @@ async function testMultiUserIsolation() {
     console.log('🎬 Test 3: UserMovie Records Isolation');
     console.log('─'.repeat(50));
 
-    const user1UserMovies = await prisma.userMovie.findMany({
+    const user1UserMovies = await prisma.user_movies.findMany({
       where: { user_id: user1.id }
     });
 
-    const user2UserMovies = await prisma.userMovie.findMany({
+    const user2UserMovies = await prisma.user_movies.findMany({
       where: { user_id: user2.id }
     });
 
@@ -113,7 +113,7 @@ async function testMultiUserIsolation() {
     console.log('─'.repeat(50));
 
     // Get a sample movie from user 1
-    const sampleMovie = await prisma.movie.findFirst({
+    const sampleMovie = await prisma.movies.findFirst({
       where: {
         user_movies: {
           some: { user_id: user1.id }
@@ -131,7 +131,7 @@ async function testMultiUserIsolation() {
       console.log(`Owned by: User 1`);
 
       // Check if user 2 has access
-      const user2Access = await prisma.movie.findUnique({
+      const user2Access = await prisma.movies.findUnique({
         where: { id: sampleMovie.id },
         include: {
           user_movies: {
@@ -151,11 +151,11 @@ async function testMultiUserIsolation() {
     console.log('🏆 Test 5: Oscar Data Accessibility (should be public)');
     console.log('─'.repeat(50));
 
-    const oscarData = await prisma.oscarData.findMany({
+    const oscarData = await prisma.oscar_data.findMany({
       take: 10
     });
 
-    const bestPictureNominees = await prisma.bestPictureNominee.findMany({
+    const bestPictureNominees = await prisma.best_picture_nominees.findMany({
       take: 10
     });
 

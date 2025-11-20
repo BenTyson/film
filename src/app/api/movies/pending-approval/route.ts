@@ -29,15 +29,15 @@ export async function GET(request: NextRequest) {
 
     // If we have analysis filters, include them
     if (Object.keys(analysisFilters).length > 0) {
-      where.match_analysis = analysisFilters;
+      where.movie_match_analysis = analysisFilters;
     }
 
     // Debug: Check what movies we have
     const debugCounts = await Promise.all([
-      prisma.movie.count(), // total movies
-      prisma.movie.count({ where: { NOT: { csv_row_number: null } } }), // with CSV
-      prisma.movie.count({ where: { approval_status: 'pending' } }), // pending
-      prisma.movie.count({ where: { approval_status: 'approved' } }) // approved
+      prisma.movies.count(), // total movies
+      prisma.movies.count({ where: { NOT: { csv_row_number: null } } }), // with CSV
+      prisma.movies.count({ where: { approval_status: 'pending' } }), // pending
+      prisma.movies.count({ where: { approval_status: 'approved' } }) // approved
     ]);
 
     console.log('Debug counts:', {
@@ -48,33 +48,33 @@ export async function GET(request: NextRequest) {
     });
 
     const [movies, total] = await Promise.all([
-      prisma.movie.findMany({
+      prisma.movies.findMany({
         where,
         include: {
-          match_analysis: true,
+          movie_match_analysis: true,
           user_movies: true,
           oscar_data: true,
           movie_tags: {
             include: {
-              tag: true
+              tags: true
             }
           }
         },
         orderBy: [
           // Prioritize movies with CSV data first, then by confidence score
           { csv_row_number: 'asc' },
-          { match_analysis: { confidence_score: 'asc' } },
+          { movie_match_analysis: { confidence_score: 'asc' } },
           { created_at: 'desc' }
         ],
         skip,
         take: limit
       }),
-      prisma.movie.count({ where })
+      prisma.movies.count({ where })
     ]);
 
     // Transform to approval format with all necessary data
     const approvalData = movies.map(movie => {
-      const analysis = movie.match_analysis;
+      const analysis = movie.movie_match_analysis;
       const userMovie = movie.user_movies[0];
       const oscarWins = movie.oscar_data.filter(o => o.is_winner).length;
       const oscarNominations = movie.oscar_data.length;
@@ -114,9 +114,9 @@ export async function GET(request: NextRequest) {
         },
         // Tags
         tags: movie.movie_tags.map(mt => ({
-          name: mt.tag.name,
-          color: mt.tag.color,
-          icon: mt.tag.icon
+          name: mt.tags.name,
+          color: mt.tags.color,
+          icon: mt.tags.icon
         }))
       };
     });
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the movie to ensure it exists and is pending
-    const movie = await prisma.movie.findUnique({
+    const movie = await prisma.movies.findUnique({
       where: { id: movieId },
       select: {
         id: true,
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
 
     // Update the movie to indicate the match has been "applied"
     // We can use a custom field or just keep it pending until Ben approves
-    const updatedMovie = await prisma.movie.update({
+    const updatedMovie = await prisma.movies.update({
       where: { id: movieId },
       data: {
         updated_at: new Date()

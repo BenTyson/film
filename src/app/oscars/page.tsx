@@ -9,7 +9,6 @@ import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
-import { MovieDetailsModal } from '@/components/movie/MovieDetailsModal';
 import { EditOscarMovieModal } from '@/components/oscar/EditOscarMovieModal';
 import OscarTableView from '@/components/oscar/OscarTableView';
 
@@ -119,8 +118,6 @@ export default function OscarsPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingOscarMovie, setEditingOscarMovie] = useState<{id: number; title: string; tmdb_id: number | null; imdb_id: string | null} | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
@@ -264,7 +261,7 @@ export default function OscarsPage() {
         const data = await response.json();
 
         if (data.success) {
-          const yearNominations = data.data.nominations || data.data;
+          const yearNominations = data.data.oscar_nominations || data.data;
           allNominations.push(...yearNominations);
 
         // Process movies for this year
@@ -350,7 +347,7 @@ export default function OscarsPage() {
       const data = await response.json();
 
       if (data.success) {
-        const yearNominations = data.data.nominations || data.data;
+        const yearNominations = data.data.oscar_nominations || data.data;
         setNominations(yearNominations);
 
         // Process movies with collection status from API
@@ -402,7 +399,7 @@ export default function OscarsPage() {
         const data = await response.json();
 
         if (data.success) {
-          const yearNominations = data.data.nominations || data.data;
+          const yearNominations = data.data.oscar_nominations || data.data;
           allNominations.push(...yearNominations);
 
           yearNominations.forEach((nom: OscarNomination) => {
@@ -463,23 +460,6 @@ export default function OscarsPage() {
       setSelectedYear(year);
       setSelectedDecade(null);
     }
-  };
-
-  const handleMovieClick = (movie: MovieWithOscars) => {
-    // Only open modal if movie is in collection
-    if (movie.in_collection && movie.collection_id) {
-      setSelectedMovieId(movie.collection_id);
-      setIsModalOpen(true);
-    }
-    // For movies not in collection, we could show a different modal or do nothing
-    // For now, we'll just not open the modal
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedMovieId(null);
-    // Optionally refresh data if needed
-    // fetchOscarData();
   };
 
   const handleEditOscarMovie = (e: React.MouseEvent, movie: MovieWithOscars) => {
@@ -893,13 +873,11 @@ export default function OscarsPage() {
                                 ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
                                 : '/placeholder-movie.jpg';
 
-                              return (
+                              const movieContent = (
                                 <div
-                                  key={movie.tmdb_id}
-                                  onClick={() => handleMovieClick(movie)}
                                   className={cn(
-                                    "group relative cursor-pointer",
-                                    movie.in_collection ? "" : "cursor-not-allowed"
+                                    "group relative",
+                                    movie.in_collection ? "cursor-pointer" : "cursor-not-allowed"
                                   )}
                                 >
                                   <div
@@ -963,6 +941,21 @@ export default function OscarsPage() {
                                   </div>
                                 </div>
                               );
+
+                              // Wrap with Link if movie is in collection
+                              return movie.in_collection && movie.collection_id ? (
+                                <Link
+                                  key={movie.tmdb_id}
+                                  href={`/movies/${movie.collection_id}?from=oscars`}
+                                  className="block"
+                                >
+                                  {movieContent}
+                                </Link>
+                              ) : (
+                                <div key={movie.tmdb_id}>
+                                  {movieContent}
+                                </div>
+                              );
                             })}
                           </div>
                   </div>
@@ -999,13 +992,6 @@ export default function OscarsPage() {
           </div>
         )}
       </div>
-
-      {/* Movie Details Modal */}
-      <MovieDetailsModal
-        movieId={selectedMovieId}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-      />
 
       {/* Edit Oscar Movie Modal */}
       {editingOscarMovie && (

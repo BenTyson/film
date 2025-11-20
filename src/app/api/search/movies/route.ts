@@ -24,15 +24,15 @@ export async function GET(request: NextRequest) {
     const searchResults = await tmdb.searchMovies(query.trim(), undefined, page);
 
     // Get list of movies in CURRENT USER'S collection (not global)
-    const existingUserMovies = await prisma.userMovie.findMany({
+    const existingUserMovies = await prisma.user_movies.findMany({
       select: {
-        movie: {
+        movies: {
           select: { tmdb_id: true }
         }
       },
       where: {
         user_id: user.id,
-        movie: {
+        movies: {
           tmdb_id: {
             in: searchResults.results.map(movie => movie.id)
           }
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    const existingIds = new Set(existingUserMovies.map(um => um.movie.tmdb_id));
+    const existingIds = new Set(existingUserMovies.map(um => um.movies.tmdb_id));
 
     // Enhance search results with additional info
     const enhancedResults = await Promise.all(

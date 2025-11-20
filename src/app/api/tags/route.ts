@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const user = await getCurrentUser();
 
     // Get only tags created by this user
-    const tags = await prisma.tag.findMany({
+    const tags = await prisma.tags.findMany({
       where: {
         user_id: user.id
       },
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if tag already exists for this user
-    const existingTag = await prisma.tag.findUnique({
+    const existingTag = await prisma.tags.findUnique({
       where: {
         name_user_id: {
           name,
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
 
-    const tag = await prisma.tag.create({
+    const tag = await prisma.tags.create({
       data: {
         name,
         color: color || '#6366f1',

@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
       moviesWithCsv,
       recentApprovals
     ] = await Promise.all([
-      prisma.movie.count(),
-      prisma.movie.count({ where: { approval_status: 'pending' } }),
-      prisma.movie.count({ where: { approval_status: 'approved' } }),
-      prisma.movie.count({ where: { csv_row_number: { not: null } } }),
-      prisma.movie.findMany({
+      prisma.movies.count(),
+      prisma.movies.count({ where: { approval_status: 'pending' } }),
+      prisma.movies.count({ where: { approval_status: 'approved' } }),
+      prisma.movies.count({ where: { csv_row_number: { not: null } } }),
+      prisma.movies.findMany({
         where: { approval_status: 'approved' },
         orderBy: { approved_at: 'desc' },
         take: 5,
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check which movies exist and are pending
-    const movies = await prisma.movie.findMany({
+    const movies = await prisma.movies.findMany({
       where: {
         id: { in: validIds },
         approval_status: 'pending'
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Batch approve movies
-    const result = await prisma.movie.updateMany({
+    const result = await prisma.movies.updateMany({
       where: {
         id: { in: movies.map(m => m.id) }
       },

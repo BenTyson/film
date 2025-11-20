@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         console.log(`Processing movie: ${movieTitle}`);
 
         // Check if movie already exists
-        const existingMovies = await prisma.movie.findMany({
+        const existingMovies = await prisma.movies.findMany({
           where: {
             title: {
               contains: movieTitle
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
         const director = tmdb.findDirector(credits);
 
         // Create movie record with CSV tracking data
-        const movie = await prisma.movie.create({
+        const movie = await prisma.movies.create({
           data: {
             tmdb_id: tmdbMovie.id,
             title: movieDetails.title,
@@ -147,7 +147,8 @@ export async function POST(request: NextRequest) {
             csv_title: row.Title?.trim() || null,
             csv_director: row['Dir.']?.trim() || null,
             csv_year: row.Yr?.trim() || null,
-            csv_notes: row.Notes?.trim() || null
+            csv_notes: row.Notes?.trim() || null,
+            updated_at: new Date()
           }
         });
 
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
         const personalData = parsePersonalData(row);
 
         // Create user movie record
-        await prisma.userMovie.create({
+        await prisma.user_movies.create({
           data: {
             movie_id: movie.id,
             user_id: user.id,
@@ -163,7 +164,8 @@ export async function POST(request: NextRequest) {
             date_watched: personalData.dateWatched,
             is_favorite: false, // Not in CSV
             ...(personalData.buddyWatchedWith && { buddy_watched_with: [personalData.buddyWatchedWith] }),
-            notes: personalData.notes
+            notes: personalData.notes,
+            updated_at: new Date()
           }
         });
 
@@ -171,7 +173,7 @@ export async function POST(request: NextRequest) {
         if (personalData.tags.length > 0) {
           for (const tagName of personalData.tags) {
             // Find or create tag for this user
-            let tag = await prisma.tag.findFirst({
+            let tag = await prisma.tags.findFirst({
               where: {
                 name: tagName,
                 user_id: user.id
@@ -179,7 +181,7 @@ export async function POST(request: NextRequest) {
             });
 
             if (!tag) {
-              tag = await prisma.tag.create({
+              tag = await prisma.tags.create({
                 data: {
                   name: tagName,
                   color: tagName === 'Calen' ? '#3b82f6' : '#6366f1',
@@ -189,7 +191,7 @@ export async function POST(request: NextRequest) {
               });
             }
 
-            await prisma.movieTag.create({
+            await prisma.movie_tags.create({
               data: {
                 movie_id: movie.id,
                 tag_id: tag.id

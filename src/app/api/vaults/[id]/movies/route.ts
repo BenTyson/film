@@ -23,7 +23,7 @@ export async function POST(
     }
 
     // Verify vault ownership
-    const vault = await prisma.vault.findFirst({
+    const vault = await prisma.vaults.findFirst({
       where: {
         id: vaultId,
         user_id: user.id,
@@ -66,7 +66,7 @@ export async function POST(
     }
 
     // Check if movie already exists in this vault
-    const existingMovie = await prisma.vaultMovie.findFirst({
+    const existingMovie = await prisma.vault_movies.findFirst({
       where: {
         vault_id: vaultId,
         tmdb_id,
@@ -84,7 +84,7 @@ export async function POST(
     }
 
     // Add movie to vault
-    const vaultMovie = await prisma.vaultMovie.create({
+    const vaultMovie = await prisma.vault_movies.create({
       data: {
         vault_id: vaultId,
         tmdb_id,
@@ -98,6 +98,7 @@ export async function POST(
         genres,
         vote_average,
         imdb_id,
+        updated_at: new Date()
       },
     });
 

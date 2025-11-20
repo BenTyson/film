@@ -13,16 +13,16 @@ export async function GET(request: NextRequest) {
       ? statusParam as ReviewStatus[]
       : defaultStatuses;
 
-    const movies = await prisma.oscarMovie.findMany({
+    const movies = await prisma.oscar_movies.findMany({
       where: {
         review_status: {
           in: statuses
         }
       },
       include: {
-        nominations: {
+        oscar_nominations: {
           include: {
-            category: true
+            oscar_categories: true
           },
           orderBy: {
             ceremony_year: 'desc'
@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
 
     // Enrich with ceremony year info from nominations
     const enrichedMovies = movies.map(movie => {
-      const ceremonyYears = [...new Set(movie.nominations.map(n => n.ceremony_year))];
-      const categories = [...new Set(movie.nominations.map(n => n.category.name))];
+      const ceremonyYears = [...new Set(movie.oscar_nominations.map(n => n.ceremony_year))];
+      const categories = [...new Set(movie.oscar_nominations.map(n => n.oscar_categories.name))];
 
       return {
         ...movie,

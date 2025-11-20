@@ -50,12 +50,13 @@ export async function POST(req: Request) {
 
     try {
       // Create user in our database
-      const user = await prisma.user.create({
+      const user = await prisma.users.create({
         data: {
           clerk_id: id,
           email: email_addresses[0].email_address,
           name: first_name && last_name ? `${first_name} ${last_name}` : first_name || null,
           role: 'user', // Default role
+          updated_at: new Date()
         },
       });
 
@@ -80,7 +81,7 @@ export async function POST(req: Request) {
 
     try {
       // Update user in our database
-      const user = await prisma.user.update({
+      const user = await prisma.users.update({
         where: { clerk_id: id },
         data: {
           email: email_addresses[0].email_address,
@@ -108,7 +109,7 @@ export async function POST(req: Request) {
 
     try {
       // Delete user from our database (cascade will handle related records)
-      await prisma.user.delete({
+      await prisma.users.delete({
         where: { clerk_id: id },
       });
 

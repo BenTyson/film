@@ -12,6 +12,7 @@ interface MovieGridProps {
   loading?: boolean;
   className?: string;
   columns?: 2 | 3 | 4 | 5 | 6;
+  context?: 'collection' | 'watchlist' | 'oscars' | 'vault';
 }
 
 const LoadingSkeleton = () => (
@@ -45,7 +46,8 @@ export function MovieGrid({
   onMovieSelect,
   loading = false,
   className,
-  columns = 6
+  columns = 6,
+  context = 'collection'
 }: MovieGridProps) {
   const gridColsClass = {
     2: 'grid-cols-2',
@@ -88,6 +90,7 @@ export function MovieGrid({
             <MovieCard
               movie={movie}
               onSelect={onMovieSelect}
+              context={context}
             />
           </motion.div>
         ))}

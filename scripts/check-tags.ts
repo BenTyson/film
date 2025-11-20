@@ -2,7 +2,7 @@ import { prisma } from '../src/lib/prisma';
 
 async function checkTags() {
   try {
-    const tags = await prisma.tag.findMany({
+    const tags = await prisma.tags.findMany({
       include: {
         _count: {
           select: {

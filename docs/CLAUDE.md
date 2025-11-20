@@ -22,12 +22,14 @@ This is a personal movie tracking web application built with Next.js, designed t
 ## Key Features
 - **Multi-user authentication** with Clerk (Google OAuth)
 - Visual movie library with poster grid layout
+- **Dedicated movie detail pages** at `/movies/[id]` with SEO optimization, Open Graph tags, and structured data
 - **User data isolation** - each user sees only their own collection
 - Oscar nominations and wins tracking with dedicated pages (1928-2025, 1,158+ movies, 2,053+ nominations)
 - **Watchlist** with user-specific tagging system - separate from main collection with quick remove functionality
 - **Vaults** for creating thematic movie collections (e.g., "Best Action Films", "Childhood Favorites") - separate from watched collection
 - **Admin Dashboard** for user management, activity monitoring, and error tracking with role-based access control
 - "Buddy system" for tracking movies watched with specific people (e.g., Calen)
+- **Personal tracking prominently displayed** on Overview tab (rating, watch date, buddies, tags, notes)
 - Clerk UserButton avatar in all page headers for authentication management
 - Dark theme with futuristic aesthetic
 - Mobile-responsive design
@@ -160,6 +162,48 @@ CLERK_SECRET_KEY=sk_test_...
 - Implement proper TypeScript interfaces
 - Follow Next.js App Router conventions
 - Use Framer Motion for complex animations
+
+### Navigation Patterns (January 2025)
+
+**Movie Detail Pages:** The app uses page-based navigation instead of modals for movie details.
+
+**Route Structure:**
+- **Movie Detail Page:** `/movies/[id]` where `[id]` is the database movie ID
+- **Context Tracking:** Use query params for smart back navigation
+  - `/movies/872?from=collection` (from homepage)
+  - `/movies/872?from=oscars` (from Oscar pages)
+  - `/movies/872?from=vault` (from vault detail)
+
+**MovieCard Usage:**
+- Always pass `context` prop to `MovieCard` and `MovieGrid` components
+- Example: `<MovieGrid movies={movies} context="collection" />`
+- MovieCard automatically wraps with Next.js Link for navigation
+- Legacy: `onSelect` prop still supported for backward compatibility
+
+**Page-Based vs Modal:**
+- **Use Page Navigation:** Collection movies, Oscar movies (in collection), Vault movies (in collection)
+- **Keep Modal:** Watchlist movies (separate table), Vault movies (not in collection)
+
+**Overview Tab Design:**
+- **My Details section** displays all personal tracking data (rating, watch date, buddies, tags, notes)
+- Users see their data immediately without clicking tabs
+- **Edit tab** is for updating data only, not viewing
+
+**Back Navigation:**
+- Use `fromContext` query param to determine return destination
+- Preserve scroll position when navigating back
+- Example in component:
+  ```typescript
+  const fromContext = searchParams.get('from');
+  const handleBack = () => {
+    switch (fromContext) {
+      case 'collection': router.push('/');
+      case 'oscars': router.push('/oscars');
+      case 'vault': router.push(`/vaults/${vaultId}`);
+      default: router.back();
+    }
+  };
+  ```
 
 ### Authentication Patterns
 - **Always** use `getCurrentUser()` from `@/lib/auth` for user-specific API routes

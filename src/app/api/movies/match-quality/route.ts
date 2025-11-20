@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
     const severity = searchParams.get('severity') as 'high' | 'medium' | 'low' | null;
 
     // Get movies with CSV data
-    const movies = await prisma.movie.findMany({
+    const movies = await prisma.movies.findMany({
       where: {
         csv_row_number: { not: null }
       },

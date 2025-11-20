@@ -3,7 +3,7 @@ import { prisma } from '../src/lib/prisma';
 async function checkRecentAdminMovies() {
   try {
     // Find the admin user
-    const adminUser = await prisma.user.findUnique({
+    const adminUser = await prisma.users.findUnique({
       where: { email: 'ideaswithben@gmail.com' }
     });
 
@@ -18,7 +18,7 @@ async function checkRecentAdminMovies() {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const recentUserMovies = await prisma.userMovie.findMany({
+    const recentUserMovies = await prisma.user_movies.findMany({
       where: {
         user_id: adminUser.id,
         created_at: {
@@ -26,7 +26,7 @@ async function checkRecentAdminMovies() {
         }
       },
       include: {
-        movie: true
+        movies: true
       },
       orderBy: {
         created_at: 'desc'
@@ -41,8 +41,8 @@ async function checkRecentAdminMovies() {
     }
 
     recentUserMovies.forEach((um, index) => {
-      console.log(`${index + 1}. ${um.movie.title} (${um.movie.release_date?.getFullYear() || 'N/A'})`);
-      console.log(`   - TMDB ID: ${um.movie.tmdb_id}`);
+      console.log(`${index + 1}. ${um.movies.title} (${um.movies.release_date?.getFullYear() || 'N/A'})`);
+      console.log(`   - TMDB ID: ${um.movies.tmdb_id}`);
       console.log(`   - UserMovie ID: ${um.id}`);
       console.log(`   - Added: ${um.created_at.toLocaleString()}`);
       console.log(`   - Rating: ${um.personal_rating || 'None'}`);
@@ -52,7 +52,7 @@ async function checkRecentAdminMovies() {
     });
 
     // Check if there are other users in the system
-    const allUsers = await prisma.user.findMany({
+    const allUsers = await prisma.users.findMany({
       select: {
         id: true,
         email: true,

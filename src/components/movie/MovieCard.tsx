@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Star, Calendar, Award, Users, User, Heart, Home, RotateCcw } from 'lucide-react';
 import { formatYear, formatRating, getRatingColor } from '@/lib/utils';
@@ -13,6 +14,7 @@ interface MovieCardProps {
   movie: MovieGridItem;
   onSelect?: (movie: MovieGridItem) => void;
   className?: string;
+  context?: 'collection' | 'watchlist' | 'oscars' | 'vault'; // For back navigation
 }
 
 const iconMap = {
@@ -23,7 +25,7 @@ const iconMap = {
   RotateCcw,
 };
 
-export function MovieCard({ movie, onSelect, className }: MovieCardProps) {
+export function MovieCard({ movie, onSelect, className, context = 'collection' }: MovieCardProps) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Check admin status
@@ -54,11 +56,18 @@ export function MovieCard({ movie, onSelect, className }: MovieCardProps) {
     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
     : '/placeholder-poster.svg';
 
-  const handleClick = () => {
-    onSelect?.(movie);
+  // Build URL with context for back navigation
+  const movieUrl = `/movies/${movie.id}?from=${context}`;
+
+  // Handle legacy onClick if provided (for backward compatibility during migration)
+  const handleClick = (e: React.MouseEvent) => {
+    if (onSelect) {
+      e.preventDefault();
+      onSelect(movie);
+    }
   };
 
-  return (
+  const cardContent = (
     <motion.div
       className={cn(
         "group relative bg-card rounded-lg overflow-hidden border border-border/50 cursor-pointer movie-card",
@@ -183,5 +192,17 @@ export function MovieCard({ movie, onSelect, className }: MovieCardProps) {
         <div className="absolute inset-0 rounded-lg shadow-2xl shadow-primary/20" />
       </div>
     </motion.div>
+  );
+
+  // If onSelect is provided (legacy mode), return without Link wrapper
+  if (onSelect) {
+    return cardContent;
+  }
+
+  // Modern mode: wrap with Link for page navigation
+  return (
+    <Link href={movieUrl} className="block">
+      {cardContent}
+    </Link>
   );
 }

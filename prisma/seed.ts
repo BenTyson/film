@@ -95,22 +95,23 @@ async function main() {
   console.log('🎬 Starting to seed the database with test movies...');
 
   // Clear existing data
-  await prisma.movieTag.deleteMany({});
-  await prisma.oscarData.deleteMany({});
-  await prisma.userMovie.deleteMany({});
-  await prisma.movie.deleteMany({});
-  await prisma.tag.deleteMany({});
-  await prisma.watchlistMovie.deleteMany({});
-  await prisma.user.deleteMany({});
+  await prisma.movie_tags.deleteMany({});
+  await prisma.oscar_data.deleteMany({});
+  await prisma.user_movies.deleteMany({});
+  await prisma.movies.deleteMany({});
+  await prisma.tags.deleteMany({});
+  await prisma.watchlist_movies.deleteMany({});
+  await prisma.users.deleteMany({});
 
   // Create a test user
   console.log('👤 Creating test user...');
-  const testUser = await prisma.user.create({
+  const testUser = await prisma.users.create({
     data: {
       clerk_id: 'test_seed_user',
       email: 'test@example.com',
       name: 'Test User',
-      role: 'user'
+      role: 'user',
+      updated_at: new Date()
     }
   });
   console.log(`✅ Created test user: ${testUser.email} (ID: ${testUser.id})`);
@@ -119,7 +120,7 @@ async function main() {
   console.log('🏷️  Creating tags...');
   const createdTags = await Promise.all(
     testTags.map(tag =>
-      prisma.tag.create({ data: tag })
+      prisma.tags.create({ data: tag })
     )
   );
 
@@ -140,7 +141,7 @@ async function main() {
       const { movie, director } = searchResult;
 
       // Create movie record
-      const createdMovie = await prisma.movie.create({
+      const createdMovie = await prisma.movies.create({
         data: {
           tmdb_id: movie.id,
           title: movie.title,
@@ -153,6 +154,7 @@ async function main() {
           genres: movie.genres,
           imdb_id: movie.imdb_id,
           imdb_rating: movie.vote_average,
+          updated_at: new Date(),
         },
       });
 
@@ -160,7 +162,7 @@ async function main() {
       const watchDate = getRandomDate(new Date(2020, 0, 1), new Date());
       const personalRating = getRandomRating();
 
-      await prisma.userMovie.create({
+      await prisma.user_movies.create({
         data: {
           movie_id: createdMovie.id,
           user_id: testUser.id,
@@ -168,6 +170,7 @@ async function main() {
           personal_rating: personalRating,
           notes: `Great ${movie.genres?.[0]?.name || 'movie'}! ${personalRating >= 8 ? 'Loved it!' : personalRating >= 6 ? 'Really enjoyed it.' : 'It was okay.'}`,
           is_favorite: personalRating >= 9,
+          updated_at: new Date(),
         },
       });
 
@@ -183,7 +186,7 @@ async function main() {
       }
 
       for (const tag of randomTags) {
-        await prisma.movieTag.create({
+        await prisma.movie_tags.create({
           data: {
             movie_id: createdMovie.id,
             tag_id: tag.id,
@@ -195,12 +198,13 @@ async function main() {
       const oscarInfo = oscarData.find(o => o.title === movie.title && o.year.toString() === movie.release_date?.substring(0, 4));
       if (oscarInfo) {
         for (const award of oscarInfo.awards) {
-          await prisma.oscarData.create({
+          await prisma.oscar_data.create({
             data: {
               movie_id: createdMovie.id,
               ceremony_year: oscarInfo.year + 1, // Usually next year
               category: award.category,
               is_winner: award.type === 'won',
+              updated_at: new Date(),
             },
           });
         }
@@ -220,13 +224,13 @@ async function main() {
   console.log(`🎉 Successfully seeded database with ${successCount} movies!`);
   console.log(`📊 Database summary:`);
 
-  const movieCount = await prisma.movie.count();
-  const userMovieCount = await prisma.userMovie.count();
-  const tagCount = await prisma.tag.count();
-  const oscarCount = await prisma.oscarData.count();
-  const calenMovies = await prisma.movieTag.count({
+  const movieCount = await prisma.movies.count();
+  const userMovieCount = await prisma.user_movies.count();
+  const tagCount = await prisma.tags.count();
+  const oscarCount = await prisma.oscar_data.count();
+  const calenMovies = await prisma.movie_tags.count({
     where: {
-      tag: { name: 'Calen' }
+      tags: { name: 'Calen' }
     }
   });
 

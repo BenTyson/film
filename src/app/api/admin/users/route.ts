@@ -13,7 +13,7 @@ export async function GET() {
     await requireAdmin();
 
     // Fetch all users with aggregated counts
-    const users = await prisma.user.findMany({
+    const users = await prisma.users.findMany({
       include: {
         _count: {
           select: {

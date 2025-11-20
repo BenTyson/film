@@ -8,11 +8,11 @@ async function checkImportData() {
   try {
     // Get counts
     const counts = await Promise.all([
-      prisma.movie.count(),
-      prisma.movieMatchAnalysis.count(),
-      prisma.userMovie.count(),
-      prisma.movie.count({ where: { approval_status: 'pending' } }),
-      prisma.movie.count({ where: { csv_row_number: { not: null } } })
+      prisma.movies.count(),
+      prisma.movie_match_analysis.count(),
+      prisma.user_movies.count(),
+      prisma.movies.count({ where: { approval_status: 'pending' } }),
+      prisma.movies.count({ where: { csv_row_number: { not: null } } })
     ]);
 
     console.log('📊 Database counts:');
@@ -25,10 +25,10 @@ async function checkImportData() {
     // Get sample data
     if (counts[0] > 0) {
       console.log('\n🎬 Sample movies:');
-      const sampleMovies = await prisma.movie.findMany({
+      const sampleMovies = await prisma.movies.findMany({
         take: 3,
         include: {
-          match_analysis: true
+          movie_match_analysis: true
         },
         orderBy: { csv_row_number: 'asc' }
       });
@@ -37,9 +37,9 @@ async function checkImportData() {
         console.log(`${i + 1}. ${movie.title} (CSV: ${movie.csv_title})`);
         console.log(`   - Approval: ${movie.approval_status}`);
         console.log(`   - CSV Row: ${movie.csv_row_number}`);
-        console.log(`   - Analysis: ${movie.match_analysis ? 'Yes' : 'No'}`);
-        if (movie.match_analysis) {
-          console.log(`   - Confidence: ${movie.match_analysis.confidence_score}%`);
+        console.log(`   - Analysis: ${movie.movie_match_analysis ? 'Yes' : 'No'}`);
+        if (movie.movie_match_analysis) {
+          console.log(`   - Confidence: ${movie.movie_match_analysis.confidence_score}%`);
         }
         console.log('');
       });
@@ -61,7 +61,7 @@ async function checkImportData() {
 
     // Test simple query first
     try {
-      const pendingMovies1 = await prisma.movie.findMany({
+      const pendingMovies1 = await prisma.movies.findMany({
         where: where1,
         take: 2
       });
@@ -72,7 +72,7 @@ async function checkImportData() {
 
     // Test OR query
     try {
-      const pendingMovies2 = await prisma.movie.findMany({
+      const pendingMovies2 = await prisma.movies.findMany({
         where: where2,
         take: 2
       });
@@ -83,16 +83,16 @@ async function checkImportData() {
 
     // Test full query with includes
     try {
-      const pendingMovies = await prisma.movie.findMany({
+      const pendingMovies = await prisma.movies.findMany({
         where: where1, // Use simple query for now
         take: 2,
         include: {
-          match_analysis: true,
+          movie_match_analysis: true,
           user_movies: true,
           oscar_data: true,
           movie_tags: {
             include: {
-              tag: true
+              tags: true
             }
           }
         }
@@ -107,7 +107,7 @@ async function checkImportData() {
         console.log(`- Title: ${movie.title}`);
         console.log(`- CSV Title: ${movie.csv_title}`);
         console.log(`- Approval Status: ${movie.approval_status}`);
-        console.log(`- Has Analysis: ${movie.match_analysis ? 'Yes' : 'No'}`);
+        console.log(`- Has Analysis: ${movie.movie_match_analysis ? 'Yes' : 'No'}`);
         console.log(`- Has User Data: ${movie.user_movies.length > 0 ? 'Yes' : 'No'}`);
       }
 

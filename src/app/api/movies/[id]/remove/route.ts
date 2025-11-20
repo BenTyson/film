@@ -20,7 +20,7 @@ export async function POST(
     }
 
     // Check if movie exists
-    const movie = await prisma.movie.findUnique({
+    const movie = await prisma.movies.findUnique({
       where: { id: movieId },
       select: { id: true, approval_status: true, title: true }
     });
@@ -40,7 +40,7 @@ export async function POST(
     }
 
     // Remove the movie (mark as removed)
-    const updatedMovie = await prisma.movie.update({
+    const updatedMovie = await prisma.movies.update({
       where: { id: movieId },
       data: {
         approval_status: 'removed',

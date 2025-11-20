@@ -26,7 +26,7 @@ export async function logError({
   requestParams,
 }: ErrorLogParams): Promise<void> {
   try {
-    await prisma.errorLog.create({
+    await prisma.error_logs.create({
       data: {
         user_id: userId,
         endpoint,

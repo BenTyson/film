@@ -6,7 +6,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Award, Trophy, Star, ArrowLeft, Filter, Calendar } from 'lucide-react';
-import { MovieDetailsModal } from '@/components/movie/MovieDetailsModal';
 import { cn, formatYear, getRatingColor } from '@/lib/utils';
 
 interface OscarEntry {
@@ -45,8 +44,6 @@ export default function OscarYearPage({ params }: OscarsPageProps) {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('');
-  const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const year = parseInt(resolvedParams.year);
 
@@ -74,16 +71,6 @@ export default function OscarYearPage({ params }: OscarsPageProps) {
 
     fetchOscarData();
   }, [year, selectedCategory, selectedType]);
-
-  const handleMovieClick = (movieId: number) => {
-    setSelectedMovieId(movieId);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedMovieId(null);
-  };
 
   const categories = [...new Set(oscars.map(o => o.category))].sort();
   const winners = oscars.filter(o => o.nomination_type === 'won');
@@ -201,7 +188,6 @@ export default function OscarYearPage({ params }: OscarsPageProps) {
                             <MovieCard
                               key={`${oscar.movie.id}-${oscar.id}`}
                               oscar={oscar}
-                              onClick={() => handleMovieClick(oscar.movie.id)}
                             />
                           ))}
                         </div>
@@ -220,7 +206,6 @@ export default function OscarYearPage({ params }: OscarsPageProps) {
                             <MovieCard
                               key={`${oscar.movie.id}-${oscar.id}`}
                               oscar={oscar}
-                              onClick={() => handleMovieClick(oscar.movie.id)}
                             />
                           ))}
                         </div>
@@ -232,27 +217,20 @@ export default function OscarYearPage({ params }: OscarsPageProps) {
             })}
           </div>
         )}
-
-        {/* Movie Details Modal */}
-        <MovieDetailsModal
-          movieId={selectedMovieId}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-        />
       </div>
     </div>
   );
 }
 
-function MovieCard({ oscar, onClick }: { oscar: OscarEntry; onClick: () => void }) {
+function MovieCard({ oscar }: { oscar: OscarEntry }) {
   const userMovie = oscar.movie.user_movies[0];
 
   return (
-    <motion.div
-      className="group relative bg-card/30 backdrop-blur-sm rounded-lg overflow-hidden border border-border/50 hover:border-purple-500/50 transition-all duration-300 cursor-pointer"
-      whileHover={{ scale: 1.05 }}
-      onClick={onClick}
-    >
+    <Link href={`/movies/${oscar.movie.id}?from=oscars`} className="block">
+      <motion.div
+        className="group relative bg-card/30 backdrop-blur-sm rounded-lg overflow-hidden border border-border/50 hover:border-purple-500/50 transition-all duration-300 cursor-pointer"
+        whileHover={{ scale: 1.05 }}
+      >
       <div className="aspect-[2/3] relative">
         <Image
           src={oscar.movie.poster_path ? `https://image.tmdb.org/t/p/w500${oscar.movie.poster_path}` : '/placeholder-poster.svg'}
@@ -323,6 +301,7 @@ function MovieCard({ oscar, onClick }: { oscar: OscarEntry; onClick: () => void 
           </div>
         )}
       </div>
-    </motion.div>
+      </motion.div>
+    </Link>
   );
 }

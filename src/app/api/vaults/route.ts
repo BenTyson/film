@@ -8,12 +8,12 @@ export async function GET() {
     // Get authenticated user
     const user = await getCurrentUser();
 
-    const vaults = await prisma.vault.findMany({
+    const vaults = await prisma.vaults.findMany({
       where: {
         user_id: user.id,
       },
       include: {
-        movies: {
+        vault_movies: {
           select: {
             poster_path: true,
           },
@@ -24,7 +24,7 @@ export async function GET() {
         },
         _count: {
           select: {
-            movies: true,
+            vault_movies: true,
           },
         },
       },
@@ -41,8 +41,8 @@ export async function GET() {
       description: vault.description,
       created_at: vault.created_at,
       updated_at: vault.updated_at,
-      movie_count: vault._count.movies,
-      preview_posters: vault.movies
+      movie_count: vault._count.vault_movies,
+      preview_posters: vault.vault_movies
         .map((m) => m.poster_path)
         .filter((p): p is string => p !== null),
     }));
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if vault with this name already exists for this user
-    const existingVault = await prisma.vault.findFirst({
+    const existingVault = await prisma.vaults.findFirst({
       where: {
         user_id: user.id,
         name: name.trim(),
@@ -100,11 +100,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const vault = await prisma.vault.create({
+    const vault = await prisma.vaults.create({
       data: {
         user_id: user.id,
         name: name.trim(),
         description: description?.trim() || null,
+        updated_at: new Date()
       },
     });
 

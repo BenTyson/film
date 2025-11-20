@@ -42,7 +42,7 @@ export async function logActivity({
   userAgent,
 }: ActivityLogParams): Promise<void> {
   try {
-    await prisma.activityLog.create({
+    await prisma.activity_logs.create({
       data: {
         user_id: userId,
         action_type: actionType,

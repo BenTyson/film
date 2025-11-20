@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     // Get all Best Picture nominees
-    const nominees = await prisma.bestPictureNominee.findMany({
+    const nominees = await prisma.best_picture_nominees.findMany({
       orderBy: [
         { ceremony_year: 'desc' },
         { movie_title: 'asc' }
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       try {
         // Find the movie in the collection by TMDB ID or title
         // SQLite doesn't support mode: 'insensitive', so we'll use UPPER/LOWER functions
-        const movie = await prisma.movie.findFirst({
+        const movie = await prisma.movies.findFirst({
           where: {
             OR: [
               // Try exact title match first (most reliable)
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         console.log(`✅ Found movie: ${foundMovie.title} (ID: ${foundMovie.id}, TMDB: ${foundMovie.tmdb_id})`);
 
         // Check if Oscar data already exists
-        const existingOscar = await prisma.oscarData.findFirst({
+        const existingOscar = await prisma.oscar_data.findFirst({
           where: {
             movie_id: foundMovie.id,
             ceremony_year: nominee.ceremony_year,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
           // Update if needed
           if (existingOscar.is_winner !== nominee.is_winner) {
             console.log(`📝 Updating winner status from '${existingOscar.is_winner}' to '${nominee.is_winner}'`);
-            await prisma.oscarData.update({
+            await prisma.oscar_data.update({
               where: { id: existingOscar.id },
               data: {
                 is_winner: nominee.is_winner
@@ -86,12 +86,13 @@ export async function POST(request: NextRequest) {
         } else {
           console.log(`➕ Creating new Oscar data`);
           // Create new Oscar data
-          const newOscarData = await prisma.oscarData.create({
+          const newOscarData = await prisma.oscar_data.create({
             data: {
               movie_id: foundMovie.id,
               ceremony_year: nominee.ceremony_year,
               category: 'Best Picture',
-              is_winner: nominee.is_winner
+              is_winner: nominee.is_winner,
+              updated_at: new Date()
             }
           });
           console.log(`✅ Created new Oscar data (ID: ${newOscarData.id})`);

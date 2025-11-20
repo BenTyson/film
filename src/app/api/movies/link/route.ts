@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if movie exists
-    const existingMovie = await prisma.movie.findUnique({
+    const existingMovie = await prisma.movies.findUnique({
       where: { tmdb_id: parseInt(tmdb_id) },
       include: {
         user_movies: true
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUserMovie) {
       // Update existing user movie record with new data if provided
-      const updatedUserMovie = await prisma.userMovie.update({
+      const updatedUserMovie = await prisma.user_movies.update({
         where: { id: existingUserMovie.id },
         data: {
           personal_rating: personal_rating ? parseInt(personal_rating) : existingUserMovie.personal_rating,
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Create new user movie record
-      await prisma.userMovie.create({
+      await prisma.user_movies.create({
         data: {
           movie_id: existingMovie.id,
           user_id: 1, // Default user for now
@@ -64,7 +64,8 @@ export async function POST(request: NextRequest) {
           date_watched: date_watched ? new Date(date_watched) : null,
           is_favorite: is_favorite || false,
           buddy_watched_with: buddy_watched_with || null,
-          notes: notes || null
+          notes: notes || null,
+          updated_at: new Date()
         }
       });
     }
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
     if (tags && tags.length > 0) {
       for (const tagName of tags) {
         // Find or create tag for this user
-        let tag = await prisma.tag.findFirst({
+        let tag = await prisma.tags.findFirst({
           where: {
             name: tagName,
             user_id: user.id
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (!tag) {
-          tag = await prisma.tag.create({
+          tag = await prisma.tags.create({
             data: {
               name: tagName,
               color: tagName === 'Calen' ? '#3b82f6' : '#6366f1',
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if movie-tag link already exists
-        const existingMovieTag = await prisma.movieTag.findUnique({
+        const existingMovieTag = await prisma.movie_tags.findUnique({
           where: {
             movie_id_tag_id: {
               movie_id: existingMovie.id,
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
 
         if (!existingMovieTag) {
           // Link movie to tag
-          await prisma.movieTag.create({
+          await prisma.movie_tags.create({
             data: {
               movie_id: existingMovie.id,
               tag_id: tag.id

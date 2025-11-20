@@ -77,7 +77,7 @@ export default function OscarTableView() {
   const availableCategories = useMemo(() => {
     const categories = new Set<string>();
     movies.forEach(movie => {
-      movie.nominations.forEach(nom => categories.add(nom.category));
+      movie.nominations?.forEach(nom => categories.add(nom.category));
     });
     // Sort with major categories first
     const majorCategories = ['Best Picture', 'Best Director', 'Best Actor', 'Best Actress'];
@@ -109,7 +109,7 @@ export default function OscarTableView() {
     // Category filter (AND logic - movie must have at least one nomination in selected categories)
     if (selectedCategories.length > 0) {
       filtered = filtered.filter(movie =>
-        movie.nominations.some(nom => selectedCategories.includes(nom.category))
+        movie.nominations?.some(nom => selectedCategories.includes(nom.category)) ?? false
       );
     }
 
@@ -183,7 +183,7 @@ export default function OscarTableView() {
 
   // Get primary person for grid view (winner or first nominee from filtered categories)
   const getPrimaryPerson = (movie: OscarTableMovie) => {
-    if (!isShowingPersonCategories) return null;
+    if (!isShowingPersonCategories || !movie.nominations) return null;
 
     // Get nominations matching selected categories
     const relevantNoms = movie.nominations.filter(nom =>
@@ -208,7 +208,7 @@ export default function OscarTableView() {
     ];
 
     // Group nominations by category for cleaner display
-    const grouped = movie.nominations.reduce((acc, nom) => {
+    const grouped = (movie.nominations || []).reduce((acc, nom) => {
       const key = nom.category;
       if (!acc[key]) {
         acc[key] = {

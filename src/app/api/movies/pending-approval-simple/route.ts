@@ -7,12 +7,12 @@ export async function GET(request: NextRequest) {
     console.log('🔍 Fetching pending movies...');
 
     // Simple query for pending movies
-    const movies = await prisma.movie.findMany({
+    const movies = await prisma.movies.findMany({
       where: {
         approval_status: 'pending'
       },
       include: {
-        match_analysis: true,
+        movie_match_analysis: true,
         user_movies: true
       },
       orderBy: {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // Transform to approval format
     const approvalData = movies.map(movie => {
-      const analysis = movie.match_analysis;
+      const analysis = movie.movie_match_analysis;
       const userMovie = movie.user_movies[0];
 
       return {

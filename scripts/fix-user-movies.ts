@@ -14,14 +14,14 @@ async function main() {
     console.log('🔍 Finding user:', USER_EMAIL);
 
     // Find the production user
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { email: USER_EMAIL }
     });
 
     if (!user) {
       console.error('❌ User not found:', USER_EMAIL);
       console.log('Available users:');
-      const allUsers = await prisma.user.findMany({
+      const allUsers = await prisma.users.findMany({
         select: { id: true, email: true, clerk_id: true, role: true }
       });
       console.table(allUsers);
@@ -36,7 +36,7 @@ async function main() {
     });
 
     // Find all approved movies
-    const allMovies = await prisma.movie.findMany({
+    const allMovies = await prisma.movies.findMany({
       where: {
         approval_status: 'approved'
       },
@@ -63,7 +63,7 @@ async function main() {
       console.log('\n✅ All movies are already linked to your user!');
 
       // Check if there are any existing user_movies for this user
-      const existingUserMovies = await prisma.userMovie.count({
+      const existingUserMovies = await prisma.user_movies.count({
         where: { user_id: user.id }
       });
       console.log(`\n📝 You currently have ${existingUserMovies} movies in your collection.`);
@@ -76,10 +76,11 @@ async function main() {
     let created = 0;
     for (const movie of moviesWithoutUser) {
       try {
-        await prisma.userMovie.create({
+        await prisma.user_movies.create({
           data: {
             movie_id: movie.id,
             user_id: user.id,
+            updated_at: new Date(),
             // Defaults: no rating, no watch date, not favorite
           }
         });
@@ -95,7 +96,7 @@ async function main() {
     console.log(`\n✅ Successfully linked ${created} movies to your account!`);
 
     // Verify final count
-    const finalCount = await prisma.userMovie.count({
+    const finalCount = await prisma.user_movies.count({
       where: { user_id: user.id }
     });
 

@@ -27,25 +27,25 @@ export async function GET() {
       errorsByStatusCode,
     ] = await Promise.all([
       // Errors in last 24 hours
-      prisma.errorLog.count({
+      prisma.error_logs.count({
         where: { created_at: { gte: last24h } },
       }),
 
       // Errors in last 7 days
-      prisma.errorLog.count({
+      prisma.error_logs.count({
         where: { created_at: { gte: last7d } },
       }),
 
       // Errors in last 30 days
-      prisma.errorLog.count({
+      prisma.error_logs.count({
         where: { created_at: { gte: last30d } },
       }),
 
       // Total errors
-      prisma.errorLog.count(),
+      prisma.error_logs.count(),
 
       // Top 5 endpoints with most errors
-      prisma.errorLog.groupBy({
+      prisma.error_logs.groupBy({
         by: ['endpoint'],
         _count: {
           endpoint: true,
@@ -59,9 +59,9 @@ export async function GET() {
       }),
 
       // Most recent errors (last 5)
-      prisma.errorLog.findMany({
+      prisma.error_logs.findMany({
         include: {
-          user: {
+          users: {
             select: {
               id: true,
               name: true,
@@ -76,7 +76,7 @@ export async function GET() {
       }),
 
       // Errors grouped by status code
-      prisma.errorLog.groupBy({
+      prisma.error_logs.groupBy({
         by: ['status_code'],
         _count: {
           status_code: true,
@@ -91,7 +91,7 @@ export async function GET() {
 
     // Calculate error rate trend (comparing last 24h to previous 24h)
     const previous24hStart = new Date(last24h.getTime() - 24 * 60 * 60 * 1000);
-    const previous24hCount = await prisma.errorLog.count({
+    const previous24hCount = await prisma.error_logs.count({
       where: {
         created_at: {
           gte: previous24hStart,

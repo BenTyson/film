@@ -25,7 +25,6 @@ import { cn } from '@/lib/utils';
 import { AddToVaultModal } from '@/components/vault/AddToVaultModal';
 import { VaultMovieModal } from '@/components/vault/VaultMovieModal';
 import { EditVaultModal } from '@/components/vault/EditVaultModal';
-import { MovieDetailsModal } from '@/components/movie/MovieDetailsModal';
 import Image from 'next/image';
 import type { VaultWithMovies, VaultMovieWithCollectionStatus } from '@/types/vault';
 
@@ -53,8 +52,6 @@ export default function VaultDetailPage({ params }: { params: Promise<{ id: stri
   const [gridColumns, setGridColumns] = useState<4 | 5 | 6>(6);
   const [selectedMovie, setSelectedMovie] = useState<VaultMovieWithCollectionStatus | null>(null);
   const [isMovieModalOpen, setIsMovieModalOpen] = useState(false);
-  const [selectedCollectionMovieId, setSelectedCollectionMovieId] = useState<number | null>(null);
-  const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -142,12 +139,9 @@ export default function VaultDetailPage({ params }: { params: Promise<{ id: stri
   }, [vaultId]);
 
   const handleMovieClick = (movie: VaultMovieWithCollectionStatus) => {
-    if (movie.in_collection && movie.collection_movie_id) {
-      // Movie is in collection - use full MovieDetailsModal
-      setSelectedCollectionMovieId(movie.collection_movie_id);
-      setIsCollectionModalOpen(true);
-    } else {
-      // Movie not in collection - use VaultMovieModal
+    // Only open modal for movies NOT in collection
+    // (Collection movies will navigate via Link)
+    if (!movie.in_collection || !movie.collection_movie_id) {
       setSelectedMovie(movie);
       setIsMovieModalOpen(true);
     }
@@ -156,11 +150,6 @@ export default function VaultDetailPage({ params }: { params: Promise<{ id: stri
   const handleMovieModalClose = () => {
     setIsMovieModalOpen(false);
     setSelectedMovie(null);
-  };
-
-  const handleCollectionModalClose = () => {
-    setIsCollectionModalOpen(false);
-    setSelectedCollectionMovieId(null);
   };
 
   const handleMovieUpdate = () => {
@@ -372,16 +361,16 @@ export default function VaultDetailPage({ params }: { params: Promise<{ id: stri
               gridColumns === 6 && 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6'
             )}
           >
-            {filteredMovies.map((movie) => (
-              <motion.div
-                key={movie.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.05 }}
-                className="group cursor-pointer"
-                onClick={() => handleMovieClick(movie)}
-              >
-                <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-gray-800">
+            {filteredMovies.map((movie) => {
+              const movieCard = (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.05 }}
+                  className="group cursor-pointer"
+                  onClick={movie.in_collection && movie.collection_movie_id ? undefined : () => handleMovieClick(movie)}
+                >
+                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-gray-800">
                   {movie.poster_path ? (
                     <Image
                       src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
@@ -408,8 +397,24 @@ export default function VaultDetailPage({ params }: { params: Promise<{ id: stri
                     </div>
                   )}
                 </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+
+              // Wrap with Link if movie is in collection
+              return movie.in_collection && movie.collection_movie_id ? (
+                <Link
+                  key={movie.id}
+                  href={`/movies/${movie.collection_movie_id}?from=vault`}
+                  className="block"
+                >
+                  {movieCard}
+                </Link>
+              ) : (
+                <div key={movie.id}>
+                  {movieCard}
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-20">
@@ -442,14 +447,6 @@ export default function VaultDetailPage({ params }: { params: Promise<{ id: stri
             isOpen={isAddModalOpen}
             onClose={() => setIsAddModalOpen(false)}
             onMovieAdded={handleMovieUpdate}
-          />
-
-          {/* For movies in collection - use full MovieDetailsModal */}
-          <MovieDetailsModal
-            movieId={selectedCollectionMovieId}
-            isOpen={isCollectionModalOpen}
-            onClose={handleCollectionModalClose}
-            onMovieUpdate={handleMovieUpdate}
           />
 
           {/* For movies NOT in collection - use VaultMovieModal */}

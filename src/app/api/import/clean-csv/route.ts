@@ -296,12 +296,12 @@ export async function POST(request: NextRequest) {
         // Create movie with transaction
         const movie = await prisma.$transaction(async (tx) => {
           // Create movie
-          const createdMovie = await tx.movie.create({
+          const createdMovie = await tx.movies.create({
             data: movieData
           });
 
           // Create match analysis
-          await tx.movieMatchAnalysis.create({
+          await tx.movie_match_analysis.create({
             data: {
               movie_id: createdMovie.id,
               confidence_score: analysis.confidenceScore,
@@ -309,19 +309,21 @@ export async function POST(request: NextRequest) {
               mismatches: analysis.mismatches,
               title_similarity: analysis.titleSimilarity,
               director_similarity: analysis.directorSimilarity,
-              year_difference: analysis.yearDifference
+              year_difference: analysis.yearDifference,
+              updated_at: new Date()
             }
           });
 
           // Create basic user movie record
           const personalData = parsePersonalData(row);
-          await tx.userMovie.create({
+          await tx.user_movies.create({
             data: {
               movie_id: createdMovie.id,
               user_id: 1,
               date_watched: personalData.dateWatched,
               ...(personalData.buddyWatchedWith && { buddy_watched_with: [personalData.buddyWatchedWith] }),
-              notes: personalData.notes
+              notes: personalData.notes,
+              updated_at: new Date()
             }
           });
 

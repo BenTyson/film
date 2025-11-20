@@ -26,15 +26,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Get nominations with related data from unified table
-    const nominations = await prisma.oscarNomination.findMany({
+    const nominations = await prisma.oscar_nominations.findMany({
       where,
       include: {
-        movie: true,
-        category: true
+        oscar_movies: true,
+        oscar_categories: true
       },
       orderBy: [
         { ceremony_year: 'desc' },
-        { category: { name: 'asc' } },
+        { oscar_categories: { name: 'asc' } },
         { is_winner: 'desc' }
       ],
       take: limit,
@@ -42,10 +42,10 @@ export async function GET(request: NextRequest) {
     });
 
     // Get total count for pagination
-    const totalCount = await prisma.oscarNomination.count({ where });
+    const totalCount = await prisma.oscar_nominations.count({ where });
 
     // Get user's movie collection for TMDB ID matching
-    const userMovies = await prisma.movie.findMany({
+    const userMovies = await prisma.movies.findMany({
       where: { approval_status: 'approved' },
       select: { tmdb_id: true, id: true, title: true, poster_path: true }
     });
@@ -55,19 +55,19 @@ export async function GET(request: NextRequest) {
 
     // Transform the data for better client consumption with collection status and fetch TMDB posters if needed
     const transformedNominations = await Promise.all(nominations.map(async nomination => {
-      const collectionMovie = nomination.movie?.tmdb_id
-        ? userMovieMap.get(nomination.movie.tmdb_id)
+      const collectionMovie = nomination.oscar_movies?.tmdb_id
+        ? userMovieMap.get(nomination.oscar_movies.tmdb_id)
         : null;
 
       let posterPath = collectionMovie?.poster_path || null;
 
       // If not in collection and no poster, try to fetch from internal TMDB API
-      if (!collectionMovie && nomination.movie?.tmdb_id && !posterPath) {
+      if (!collectionMovie && nomination.oscar_movies?.tmdb_id && !posterPath) {
         try {
           const baseUrl = process.env.NODE_ENV === 'production'
             ? 'https://yourdomain.com'
             : 'http://localhost:3002';
-          const tmdbResponse = await fetch(`${baseUrl}/api/tmdb/movie/${nomination.movie.tmdb_id}`);
+          const tmdbResponse = await fetch(`${baseUrl}/api/tmdb/movie/${nomination.oscar_movies.tmdb_id}`);
           if (tmdbResponse.ok) {
             const tmdbData = await tmdbResponse.json();
             if (tmdbData.success && tmdbData.data?.poster_path) {
@@ -75,22 +75,22 @@ export async function GET(request: NextRequest) {
             }
           }
         } catch (error) {
-          console.warn(`Failed to fetch TMDB poster for ${nomination.movie.title}:`, error);
+          console.warn(`Failed to fetch TMDB poster for ${nomination.oscar_movies.title}:`, error);
         }
       }
 
       return {
         id: nomination.id,
         ceremony_year: nomination.ceremony_year,
-        category: nomination.category?.name || '',
-        category_group: nomination.category?.category_group || '',
+        category: nomination.oscar_categories?.name || '',
+        category_group: nomination.oscar_categories?.category_group || '',
         nominee_name: nomination.nominee_name,
         is_winner: nomination.is_winner,
-        movie: nomination.movie ? {
-          id: nomination.movie.id,
-          title: nomination.movie.title,
-          tmdb_id: nomination.movie.tmdb_id,
-          imdb_id: nomination.movie.imdb_id,
+        movie: nomination.oscar_movies ? {
+          id: nomination.oscar_movies.id,
+          title: nomination.oscar_movies.title,
+          tmdb_id: nomination.oscar_movies.tmdb_id,
+          imdb_id: nomination.oscar_movies.imdb_id,
           // Add collection status and poster (from collection or TMDB)
           in_collection: !!collectionMovie,
           collection_id: collectionMovie?.id || null,
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        nominations: transformedNominations,
+        oscar_nominations: transformedNominations,
         grouped_by_year: groupedData,
         pagination: {
           total_count: totalCount,
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error fetching Oscar nominations:', error);
+    console.error('Error fetching Oscar oscar_nominations:', error);
     return NextResponse.json({
       success: false,
       error: 'Failed to fetch Oscar nominations'

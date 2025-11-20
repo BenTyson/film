@@ -202,20 +202,20 @@ export async function GET(request: NextRequest) {
       // Fetch all movies matching the filter for proper sorting
       const [allMovies, totalCount, grandTotalCount] = await withDatabaseRetry(() =>
         Promise.all([
-          prisma.movie.findMany({
+          prisma.movies.findMany({
             where,
             include: {
               user_movies: true,
               oscar_data: true,
               movie_tags: {
                 include: {
-                  tag: true
+                  tags: true
                 }
               }
             }
           }),
-          prisma.movie.count({ where }),
-          prisma.movie.count({
+          prisma.movies.count({ where }),
+          prisma.movies.count({
             where: {
               approval_status: 'approved',
               user_movies: {
@@ -264,14 +264,14 @@ export async function GET(request: NextRequest) {
       // Use standard pagination for database-sortable fields
       const [fetchedMovies, totalCount, grandTotalCount] = await withDatabaseRetry(() =>
         Promise.all([
-          prisma.movie.findMany({
+          prisma.movies.findMany({
             where,
             include: {
               user_movies: true,
               oscar_data: true,
               movie_tags: {
                 include: {
-                  tag: true
+                  tags: true
                 }
               }
             },
@@ -279,8 +279,8 @@ export async function GET(request: NextRequest) {
             skip,
             take: limit,
           }),
-          prisma.movie.count({ where }),
-          prisma.movie.count({
+          prisma.movies.count({ where }),
+          prisma.movies.count({
             where: {
               approval_status: 'approved',
               user_movies: {
@@ -327,9 +327,9 @@ export async function GET(request: NextRequest) {
           categories: movie.oscar_data.map(o => o.category),
         },
         tags: movie.movie_tags.map(mt => ({
-          name: mt.tag.name,
-          color: mt.tag.color,
-          icon: mt.tag.icon,
+          name: mt.tags.name,
+          color: mt.tags.color,
+          icon: mt.tags.icon,
         })),
       };
     });
@@ -421,10 +421,10 @@ export async function POST(request: NextRequest) {
 
     // Check if THIS USER already has this movie in their collection
     const existingUserMovie = await withDatabaseRetry(() =>
-      prisma.userMovie.findFirst({
+      prisma.user_movies.findFirst({
         where: {
           user_id: user.id,
-          movie: {
+          movies: {
             tmdb_id: parseInt(tmdb_id),
             approval_status: 'approved'
           }
@@ -441,7 +441,7 @@ export async function POST(request: NextRequest) {
 
     // Check if movie exists in global Movie table (from vault or other users)
     const existingMovie = await withDatabaseRetry(() =>
-      prisma.movie.findUnique({
+      prisma.movies.findUnique({
         where: { tmdb_id: parseInt(tmdb_id) }
       })
     );
@@ -453,7 +453,7 @@ export async function POST(request: NextRequest) {
       // If movie was removed, update it back to approved
       if (existingMovie.approval_status === 'removed') {
         movie = await withDatabaseRetry(() =>
-          prisma.movie.update({
+          prisma.movies.update({
             where: { id: existingMovie.id },
             data: {
               approval_status: 'approved',
@@ -475,7 +475,7 @@ export async function POST(request: NextRequest) {
 
       // Create movie record
       movie = await withDatabaseRetry(() =>
-        prisma.movie.create({
+        prisma.movies.create({
         data: {
           tmdb_id: parseInt(tmdb_id),
           title: movieDetails.title,
@@ -494,14 +494,15 @@ export async function POST(request: NextRequest) {
           revenue: movieDetails.revenue,
           tagline: movieDetails.tagline,
           approval_status: "approved",
-          approved_at: new Date()
+          approved_at: new Date(),
+          updated_at: new Date()
         }
       })
     );
     }
 
     // Create user movie record - ALWAYS create it to link the movie to the user
-    await prisma.userMovie.create({
+    await prisma.user_movies.create({
       data: {
         movie_id: movie.id,
         user_id: user.id,
@@ -509,7 +510,8 @@ export async function POST(request: NextRequest) {
         date_watched: date_watched ? new Date(date_watched) : null,
         is_favorite: is_favorite || false,
         ...(buddiesArray && buddiesArray.length > 0 && { buddy_watched_with: buddiesArray }),
-        notes: notes || null
+        notes: notes || null,
+        updated_at: new Date()
       }
     });
 
@@ -517,7 +519,7 @@ export async function POST(request: NextRequest) {
     if (tags && tags.length > 0) {
       for (const tagName of tags) {
         // Find or create tag for this user
-        let tag = await prisma.tag.findFirst({
+        let tag = await prisma.tags.findFirst({
           where: {
             name: tagName,
             user_id: user.id
@@ -525,7 +527,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (!tag) {
-          tag = await prisma.tag.create({
+          tag = await prisma.tags.create({
             data: {
               name: tagName,
               color: '#6366f1', // Default color
@@ -536,7 +538,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Link movie to tag (check if it doesn't already exist)
-        const existingMovieTag = await prisma.movieTag.findUnique({
+        const existingMovieTag = await prisma.movie_tags.findUnique({
           where: {
             movie_id_tag_id: {
               movie_id: movie.id,
@@ -546,7 +548,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (!existingMovieTag) {
-          await prisma.movieTag.create({
+          await prisma.movie_tags.create({
             data: {
               movie_id: movie.id,
               tag_id: tag.id

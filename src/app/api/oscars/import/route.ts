@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         analysis: {
-          total_nominations: oscarData.length,
+          total_oscar_nominations: oscarData.length,
           categories: Array.from(categories).sort(),
           years: Array.from(years).sort(),
           year_range: [Math.min(...years), Math.max(...years)],
@@ -95,9 +95,9 @@ export async function POST(request: NextRequest) {
 
     // Clear existing data
     console.log('Clearing existing Oscar data...');
-    await prisma.oscarNomination.deleteMany();
-    await prisma.oscarMovie.deleteMany();
-    await prisma.oscarCategory.deleteMany();
+    await prisma.oscar_nominations.deleteMany();
+    await prisma.oscar_movies.deleteMany();
+    await prisma.oscar_categories.deleteMany();
 
     const stats = {
       categories_created: 0,
@@ -115,16 +115,17 @@ export async function POST(request: NextRequest) {
     // Use createMany for categories
     const categoryData = uniqueCategories.map(categoryName => ({
       name: categoryName,
-      category_group: categorizeCategory(categoryName)
+      category_group: categorizeCategory(categoryName),
+      updated_at: new Date()
     }));
 
     try {
-      await prisma.oscarCategory.createMany({
+      await prisma.oscar_categories.createMany({
         data: categoryData
       });
 
       // Get the created categories to build the map
-      const createdCategories = await prisma.oscarCategory.findMany({
+      const createdCategories = await prisma.oscar_categories.findMany({
         where: {
           name: { in: uniqueCategories }
         }
@@ -159,16 +160,17 @@ export async function POST(request: NextRequest) {
     const movieData = Array.from(uniqueMovies.values()).map(movie => ({
       title: movie.title,
       tmdb_id: movie.tmdb_id,
-      imdb_id: movie.imdb_id
+      imdb_id: movie.imdb_id,
+      updated_at: new Date()
     }));
 
     try {
-      await prisma.oscarMovie.createMany({
+      await prisma.oscar_movies.createMany({
         data: movieData
       });
 
       // Get the created movies to build the map
-      const createdMovies = await prisma.oscarMovie.findMany({
+      const createdMovies = await prisma.oscar_movies.findMany({
         where: {
           OR: Array.from(uniqueMovies.values()).map(movie => ({
             title: movie.title,
@@ -228,12 +230,13 @@ export async function POST(request: NextRequest) {
             category_id: categoryId,
             movie_id: movieId,
             nominee_name: nominee,
-            is_winner: nomination.won
+            is_winner: nomination.won,
+            updated_at: new Date()
           });
 
           // Insert in batches
           if (nominationData.length >= BATCH_SIZE) {
-            await prisma.oscarNomination.createMany({
+            await prisma.oscar_nominations.createMany({
               data: nominationData
             });
             stats.nominations_created += nominationData.length;
@@ -249,7 +252,7 @@ export async function POST(request: NextRequest) {
 
     // Insert remaining nominations
     if (nominationData.length > 0) {
-      await prisma.oscarNomination.createMany({
+      await prisma.oscar_nominations.createMany({
         data: nominationData
       });
       stats.nominations_created += nominationData.length;
@@ -265,7 +268,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error importing Oscar nominations:', error);
+    console.error('Error importing Oscar oscar_nominations:', error);
     return NextResponse.json({
       success: false,
       error: 'Failed to import Oscar nominations'

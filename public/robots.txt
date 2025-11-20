@@ -1,0 +1,13 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Allow movie detail pages
+Allow: /movies/
+
+# Disallow admin and API routes
+Disallow: /api/
+Disallow: /admin/
+
+# Sitemap location
+Sitemap: https://film-app.vercel.app/sitemap.xml

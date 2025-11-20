@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get Best Picture nominees with their watch status
-    const nominees = await prisma.bestPictureNominee.findMany({
+    const nominees = await prisma.best_picture_nominees.findMany({
       where,
       orderBy: [
         { ceremony_year: 'desc' },
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all movies to search through
-    const allMovies = await prisma.movie.findMany({
+    const allMovies = await prisma.movies.findMany({
       include: {
         user_movies: true
       }

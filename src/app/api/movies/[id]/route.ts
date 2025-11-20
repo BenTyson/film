@@ -21,7 +21,7 @@ export async function GET(
       }, { status: 400 });
     }
 
-    const movie = await prisma.movie.findUnique({
+    const movie = await prisma.movies.findUnique({
       where: { id: movieId },
       include: {
         user_movies: {
@@ -33,7 +33,7 @@ export async function GET(
         },
         movie_tags: {
           include: {
-            tag: true
+            tags: true
           }
         }
       }
@@ -121,9 +121,9 @@ export async function GET(
         tag_id: Number(mt.tag_id),
         created_at: mt.created_at?.toISOString(),
         tag: {
-          ...mt.tag,
-          id: Number(mt.tag.id),
-          created_at: mt.tag.created_at?.toISOString()
+          ...mt.tags,
+          id: Number(mt.tags.id),
+          created_at: mt.tags.created_at?.toISOString()
         }
       })),
       trailer: trailerData
@@ -187,7 +187,7 @@ export async function PATCH(
     }
 
     // Verify user owns this user_movie record
-    const existingUserMovie = await prisma.userMovie.findUnique({
+    const existingUserMovie = await prisma.user_movies.findUnique({
       where: { id: user_movie_id }
     });
 
@@ -199,7 +199,7 @@ export async function PATCH(
     }
 
     // Update the user movie record
-    const updatedUserMovie = await prisma.userMovie.update({
+    const updatedUserMovie = await prisma.user_movies.update({
       where: { id: user_movie_id },
       data: {
         ...(personal_rating !== undefined && { personal_rating }),

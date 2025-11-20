@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const bestPictureData = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
 
     // Check if data already exists
-    const existingCount = await prisma.bestPictureNominee.count();
+    const existingCount = await prisma.best_picture_nominees.count();
     if (existingCount > 0 && !force_reimport) {
       return NextResponse.json({
         success: false,
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Clear existing data if force reimporting
     if (force_reimport) {
-      await prisma.bestPictureNominee.deleteMany({});
+      await prisma.best_picture_nominees.deleteMany({});
     }
 
     const results = [];
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     for (const nominee of bestPictureData as BestPictureNominee[]) {
       try {
         // Check for existing entry
-        const existing = await prisma.bestPictureNominee.findUnique({
+        const existing = await prisma.best_picture_nominees.findUnique({
           where: {
             ceremony_year_movie_title: {
               ceremony_year: nominee.ceremony_year,
@@ -67,14 +67,15 @@ export async function POST(request: NextRequest) {
         }
 
         // Create the nominee record
-        const created = await prisma.bestPictureNominee.create({
+        const created = await prisma.best_picture_nominees.create({
           data: {
             ceremony_year: nominee.ceremony_year,
             movie_title: nominee.movie_title,
             release_year: nominee.release_year,
             is_winner: nominee.is_winner,
             tmdb_id: nominee.tmdb_id || null,
-            director: nominee.director || null
+            director: nominee.director || null,
+            updated_at: new Date()
           }
         });
 

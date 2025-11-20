@@ -33,7 +33,7 @@ export async function PUT(
     }
 
     // Check if movie exists
-    const existingMovie = await prisma.movie.findUnique({
+    const existingMovie = await prisma.movies.findUnique({
       where: { id: movieId },
       select: {
         id: true,
@@ -55,7 +55,7 @@ export async function PUT(
     }
 
     // Check if new TMDB ID is already in use
-    const duplicateMovie = await prisma.movie.findUnique({
+    const duplicateMovie = await prisma.movies.findUnique({
       where: { tmdb_id: tmdbIdNumber }
     });
 
@@ -74,7 +74,7 @@ export async function PUT(
     // Use transaction to update movie and create/update match analysis
     const updatedMovie = await prisma.$transaction(async (tx) => {
       // Update movie with new TMDB data
-      const updated = await tx.movie.update({
+      const updated = await tx.movies.update({
         where: { id: movieId },
         data: {
           tmdb_id: tmdbIdNumber,
@@ -141,7 +141,7 @@ export async function PUT(
                         confidenceScore < 80 ? 'medium' : 'low';
 
         // Update or create match analysis
-        await tx.movieMatchAnalysis.upsert({
+        await tx.movie_match_analysis.upsert({
           where: { movie_id: movieId },
           create: {
             movie_id: movieId,
@@ -150,7 +150,8 @@ export async function PUT(
             mismatches,
             title_similarity: titleSimilarity,
             director_similarity: directorSimilarity,
-            year_difference: yearDifference
+            year_difference: yearDifference,
+            updated_at: new Date()
           },
           update: {
             confidence_score: Math.max(0, Math.round(confidenceScore)),

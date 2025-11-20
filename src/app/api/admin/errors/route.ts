@@ -30,10 +30,10 @@ export async function GET(request: NextRequest) {
 
     // Fetch errors
     const [errors, total] = await Promise.all([
-      prisma.errorLog.findMany({
+      prisma.error_logs.findMany({
         where,
         include: {
-          user: {
+          users: {
             select: {
               id: true,
               name: true,
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         skip: offset,
       }),
-      prisma.errorLog.count({ where }),
+      prisma.error_logs.count({ where }),
     ]);
 
     return NextResponse.json({

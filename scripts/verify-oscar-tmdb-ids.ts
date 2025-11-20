@@ -39,7 +39,7 @@ async function verifyOscarTMDBIds() {
     console.log('📊 STEP 1: Checking existing OscarMovie records...\n');
     
     const tmdbIdsToCheck = moviesToCheck.map(m => m.tmdb_id);
-    const existingMovies = await prisma.oscarMovie.findMany({
+    const existingMovies = await prisma.oscar_movies.findMany({
       where: {
         tmdb_id: {
           in: tmdbIdsToCheck
@@ -120,7 +120,7 @@ async function verifyOscarTMDBIds() {
     // Step 3: Check OscarCategory IDs
     console.log('\n📋 STEP 3: Checking OscarCategory IDs...\n');
 
-    const categories = await prisma.oscarCategory.findMany({
+    const categories = await prisma.oscar_categories.findMany({
       where: {
         name: {
           in: categoriesToCheck

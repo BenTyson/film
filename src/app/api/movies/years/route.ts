@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's approved movies with their release dates
-    const movies = await prisma.movie.findMany({
+    const movies = await prisma.movies.findMany({
       where,
       select: {
         release_date: true

@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const { dryRun = true } = body;
 
     // Find all movies that don't have an approval status set or are still at default
-    const moviesToMigrate = await prisma.movie.findMany({
+    const moviesToMigrate = await prisma.movies.findMany({
       where: {
         OR: [
           { approval_status: '' },
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     if (!dryRun && moviesToMigrate.length > 0) {
       // Update all movies to pending approval status
-      const result = await prisma.movie.updateMany({
+      const result = await prisma.movies.updateMany({
         where: {
           id: { in: moviesToMigrate.map(m => m.id) }
         },
@@ -79,9 +79,9 @@ export async function GET(request: NextRequest) {
       pendingMovies,
       approvedMovies
     ] = await Promise.all([
-      prisma.movie.count(),
-      prisma.movie.count({ where: { approval_status: 'pending' } }),
-      prisma.movie.count({ where: { approval_status: 'approved' } })
+      prisma.movies.count(),
+      prisma.movies.count({ where: { approval_status: 'pending' } }),
+      prisma.movies.count({ where: { approval_status: 'approved' } })
     ]);
 
     const noStatusMovies = totalMovies - pendingMovies - approvedMovies;

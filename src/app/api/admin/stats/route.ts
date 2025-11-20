@@ -25,28 +25,28 @@ export async function GET() {
       activeUsers,
     ] = await Promise.all([
       // Total users
-      prisma.user.count(),
+      prisma.users.count(),
 
       // Total user movies (across all users)
-      prisma.userMovie.count(),
+      prisma.user_movies.count(),
 
       // Total watchlist items (across all users)
-      prisma.watchlistMovie.count(),
+      prisma.watchlist_movies.count(),
 
       // Total vaults
-      prisma.vault.count(),
+      prisma.vaults.count(),
 
       // Total tags
-      prisma.tag.count(),
+      prisma.tags.count(),
 
       // Total Oscar movies
-      prisma.oscarMovie.count(),
+      prisma.oscar_movies.count(),
 
       // Total Oscar nominations
-      prisma.oscarNomination.count(),
+      prisma.oscar_nominations.count(),
 
       // Users created in last 30 days
-      prisma.user.count({
+      prisma.users.count({
         where: {
           created_at: {
             gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -55,7 +55,7 @@ export async function GET() {
       }),
 
       // Users active in last 7 days (logged in)
-      prisma.user.count({
+      prisma.users.count({
         where: {
           last_login_at: {
             gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
@@ -65,7 +65,7 @@ export async function GET() {
     ]);
 
     // Get average collection size per user
-    const avgStats = await prisma.userMovie.groupBy({
+    const avgStats = await prisma.user_movies.groupBy({
       by: ['user_id'],
       _count: {
         user_id: true,
@@ -77,7 +77,7 @@ export async function GET() {
       : 0;
 
     // Get most active users (top 5 by collection size)
-    const topUsers = await prisma.user.findMany({
+    const topUsers = await prisma.users.findMany({
       include: {
         _count: {
           select: {

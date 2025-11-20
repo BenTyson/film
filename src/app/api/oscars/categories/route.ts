@@ -18,12 +18,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Get categories with nomination counts
-    const categories = await prisma.oscarCategory.findMany({
+    const categories = await prisma.oscar_categories.findMany({
       where,
       include: {
         _count: {
           select: {
-            nominations: true
+            oscar_nominations: true
           }
         }
       },
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       name: category.name,
       category_group: category.category_group,
       is_active: category.is_active,
-      nomination_count: category._count.nominations
+      nomination_count: category._count.oscar_nominations
     }));
 
     // Group by category group
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       total_categories: categories.length,
       active_categories: categories.filter(c => c.is_active).length,
       category_groups: Object.keys(groupedCategories).length,
-      total_nominations: categories.reduce((sum, c) => sum + c._count.nominations, 0)
+      total_oscar_nominations: categories.reduce((sum, c) => sum + c._count.oscar_nominations, 0)
     };
 
     return NextResponse.json({

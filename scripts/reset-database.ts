@@ -11,22 +11,22 @@ async function resetDatabase() {
 
     // Delete in order to avoid foreign key conflicts
     console.log('Clearing movie_match_analysis...');
-    await prisma.movieMatchAnalysis.deleteMany();
+    await prisma.movie_match_analysis.deleteMany();
 
     console.log('Clearing movie_tags...');
-    await prisma.movieTag.deleteMany();
+    await prisma.movie_tags.deleteMany();
 
     console.log('Clearing oscar_data...');
-    await prisma.oscarData.deleteMany();
+    await prisma.oscar_data.deleteMany();
 
     console.log('Clearing user_movies...');
-    await prisma.userMovie.deleteMany();
+    await prisma.user_movies.deleteMany();
 
     console.log('Clearing movies...');
-    await prisma.movie.deleteMany();
+    await prisma.movies.deleteMany();
 
     console.log('Clearing tags...');
-    await prisma.tag.deleteMany();
+    await prisma.tags.deleteMany();
 
     // Re-enable foreign key constraints
     await prisma.$executeRaw`PRAGMA foreign_keys = ON`;
@@ -42,12 +42,12 @@ async function resetDatabase() {
 
     // Get final counts to verify
     const counts = await Promise.all([
-      prisma.movie.count(),
-      prisma.userMovie.count(),
-      prisma.oscarData.count(),
-      prisma.tag.count(),
-      prisma.movieTag.count(),
-      prisma.movieMatchAnalysis.count()
+      prisma.movies.count(),
+      prisma.user_movies.count(),
+      prisma.oscar_data.count(),
+      prisma.tags.count(),
+      prisma.movie_tags.count(),
+      prisma.movie_match_analysis.count()
     ]);
 
     console.log('📊 Final verification:');

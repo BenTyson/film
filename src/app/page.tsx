@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { Search, Grid, List, Grid3X3, LayoutGrid, Grip, ArrowUp, ArrowDown, Award, Users, Plus, Clapperboard, Film, Archive, Shield } from 'lucide-react';
 import { MovieGrid } from '@/components/movie/MovieGrid';
 import { MovieList } from '@/components/movie/MovieList';
-import { MovieDetailsModal } from '@/components/movie/MovieDetailsModal';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -57,8 +56,6 @@ export default function HomePage() {
   const [yearCounts, setYearCounts] = useState<Record<string, number>>({});
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [gridColumns, setGridColumns] = useState<4 | 5 | 6>(6);
-  const [selectedMovieId, setSelectedMovieId] = useState<number | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -247,18 +244,6 @@ export default function HomePage() {
     if (!loading && !loadingMore && hasNextPage) {
       fetchMovies(currentPage + 1, true);
     }
-  };
-
-  const handleMovieSelect = (movie: MovieGridItem) => {
-    setSelectedMovieId(movie.id);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedMovieId(null);
-    // Refresh the movies list to show any updates
-    fetchMovies();
   };
 
   const fetchYearCounts = async () => {
@@ -651,14 +636,13 @@ export default function HomePage() {
         {viewMode === 'grid' ? (
           <MovieGrid
             movies={movies}
-            onMovieSelect={handleMovieSelect}
             loading={loading}
             columns={gridColumns}
+            context="collection"
           />
         ) : (
           <MovieList
             movies={movies}
-            onMovieSelect={handleMovieSelect}
             loading={loading}
           />
         )}
@@ -689,13 +673,6 @@ export default function HomePage() {
             )}
           </div>
         )}
-
-        {/* Movie Details Modal */}
-        <MovieDetailsModal
-          movieId={selectedMovieId}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-        />
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ async function transferDataToClerkUser() {
 
   try {
     // Step 1: Find the temporary user
-    const tempUser = await prisma.user.findUnique({
+    const tempUser = await prisma.users.findUnique({
       where: { id: 1 },
     });
 
@@ -24,7 +24,7 @@ async function transferDataToClerkUser() {
     console.log(`Clerk ID: ${tempUser.clerk_id}\n`);
 
     // Step 2: Find your real Clerk user (the one that's NOT the temp user)
-    const realUsers = await prisma.user.findMany({
+    const realUsers = await prisma.users.findMany({
       where: {
         id: { not: 1 },
         clerk_id: { not: 'temp_will_be_replaced_on_first_login' }
@@ -50,11 +50,11 @@ async function transferDataToClerkUser() {
     console.log(`Role: ${realUser.role}\n`);
 
     // Step 3: Count what we're transferring
-    const userMovieCount = await prisma.userMovie.count({
+    const userMovieCount = await prisma.user_movies.count({
       where: { user_id: 1 }
     });
 
-    const watchlistCount = await prisma.watchlistMovie.count({
+    const watchlistCount = await prisma.watchlist_movies.count({
       where: { user_id: 1 }
     });
 
@@ -64,7 +64,7 @@ async function transferDataToClerkUser() {
 
     // Step 4: Transfer UserMovie records
     console.log('Transferring user movies...');
-    const transferredMovies = await prisma.userMovie.updateMany({
+    const transferredMovies = await prisma.user_movies.updateMany({
       where: { user_id: 1 },
       data: { user_id: realUser.id }
     });
@@ -72,7 +72,7 @@ async function transferDataToClerkUser() {
 
     // Step 5: Transfer Watchlist records
     console.log('Transferring watchlist movies...');
-    const transferredWatchlist = await prisma.watchlistMovie.updateMany({
+    const transferredWatchlist = await prisma.watchlist_movies.updateMany({
       where: { user_id: 1 },
       data: { user_id: realUser.id }
     });
@@ -81,7 +81,7 @@ async function transferDataToClerkUser() {
     // Step 6: Promote to admin if not already
     if (realUser.role !== 'admin') {
       console.log('Promoting you to admin...');
-      await prisma.user.update({
+      await prisma.users.update({
         where: { id: realUser.id },
         data: { role: 'admin' }
       });
@@ -92,7 +92,7 @@ async function transferDataToClerkUser() {
 
     // Step 7: Delete temporary user
     console.log('Deleting temporary user...');
-    await prisma.user.delete({
+    await prisma.users.delete({
       where: { id: 1 }
     });
     console.log(`✅ Deleted temporary user\n`);

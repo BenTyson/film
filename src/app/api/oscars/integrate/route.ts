@@ -9,14 +9,14 @@ export async function POST(request: NextRequest) {
     console.log('🔄 Starting Oscar integration with movie collection...');
 
     // Get all Oscar movies with their nominations
-    const oscarMovies = await prisma.oscarMovie.findMany({
+    const oscarMovies = await prisma.oscar_movies.findMany({
       where: {
         tmdb_id: { not: null }
       },
       include: {
-        nominations: {
+        oscar_nominations: {
           include: {
-            category: true
+            oscar_categories: true
           }
         }
       }
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     console.log(`📊 Found ${oscarMovies.length} Oscar movies with TMDB IDs`);
 
     // Get all movies in the collection
-    const collectionMovies = await prisma.movie.findMany({
+    const collectionMovies = await prisma.movies.findMany({
       select: {
         id: true,
         tmdb_id: true,
@@ -44,13 +44,13 @@ export async function POST(request: NextRequest) {
       collection_movies_total: collectionMovies.length,
       matches_found: 0,
       oscar_data_created: 0,
-      movies_with_nominations: [] as Array<{title: string; nomination_count: number; wins: number}>,
-      sample_matches: [] as Array<{title: string; tmdb_id: number | null; nominations: unknown[]}>
+      movies_with_oscar_nominations: [] as Array<{title: string; nomination_count: number; wins: number}>,
+      sample_matches: [] as Array<{title: string; tmdb_id: number | null; oscar_nominations: unknown[]}>
     };
 
     if (!dryRun) {
       // Clear existing oscar_data entries to avoid duplicates
-      await prisma.oscarData.deleteMany();
+      await prisma.oscar_data.deleteMany();
       console.log('🗑️  Cleared existing oscar_data entries');
     }
 
@@ -65,12 +65,12 @@ export async function POST(request: NextRequest) {
 
         // Group nominations by category
         const nominationsByCategory = new Map();
-        for (const nom of oscarMovie.nominations) {
-          const key = `${nom.ceremony_year}-${nom.category.name}`;
+        for (const nom of oscarMovie.oscar_nominations) {
+          const key = `${nom.ceremony_year}-${nom.oscar_categories.name}`;
           if (!nominationsByCategory.has(key)) {
             nominationsByCategory.set(key, {
               ceremony_year: nom.ceremony_year,
-              category: nom.category.name,
+              category: nom.oscar_categories.name,
               is_winner: nom.is_winner,
               nominee_name: nom.nominee_name
             });
@@ -80,12 +80,13 @@ export async function POST(request: NextRequest) {
         if (!dryRun) {
           // Create OscarData entries for each unique category/year combination
           for (const [key, data] of nominationsByCategory) {
-            await prisma.oscarData.create({
+            await prisma.oscar_data.create({
               data: {
                 movie_id: collectionMovie.id,
                 ceremony_year: data.ceremony_year,
                 category: data.category,
-                is_winner: data.is_winner
+                is_winner: data.is_winner,
+                updated_at: new Date()
               }
             });
             stats.oscar_data_created++;
@@ -97,28 +98,28 @@ export async function POST(request: NextRequest) {
           stats.sample_matches.push({
             title: collectionMovie.title,
             tmdb_id: collectionMovie.tmdb_id,
-            nominations: Array.from(nominationsByCategory.values())
+            oscar_nominations: Array.from(nominationsByCategory.values())
           });
         }
 
-        stats.movies_with_nominations.push({
+        stats.movies_with_oscar_nominations.push({
           title: collectionMovie.title,
-          nomination_count: oscarMovie.nominations.length,
-          wins: oscarMovie.nominations.filter(n => n.is_winner).length
+          nomination_count: oscarMovie.oscar_nominations.length,
+          wins: oscarMovie.oscar_nominations.filter(n => n.is_winner).length
         });
       }
     }
 
     // Sort movies by nomination count
-    stats.movies_with_nominations.sort((a, b) => b.nomination_count - a.nomination_count);
+    stats.movies_with_oscar_nominations.sort((a, b) => b.nomination_count - a.nomination_count);
 
     // Get top nominated movies
-    const topNominated = stats.movies_with_nominations.slice(0, 10);
+    const topNominated = stats.movies_with_oscar_nominations.slice(0, 10);
 
     // Calculate additional statistics
-    const moviesWithWins = stats.movies_with_nominations.filter(m => m.wins > 0);
-    const totalNominations = stats.movies_with_nominations.reduce((sum, m) => sum + m.nomination_count, 0);
-    const totalWins = stats.movies_with_nominations.reduce((sum, m) => sum + m.wins, 0);
+    const moviesWithWins = stats.movies_with_oscar_nominations.filter(m => m.wins > 0);
+    const totalNominations = stats.movies_with_oscar_nominations.reduce((sum, m) => sum + m.nomination_count, 0);
+    const totalWins = stats.movies_with_oscar_nominations.reduce((sum, m) => sum + m.wins, 0);
 
     console.log('✅ Oscar integration completed!');
     console.log(`   Matches found: ${stats.matches_found}`);
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
         ...stats,
         top_nominated: topNominated,
         movies_with_wins: moviesWithWins.length,
-        total_nominations: totalNominations,
+        total_oscar_nominations: totalNominations,
         total_wins: totalWins,
         integration_rate: ((stats.matches_found / oscarMovies.length) * 100).toFixed(1) + '%'
       }
@@ -150,7 +151,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     // Count movies with Oscar data
-    const moviesWithOscars = await prisma.movie.count({
+    const moviesWithOscars = await prisma.movies.count({
       where: {
         oscar_data: {
           some: {}
@@ -159,10 +160,10 @@ export async function GET() {
     });
 
     // Get total Oscar data entries
-    const totalOscarData = await prisma.oscarData.count();
+    const totalOscarData = await prisma.oscar_data.count();
 
     // Get breakdown by category
-    const categoryBreakdown = await prisma.oscarData.groupBy({
+    const categoryBreakdown = await prisma.oscar_data.groupBy({
       by: ['category'],
       _count: true,
       orderBy: {
@@ -173,12 +174,12 @@ export async function GET() {
     });
 
     // Get recent winners in collection
-    const recentWinners = await prisma.oscarData.findMany({
+    const recentWinners = await prisma.oscar_data.findMany({
       where: {
         is_winner: true
       },
       include: {
-        movie: {
+        movies: {
           select: {
             title: true,
             tmdb_id: true,
@@ -203,7 +204,7 @@ export async function GET() {
             count: c._count
           })),
           recent_winners: recentWinners.map(w => ({
-            title: w.movie.title,
+            title: w.movies.title,
             year: w.ceremony_year,
             category: w.category
           }))

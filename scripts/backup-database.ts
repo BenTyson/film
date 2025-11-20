@@ -13,40 +13,40 @@ async function backupDatabase() {
   try {
     // Fetch all data
     console.log('Fetching movies...');
-    const movies = await prisma.movie.findMany();
+    const movies = await prisma.movies.findMany();
 
     console.log('Fetching user movies...');
-    const userMovies = await prisma.userMovie.findMany();
+    const userMovies = await prisma.user_movies.findMany();
 
     console.log('Fetching Oscar data...');
-    const oscarData = await prisma.oscarData.findMany();
+    const oscarData = await prisma.oscar_data.findMany();
 
     console.log('Fetching Oscar categories...');
-    const oscarCategories = await prisma.oscarCategory.findMany();
+    const oscarCategories = await prisma.oscar_categories.findMany();
 
     console.log('Fetching Oscar movies...');
-    const oscarMovies = await prisma.oscarMovie.findMany();
+    const oscarMovies = await prisma.oscar_movies.findMany();
 
     console.log('Fetching Oscar nominations...');
-    const oscarNominations = await prisma.oscarNomination.findMany();
+    const oscarNominations = await prisma.oscar_nominations.findMany();
 
     console.log('Fetching watchlist movies...');
-    const watchlistMovies = await prisma.watchlistMovie.findMany();
+    const watchlistMovies = await prisma.watchlist_movies.findMany();
 
     console.log('Fetching tags...');
-    const tags = await prisma.tag.findMany();
+    const tags = await prisma.tags.findMany();
 
     console.log('Fetching movie tags...');
-    const movieTags = await prisma.movieTag.findMany();
+    const movieTags = await prisma.movie_tags.findMany();
 
     console.log('Fetching watchlist tags...');
-    const watchlistTags = await prisma.watchlistTag.findMany();
+    const watchlistTags = await prisma.watchlist_tags.findMany();
 
     console.log('Fetching best picture nominees...');
-    const bestPictureNominees = await prisma.bestPictureNominee.findMany();
+    const bestPictureNominees = await prisma.best_picture_nominees.findMany();
 
     console.log('Fetching movie match analysis...');
-    const movieMatchAnalysis = await prisma.movieMatchAnalysis.findMany();
+    const movieMatchAnalysis = await prisma.movie_match_analysis.findMany();
 
     // Create backup object
     const backup = {

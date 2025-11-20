@@ -4,17 +4,17 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     const [total, autoVerified, needsReview, manuallyReviewed, pending] = await Promise.all([
-      prisma.oscarMovie.count(),
-      prisma.oscarMovie.count({
+      prisma.oscar_movies.count(),
+      prisma.oscar_movies.count({
         where: { review_status: 'auto_verified' }
       }),
-      prisma.oscarMovie.count({
+      prisma.oscar_movies.count({
         where: { review_status: 'needs_manual_review' }
       }),
-      prisma.oscarMovie.count({
+      prisma.oscar_movies.count({
         where: { review_status: 'manually_reviewed' }
       }),
-      prisma.oscarMovie.count({
+      prisma.oscar_movies.count({
         where: { review_status: 'pending' }
       })
     ]);

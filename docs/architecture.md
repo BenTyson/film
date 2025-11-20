@@ -234,18 +234,137 @@ App Layout (src/app/layout.tsx)
 └── Footer
 ```
 
+## Movie Detail Page Navigation System
+
+**Implemented:** January 2025
+
+### Page-Based Architecture
+
+The application has transitioned from modal-based movie details to dedicated page routes for improved UX, SEO, and mobile experience.
+
+**Route Pattern:** `/movies/[id]` where `[id]` is the database movie ID (not TMDB ID)
+
+**Context Preservation:** Query parameters track navigation source for smart back button behavior:
+- `/movies/872?from=collection` - Navigated from main collection
+- `/movies/872?from=watchlist` - Navigated from watchlist
+- `/movies/872?from=oscars` - Navigated from Oscar pages
+- `/movies/872?from=vault` - Navigated from vault detail page
+
+### Movie Detail Page Structure
+
+**File:** `src/app/movies/[id]/page.tsx`
+
+**Layout Features:**
+- Fixed header with back button, movie title, favorite/Oscar badges
+- Full-width cinematic backdrop with gradient overlay
+- Tab navigation: Overview, Details, Edit, Media, Streaming, Awards
+
+**Tab Content:**
+
+1. **Overview Tab** - Primary view with personal tracking data
+   - Movie synopsis and tagline
+   - Director information
+   - **My Details** section (highlighted card):
+     - Personal rating (visual 10-star display)
+     - Watch date
+     - Watch location
+     - Watched with (buddy chips)
+     - Tags (color-coded)
+     - Personal notes
+   - Quick Stats (TMDB rating, popularity)
+   - External links (IMDb, TMDB)
+
+2. **Details Tab** - Production information
+   - Budget and box office revenue
+   - Original language
+   - Production companies
+   - Cast & Crew (top 5 with characters)
+
+3. **Edit Tab** - Personal data editing
+   - Date watched (date picker)
+   - Personal rating (1-10 stars, interactive)
+   - Watch location (text input)
+   - Buddy watched with (add/remove chips)
+   - Favorite toggle
+   - Tags (autocomplete, add/remove)
+   - Notes (textarea, 6 rows)
+
+4. **Media Tab** - Visual content
+   - Trailer (YouTube iframe embed)
+   - Posters & Images grid
+
+5. **Streaming Tab** - Watch availability
+   - JustWatch integration via TMDB API
+   - Provider logos (Netflix, Hulu, etc.)
+   - US region focus
+
+6. **Awards Tab** - Oscar nominations/wins (conditional)
+   - Only shown if movie has Oscar data
+   - Win/nomination badges
+   - Category, nominee, ceremony year
+
+### SEO & Social Sharing
+
+**Metadata Generation:** `src/app/movies/[id]/layout.tsx`
+- Dynamic `<title>` tags: "Movie Title (Year) | Film Collection"
+- Open Graph tags for Facebook, Discord, LinkedIn
+- Twitter Card tags for X/Twitter
+- Canonical URLs for duplicate content prevention
+- Image optimization (backdrop 1280x720, poster 500x750)
+
+**Structured Data:** `src/components/movie/MovieStructuredData.tsx`
+- JSON-LD schema for search engine rich snippets
+- Movie schema with title, director, genre, runtime
+- Aggregate ratings from TMDB
+- User review integration
+- External links (IMDb, TMDB)
+
+**Benefits:**
+- Rich search results with star ratings
+- Beautiful social media preview cards
+- Shareable, bookmarkable URLs
+- Improved SEO discoverability
+
+### Navigation Updates
+
+**MovieCard Component** (`src/components/movie/MovieCard.tsx`):
+- Uses Next.js `<Link>` for page navigation
+- Backward compatible (supports `onSelect` prop for legacy modal usage)
+- Context prop for smart back navigation
+- URL pattern: `/movies/${movie.id}?from=${context}`
+
+**MovieGrid Component** (`src/components/movie/MovieGrid.tsx`):
+- Passes `context` prop to all MovieCard instances
+- Supports both Link-based and modal-based navigation
+
+**Updated Pages:**
+- **Homepage** (`src/app/page.tsx`) - Collection movies → Link navigation
+- **Oscar Pages** (`src/app/oscars/page.tsx`, `src/app/oscars/[year]/page.tsx`) - Oscar movies → Link navigation
+- **Vault Detail** (`src/app/vaults/[id]/page.tsx`) - Collection movies → Link, non-collection → modal
+
+**Hybrid Approach:**
+- Watchlist page keeps modal (uses separate `watchlist_movies` table)
+- Vault page uses Link for collection movies, modal for non-collection movies
+
 ### Component Inventory
 
 #### Movie Components (`src/components/movie/`)
-- **MovieCard.tsx** - Individual movie card with poster, title, rating, Oscar badges
-- **MovieGrid.tsx** - Grid layout for movie cards
+- **MovieCard.tsx** - Individual movie card with Next.js Link navigation
+  - Poster, title, rating, Oscar badges, tags
+  - Context-aware URLs for back navigation
+  - Backward compatible with modal-based pages
+- **MovieGrid.tsx** - Grid layout for movie cards with context support
 - **MovieList.tsx** - List layout for movie items
 - **MovieListItem.tsx** - Individual list item view
-- **MovieDetailsModal.tsx** - Full movie details modal with backdrop, info, trailer, and streaming availability
+- **MovieStructuredData.tsx** - JSON-LD structured data for SEO
+  - Movie schema with director, genre, runtime
+  - Aggregate ratings and user reviews
+  - External links (IMDb, TMDB)
+- **MovieDetailsModal.tsx** - ⚠️ **LEGACY:** Being phased out in favor of page-based navigation
+  - Still used in watchlist (separate table structure)
   - Tabbed interface: Overview, Details, Media, Streaming
-  - **Streaming tab** shows where movie is available to watch (Netflix, Hulu, etc.) via TMDB watch provider API
+  - **Streaming tab** shows watch providers via TMDB API
   - YouTube trailer embed with toggle
-  - Rating, runtime, director, and genre information
 - **FixMovieModal.tsx** - Modal for fixing movie TMDB matching issues
 - **AddToCalenModal.tsx** - Modal for adding movies to Calen buddy collection
 - **TrailerPlayer.tsx** - YouTube trailer embed component

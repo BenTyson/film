@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all current movie titles from database
-    const existingMovies = await prisma.movie.findMany({
+    const existingMovies = await prisma.movies.findMany({
       select: {
         title: true,
         tmdb_id: true

@@ -10,19 +10,19 @@ export async function GET(request: NextRequest) {
 
     // If specific year requested
     if (year) {
-      const oscars = await prisma.oscarData.findMany({
+      const oscars = await prisma.oscar_data.findMany({
         where: {
           ceremony_year: parseInt(year),
           ...(category && { category }),
           ...(type && { is_winner: type === 'won' }),
         },
         include: {
-          movie: {
+          movies: {
             include: {
               user_movies: true,
               movie_tags: {
                 include: {
-                  tag: true
+                  tags: true
                 }
               }
             }
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     // Get Oscar statistics
     const stats = await Promise.all([
       // Total Oscar movies in collection
-      prisma.movie.count({
+      prisma.movies.count({
         where: {
           oscar_data: {
             some: {}
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       }),
 
       // Total wins vs nominations
-      prisma.oscarData.groupBy({
+      prisma.oscar_data.groupBy({
         by: ['is_winner'],
         _count: {
           id: true
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       }),
 
       // Awards by year
-      prisma.oscarData.groupBy({
+      prisma.oscar_data.groupBy({
         by: ['ceremony_year'],
         _count: {
           id: true
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       }),
 
       // Awards by category
-      prisma.oscarData.groupBy({
+      prisma.oscar_data.groupBy({
         by: ['category'],
         _count: {
           id: true
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       }),
 
       // Most awarded movies
-      prisma.movie.findMany({
+      prisma.movies.findMany({
         where: {
           oscar_data: {
             some: {
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
         overview: {
           total_oscar_movies: totalOscarMovies,
           total_wins: winsCount,
-          total_nominations: nominationsCount,
+          total_oscar_nominations: nominationsCount,
           total_awards: winsCount + nominationsCount
         },
         by_year: yearStats.map(stat => ({

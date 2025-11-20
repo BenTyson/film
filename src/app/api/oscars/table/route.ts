@@ -4,11 +4,11 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     // Fetch all Oscar movies with their nominations
-    const oscarMovies = await prisma.oscarMovie.findMany({
+    const oscarMovies = await prisma.oscar_movies.findMany({
       include: {
-        nominations: {
+        oscar_nominations: {
           include: {
-            category: true
+            oscar_categories: true
           }
         }
       },
@@ -18,7 +18,7 @@ export async function GET() {
     });
 
     // Get user's movie collection for TMDB ID matching and poster paths
-    const userMovies = await prisma.movie.findMany({
+    const userMovies = await prisma.movies.findMany({
       where: { approval_status: 'approved' },
       select: { tmdb_id: true, id: true, poster_path: true }
     });
@@ -29,19 +29,19 @@ export async function GET() {
     // Transform data for table view
     const tableData = oscarMovies.map(movie => {
       // Get unique ceremony years
-      const ceremonyYears = [...new Set(movie.nominations.map(n => n.ceremony_year))].sort();
+      const ceremonyYears = [...new Set(movie.oscar_nominations.map(n => n.ceremony_year))].sort();
 
       // Count wins and total nominations
-      const winCount = movie.nominations.filter(n => n.is_winner).length;
-      const nominationCount = movie.nominations.length;
+      const winCount = movie.oscar_nominations.filter(n => n.is_winner).length;
+      const nominationCount = movie.oscar_nominations.length;
 
       // Check if in user's collection
       const collectionMovie = movie.tmdb_id ? userMovieMap.get(movie.tmdb_id) : null;
       const inCollection = !!collectionMovie;
 
       // Format nominations with category, win status, and person data
-      const formattedNominations = movie.nominations.map(nom => ({
-        category: nom.category?.name || 'Unknown',
+      const formattedNominations = movie.oscar_nominations.map(nom => ({
+        category: nom.oscar_categories?.name || 'Unknown',
         ceremony_year: nom.ceremony_year,
         is_winner: nom.is_winner,
         nominee_name: nom.nominee_name,

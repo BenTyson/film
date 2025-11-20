@@ -30,10 +30,10 @@ export async function GET(request: NextRequest) {
 
     // Fetch activities
     const [activities, total] = await Promise.all([
-      prisma.activityLog.findMany({
+      prisma.activity_logs.findMany({
         where,
         include: {
-          user: {
+          users: {
             select: {
               id: true,
               name: true,
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         skip: offset,
       }),
-      prisma.activityLog.count({ where }),
+      prisma.activity_logs.count({ where }),
     ]);
 
     return NextResponse.json({

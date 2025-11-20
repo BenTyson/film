@@ -16,7 +16,7 @@ async function main() {
 
   for (const tag of watchlistTags) {
     // For global tags (user_id = null), we need to check if they exist first
-    const existingTag = await prisma.tag.findFirst({
+    const existingTag = await prisma.tags.findFirst({
       where: {
         name: tag.name,
         user_id: null
@@ -24,12 +24,12 @@ async function main() {
     });
 
     if (existingTag) {
-      await prisma.tag.update({
+      await prisma.tags.update({
         where: { id: existingTag.id },
         data: { icon: tag.icon, color: tag.color }
       });
     } else {
-      await prisma.tag.create({
+      await prisma.tags.create({
         data: {
           ...tag,
           user_id: null

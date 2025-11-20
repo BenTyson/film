@@ -11,7 +11,7 @@ export async function PATCH(
     const body = await request.json();
     const { tmdb_id, movie_title } = body;
 
-    const updated = await prisma.bestPictureNominee.update({
+    const updated = await prisma.best_picture_nominees.update({
       where: { id },
       data: {
         ...(tmdb_id !== undefined && { tmdb_id }),
@@ -40,7 +40,7 @@ export async function GET(
     const { id: paramId } = await params;
     const id = parseInt(paramId);
 
-    const nominee = await prisma.bestPictureNominee.findUnique({
+    const nominee = await prisma.best_picture_nominees.findUnique({
       where: { id }
     });
 

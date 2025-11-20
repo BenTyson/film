@@ -14,7 +14,7 @@ export async function getCurrentUser() {
   }
 
   // Find user in our database by Clerk ID
-  let user = await prisma.user.findUnique({
+  let user = await prisma.users.findUnique({
     where: { clerk_id: userId },
   });
 
@@ -25,7 +25,7 @@ export async function getCurrentUser() {
     const clerkUser = await client.users.getUser(userId);
 
     // Create user in database
-    user = await prisma.user.create({
+    user = await prisma.users.create({
       data: {
         clerk_id: userId,
         email: clerkUser.emailAddresses[0]?.emailAddress || '',
@@ -34,11 +34,12 @@ export async function getCurrentUser() {
           : clerkUser.firstName || clerkUser.emailAddresses[0]?.emailAddress || 'User',
         role: 'user', // Default role for new users
         last_login_at: new Date(),
+        updated_at: new Date()
       },
     });
   } else {
     // Update last login time for existing users
-    await prisma.user.update({
+    await prisma.users.update({
       where: { id: user.id },
       data: { last_login_at: new Date() },
     });

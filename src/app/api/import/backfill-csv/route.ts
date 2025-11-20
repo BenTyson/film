@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all existing movies that don't have CSV data yet
-    const existingMovies = await prisma.movie.findMany({
+    const existingMovies = await prisma.movies.findMany({
       where: {
         csv_row_number: null
       },
@@ -314,7 +314,7 @@ export async function POST(request: NextRequest) {
           // Use transaction to ensure data consistency
           await prisma.$transaction(async (tx) => {
             // Update movie with CSV data and set to pending approval
-            await tx.movie.update({
+            await tx.movies.update({
               where: { id: match.movie.id },
               data: {
                 csv_row_number: match.csvRow.rowNumber,
@@ -327,7 +327,7 @@ export async function POST(request: NextRequest) {
             });
 
             // Create or update match analysis
-            await tx.movieMatchAnalysis.upsert({
+            await tx.movie_match_analysis.upsert({
               where: { movie_id: match.movie.id },
               create: {
                 movie_id: match.movie.id,
@@ -336,7 +336,8 @@ export async function POST(request: NextRequest) {
                 mismatches: match.analysis.mismatches,
                 title_similarity: match.analysis.titleSimilarity,
                 director_similarity: match.analysis.directorSimilarity,
-                year_difference: match.analysis.yearDifference
+                year_difference: match.analysis.yearDifference,
+                updated_at: new Date()
               },
               update: {
                 confidence_score: match.analysis.confidenceScore,
@@ -389,7 +390,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Get the movie first to create analysis
-    const movie = await prisma.movie.findUnique({
+    const movie = await prisma.movies.findUnique({
       where: { id: movieId },
       select: {
         id: true,
@@ -422,7 +423,7 @@ export async function PUT(request: NextRequest) {
     // Use transaction to update movie and save analysis
     const updatedMovie = await prisma.$transaction(async (tx) => {
       // Update movie with CSV data and set to pending approval
-      const updated = await tx.movie.update({
+      const updated = await tx.movies.update({
         where: { id: movieId },
         data: {
           csv_row_number: csvRowNumber,
@@ -435,7 +436,7 @@ export async function PUT(request: NextRequest) {
       });
 
       // Create or update match analysis
-      await tx.movieMatchAnalysis.upsert({
+      await tx.movie_match_analysis.upsert({
         where: { movie_id: movieId },
         create: {
           movie_id: movieId,
@@ -444,7 +445,8 @@ export async function PUT(request: NextRequest) {
           mismatches: analysis.mismatches,
           title_similarity: analysis.titleSimilarity,
           director_similarity: analysis.directorSimilarity,
-          year_difference: analysis.yearDifference
+          year_difference: analysis.yearDifference,
+          updated_at: new Date()
         },
         update: {
           confidence_score: analysis.confidenceScore,

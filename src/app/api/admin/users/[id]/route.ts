@@ -23,7 +23,7 @@ export async function GET(
       );
     }
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: userId },
       include: {
         _count: {
@@ -157,7 +157,7 @@ export async function PATCH(
     if (email !== undefined) updateData.email = email;
 
     // Update user
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await prisma.users.update({
       where: { id: userId },
       data: updateData,
     });

@@ -12,24 +12,24 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const tagId = searchParams.get('tagId');
 
-    const where: Prisma.WatchlistMovieWhereInput = {
+    const where: Prisma.watchlist_moviesWhereInput = {
       user_id: user.id, // Filter by current user
     };
 
     if (tagId) {
-      where.tags = {
+      where.watchlist_tags = {
         some: {
           tag_id: parseInt(tagId),
         },
       };
     }
 
-    const watchlistMovies = await prisma.watchlistMovie.findMany({
+    const watchlistMovies = await prisma.watchlist_movies.findMany({
       where,
       include: {
-        tags: {
+        watchlist_tags: {
           include: {
-            tag: true,
+            tags: true,
           },
         },
       },
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if movie already exists in this user's watchlist
-    const existingMovie = await prisma.watchlistMovie.findFirst({
+    const existingMovie = await prisma.watchlist_movies.findFirst({
       where: {
         tmdb_id,
         user_id: user.id,
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create watchlist movie with tags
-    const watchlistMovie = await prisma.watchlistMovie.create({
+    const watchlistMovie = await prisma.watchlist_movies.create({
       data: {
         tmdb_id,
         user_id: user.id,
@@ -106,16 +106,18 @@ export async function POST(request: NextRequest) {
         genres,
         vote_average,
         imdb_id,
-        tags: {
+        watchlist_tags: {
           create: (tag_ids || []).map((tagId: number) => ({
             tag_id: tagId,
+            updated_at: new Date()
           })),
         },
+        updated_at: new Date()
       },
       include: {
-        tags: {
+        watchlist_tags: {
           include: {
-            tag: true,
+            tags: true,
           },
         },
       },

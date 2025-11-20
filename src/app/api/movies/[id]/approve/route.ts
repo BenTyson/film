@@ -19,7 +19,7 @@ export async function POST(
     }
 
     // Check if movie exists
-    const movie = await prisma.movie.findUnique({
+    const movie = await prisma.movies.findUnique({
       where: { id: movieId },
       select: { id: true, approval_status: true, title: true }
     });
@@ -39,7 +39,7 @@ export async function POST(
     }
 
     // Approve the movie
-    const updatedMovie = await prisma.movie.update({
+    const updatedMovie = await prisma.movies.update({
       where: { id: movieId },
       data: {
         approval_status: 'approved',
@@ -48,7 +48,7 @@ export async function POST(
         updated_at: new Date()
       },
       include: {
-        match_analysis: true
+        movie_match_analysis: true
       }
     });
 
@@ -61,12 +61,12 @@ export async function POST(
       created_at: updatedMovie.created_at?.toISOString(),
       updated_at: updatedMovie.updated_at?.toISOString(),
       approved_at: updatedMovie.approved_at?.toISOString(),
-      match_analysis: updatedMovie.match_analysis ? {
-        ...updatedMovie.match_analysis,
-        id: Number(updatedMovie.match_analysis.id),
-        movie_id: Number(updatedMovie.match_analysis.movie_id),
-        created_at: updatedMovie.match_analysis.created_at?.toISOString(),
-        updated_at: updatedMovie.match_analysis.updated_at?.toISOString()
+      movie_match_analysis: updatedMovie.movie_match_analysis ? {
+        ...updatedMovie.movie_match_analysis,
+        id: Number(updatedMovie.movie_match_analysis.id),
+        movie_id: Number(updatedMovie.movie_match_analysis.movie_id),
+        created_at: updatedMovie.movie_match_analysis.created_at?.toISOString(),
+        updated_at: updatedMovie.movie_match_analysis.updated_at?.toISOString()
       } : null
     };
 
@@ -103,7 +103,7 @@ export async function GET(
       );
     }
 
-    const movie = await prisma.movie.findUnique({
+    const movie = await prisma.movies.findUnique({
       where: { id: movieId },
       select: {
         id: true,

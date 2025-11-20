@@ -24,7 +24,7 @@ export async function DELETE(
     }
 
     // Verify vault ownership
-    const vault = await prisma.vault.findFirst({
+    const vault = await prisma.vaults.findFirst({
       where: {
         id: vaultId,
         user_id: user.id,
@@ -42,7 +42,7 @@ export async function DELETE(
     }
 
     // Check if movie exists in vault
-    const vaultMovie = await prisma.vaultMovie.findFirst({
+    const vaultMovie = await prisma.vault_movies.findFirst({
       where: {
         id: movieId,
         vault_id: vaultId,
@@ -60,7 +60,7 @@ export async function DELETE(
     }
 
     // Delete the movie from vault
-    await prisma.vaultMovie.delete({
+    await prisma.vault_movies.delete({
       where: { id: movieId },
     });
 

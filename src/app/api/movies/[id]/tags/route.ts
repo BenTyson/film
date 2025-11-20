@@ -67,7 +67,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // Verify movie exists AND user owns it
     const movie = await withDatabaseRetry(() =>
-      prisma.movie.findUnique({
+      prisma.movies.findUnique({
         where: { id: movieId },
         select: {
           id: true,
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       // Find or create tag for this user
       let tag = await withDatabaseRetry(() =>
-        prisma.tag.findFirst({
+        prisma.tags.findFirst({
           where: {
             name: normalizedTagName,
             user_id: user.id
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         const defaultIcon = normalizedTagName.toLowerCase() === 'calen' ? 'Users' : 'Tag';
 
         tag = await withDatabaseRetry(() =>
-          prisma.tag.create({
+          prisma.tags.create({
             data: {
               name: normalizedTagName,
               color: defaultColor,
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       // Check if movie-tag relationship already exists
       const existingMovieTag = await withDatabaseRetry(() =>
-        prisma.movieTag.findUnique({
+        prisma.movie_tags.findUnique({
           where: {
             movie_id_tag_id: {
               movie_id: movieId,
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       if (!existingMovieTag) {
         // Create movie-tag relationship
         await withDatabaseRetry(() =>
-          prisma.movieTag.create({
+          prisma.movie_tags.create({
             data: {
               movie_id: movieId,
               tag_id: tag.id
@@ -166,12 +166,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     // Get updated movie with all tags
     const updatedMovie = await withDatabaseRetry(() =>
-      prisma.movie.findUnique({
+      prisma.movies.findUnique({
         where: { id: movieId },
         include: {
           movie_tags: {
             include: {
-              tag: true
+              tags: true
             }
           }
         }
@@ -185,10 +185,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         movieTitle: movie.title,
         addedTags: addedTags,
         allTags: updatedMovie?.movie_tags.map(mt => ({
-          id: mt.tag.id,
-          name: mt.tag.name,
-          color: mt.tag.color,
-          icon: mt.tag.icon
+          id: mt.tags.id,
+          name: mt.tags.name,
+          color: mt.tags.color,
+          icon: mt.tags.icon
         })) || [],
         message: `Successfully added ${addedTags.length} tag(s) to "${movie.title}"`
       }
@@ -249,7 +249,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     // Verify movie exists AND user owns it
     const movie = await withDatabaseRetry(() =>
-      prisma.movie.findUnique({
+      prisma.movies.findUnique({
         where: { id: movieId },
         select: {
           id: true,
@@ -289,7 +289,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
       // Find tag for this user
       const tag = await withDatabaseRetry(() =>
-        prisma.tag.findFirst({
+        prisma.tags.findFirst({
           where: {
             name: normalizedTagName,
             user_id: user.id
@@ -300,7 +300,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       if (tag) {
         // Remove movie-tag relationship if it exists
         const deletedMovieTag = await withDatabaseRetry(() =>
-          prisma.movieTag.deleteMany({
+          prisma.movie_tags.deleteMany({
             where: {
               movie_id: movieId,
               tag_id: tag.id
@@ -321,12 +321,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     // Get updated movie with all remaining tags
     const updatedMovie = await withDatabaseRetry(() =>
-      prisma.movie.findUnique({
+      prisma.movies.findUnique({
         where: { id: movieId },
         include: {
           movie_tags: {
             include: {
-              tag: true
+              tags: true
             }
           }
         }
@@ -340,10 +340,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         movieTitle: movie.title,
         removedTags: removedTags,
         remainingTags: updatedMovie?.movie_tags.map(mt => ({
-          id: mt.tag.id,
-          name: mt.tag.name,
-          color: mt.tag.color,
-          icon: mt.tag.icon
+          id: mt.tags.id,
+          name: mt.tags.name,
+          color: mt.tags.color,
+          icon: mt.tags.icon
         })) || [],
         message: `Successfully removed ${removedTags.length} tag(s) from "${movie.title}"`
       }

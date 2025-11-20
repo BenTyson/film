@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // For other users, get unique buddy names from their watch history
-    const userMovies = await prisma.userMovie.findMany({
+    const userMovies = await prisma.user_movies.findMany({
       where: {
         user_id: user.id
       },
