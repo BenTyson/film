@@ -10,9 +10,11 @@ Welcome! This guide provides rapid orientation to the Film project codebase. Rea
 
 **IMPORTANT:** Before diving into the codebase, read the most recent session note to understand the latest changes and current development context:
 
-**Latest Session:** [`docs/sessions/2025-11-23.md`](../sessions/2025-11-23.md)
+**Current Status & Next Actions:** [`docs/CURRENT-STATUS.md`](../CURRENT-STATUS.md)
 
-This will give you immediate context on recent work, decisions made, and any ongoing tasks.
+**Latest Session Details:** [`docs/sessions/2025-11-23.md`](../sessions/2025-11-23.md)
+
+Read CURRENT-STATUS.md first - it tells you exactly what to do next. Then dive into session notes if you need more context.
 
 ---
 
