@@ -15,14 +15,16 @@
 - 🚀 **Deployed at**: 2025-11-23 (just now)
 
 ### Deployment Progress
-Railway is currently:
-1. Building production bundle
-2. Running `prisma generate`
-3. Deploying with zero downtime
-**Expected completion**: 3-5 minutes from push
+Railway deployment should be **complete or nearly complete** (~5 minutes elapsed).
 
-### Next Action
-Monitor Railway dashboard for deployment completion.
+### IMMEDIATE NEXT ACTIONS
+1. **Check Railway Dashboard** - Verify "Success" status
+2. **Test Production URL** - Confirm site loads
+3. **Follow Verification Checklist** - See `docs/POST-DEPLOYMENT-VERIFICATION.md`
+
+**Critical**: Do NOT proceed with any new work until deployment is verified successful.
+
+**Full handoff details**: See `/DEPLOYMENT-HANDOFF.md` in repository root.
 
 ---
 
