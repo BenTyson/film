@@ -10,7 +10,7 @@ Welcome! This guide provides rapid orientation to the Film project codebase. Rea
 
 **IMPORTANT:** Before diving into the codebase, read the most recent session note to understand the latest changes and current development context:
 
-**Latest Session:** [`docs/sessions/2025-01-20.md`](../sessions/2025-01-20.md)
+**Latest Session:** [`docs/sessions/2025-11-23.md`](../sessions/2025-11-23.md)
 
 This will give you immediate context on recent work, decisions made, and any ongoing tasks.
 
@@ -188,7 +188,11 @@ Tag-based collections for tracking movies watched with specific people
 │   │   ├── layout/             # Layout components
 │   │   │   └── Navigation.tsx
 │   │   └── ui/                 # Base UI components
-│   │       └── TagIcon.tsx
+│   │       ├── TagIcon.tsx
+│   │       └── ErrorBoundary.tsx  # Error handling components
+│   ├── contexts/               # React contexts (UserRoleContext, etc.)
+│   ├── hooks/                  # Custom hooks with tests (useDebounce, etc.)
+│   ├── services/               # API service layer with tests
 │   ├── lib/                    # Utility functions and clients
 │   │   ├── prisma.ts           # Prisma database client
 │   │   ├── tmdb.ts             # TMDB API client
@@ -375,6 +379,13 @@ Follow the standard pattern: Database → API → Types → Components → Page
 
 **→ See [skills/add-feature.md](../skills/add-feature.md) for complete workflow**
 
+### Run Tests
+```bash
+npm test                        # Full suite (372 tests)
+npm test -- src/services/       # Service tests only
+npm test -- --watch             # Watch mode for development
+```
+
 ### Deploy to Railway
 ```bash
 # 1. Build locally to test
@@ -479,11 +490,12 @@ git push origin main
 
 ---
 
-## 10. Project Stats (As of January 2025)
+## 10. Project Stats (As of November 2025)
 
 - **Total Source Files:** 70+ TypeScript/TSX files
 - **API Endpoints:** 45 routes
 - **Database Models:** 14 models
+- **Tests:** 372 tests across 24 test files (Vitest + RTL)
 - **Active Scripts:** 4 utility scripts
 - **Components:** 20+ reusable components
 - **Pages:** 9+ distinct pages/routes

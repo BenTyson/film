@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo, useCallback, memo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Star, Calendar, Award, Users, User, Heart, Home, RotateCcw } from 'lucide-react';
 import { formatYear, formatRating, getRatingColor } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { useUserRole } from '@/contexts';
 import type { MovieGridItem } from '@/types/movie';
 
 interface MovieCardProps {
@@ -25,47 +26,34 @@ const iconMap = {
   RotateCcw,
 };
 
-export function MovieCard({ movie, onSelect, className, context = 'collection' }: MovieCardProps) {
-  const [isAdmin, setIsAdmin] = useState(false);
+function MovieCardComponent({ movie, onSelect, className, context = 'collection' }: MovieCardProps) {
+  // Get admin status from context (single fetch for all cards)
+  const { isAdmin } = useUserRole();
 
-  // Check admin status
-  useEffect(() => {
-    async function checkAdminStatus() {
-      try {
-        const response = await fetch('/api/user/me');
-        if (!response.ok) {
-          setIsAdmin(false);
-          return;
-        }
-        const data = await response.json();
-        setIsAdmin(data.success && data.data?.role === 'admin');
-      } catch (error) {
-        setIsAdmin(false);
-      }
-    }
-    checkAdminStatus();
-  }, []);
+  // Memoize computed values to prevent recalculation on every render
+  const displayTags = useMemo(
+    () => isAdmin ? movie.tags : movie.tags.filter(tag => tag.name !== 'Calen'),
+    [isAdmin, movie.tags]
+  );
 
-  // Filter out Calen tag for non-admin users
-  const displayTags = isAdmin
-    ? movie.tags
-    : movie.tags.filter(tag => tag.name !== 'Calen');
-  const hasOscarWins = movie.oscar_badges.wins > 0;
-  const hasOscarNominations = movie.oscar_badges.nominations > 0;
-  const posterUrl = movie.poster_path
-    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-    : '/placeholder-poster.svg';
+  const hasOscarWins = useMemo(() => movie.oscar_badges.wins > 0, [movie.oscar_badges.wins]);
+  const hasOscarNominations = useMemo(() => movie.oscar_badges.nominations > 0, [movie.oscar_badges.nominations]);
+
+  const posterUrl = useMemo(
+    () => movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : '/placeholder-poster.svg',
+    [movie.poster_path]
+  );
 
   // Build URL with context for back navigation
-  const movieUrl = `/movies/${movie.id}?from=${context}`;
+  const movieUrl = useMemo(() => `/movies/${movie.id}?from=${context}`, [movie.id, context]);
 
   // Handle legacy onClick if provided (for backward compatibility during migration)
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = useCallback((e: React.MouseEvent) => {
     if (onSelect) {
       e.preventDefault();
       onSelect(movie);
     }
-  };
+  }, [onSelect, movie]);
 
   const cardContent = (
     <motion.div
@@ -206,3 +194,6 @@ export function MovieCard({ movie, onSelect, className, context = 'collection' }
     </Link>
   );
 }
+
+// Memoize the component to prevent unnecessary re-renders when parent updates
+export const MovieCard = memo(MovieCardComponent);

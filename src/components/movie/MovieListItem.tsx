@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useCallback, memo } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Star, Calendar, Award, Users, User, Heart, Home, RotateCcw } from 'lucide-react';
@@ -21,16 +22,19 @@ const iconMap = {
   RotateCcw,
 };
 
-export function MovieListItem({ movie, onSelect, className }: MovieListItemProps) {
-  const hasOscarWins = movie.oscar_badges.wins > 0;
-  const hasOscarNominations = movie.oscar_badges.nominations > 0;
-  const posterUrl = movie.poster_path
-    ? `https://image.tmdb.org/t/p/w185${movie.poster_path}`
-    : '/placeholder-poster.svg';
+function MovieListItemComponent({ movie, onSelect, className }: MovieListItemProps) {
+  // Memoize computed values
+  const hasOscarWins = useMemo(() => movie.oscar_badges.wins > 0, [movie.oscar_badges.wins]);
+  const hasOscarNominations = useMemo(() => movie.oscar_badges.nominations > 0, [movie.oscar_badges.nominations]);
 
-  const handleClick = () => {
+  const posterUrl = useMemo(
+    () => movie.poster_path ? `https://image.tmdb.org/t/p/w185${movie.poster_path}` : '/placeholder-poster.svg',
+    [movie.poster_path]
+  );
+
+  const handleClick = useCallback(() => {
     onSelect?.(movie);
-  };
+  }, [onSelect, movie]);
 
   return (
     <motion.div
@@ -157,3 +161,6 @@ export function MovieListItem({ movie, onSelect, className }: MovieListItemProps
     </motion.div>
   );
 }
+
+// Memoize the component to prevent unnecessary re-renders when parent updates
+export const MovieListItem = memo(MovieListItemComponent);

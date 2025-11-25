@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Edit, Loader2, Trash2 } from 'lucide-react';
 import type { Vault } from '@/types/vault';
@@ -33,6 +33,20 @@ export function EditVaultModal({
       setDescription(vault.description || '');
     }
   }, [vault]);
+
+  // Handle Escape key to close modal
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape' && !loading && !deleting) {
+      onClose();
+    }
+  }, [loading, deleting, onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, handleKeyDown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +130,12 @@ export function EditVaultModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-vault-title"
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -128,10 +147,10 @@ export function EditVaultModal({
           <div className="flex items-center justify-between p-6 border-b border-gray-800">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-r from-blue-500/20 to-purple-600/20 rounded-lg">
-                <Edit className="w-5 h-5 text-purple-400" />
+                <Edit className="w-5 h-5 text-purple-400" aria-hidden="true" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Edit Vault</h2>
+                <h2 id="edit-vault-title" className="text-xl font-bold text-white">Edit Vault</h2>
                 <p className="text-sm text-gray-400">Update vault details</p>
               </div>
             </div>
@@ -139,8 +158,9 @@ export function EditVaultModal({
               onClick={handleClose}
               disabled={loading || deleting}
               className="p-2 hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
+              aria-label="Close modal"
             >
-              <X className="w-5 h-5 text-gray-400" />
+              <X className="w-5 h-5 text-gray-400" aria-hidden="true" />
             </button>
           </div>
 

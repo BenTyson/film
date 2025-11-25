@@ -72,8 +72,9 @@ npx prisma migrate dev # Run database migrations
 npx prisma studio    # Open Prisma database GUI
 npx prisma db push   # Push schema to database
 
-# Testing (when implemented)
-npm run test         # Run test suite
+# Testing
+npm test             # Run full test suite (372 tests, 24 files)
+npm test -- path     # Run specific test file
 ```
 
 ## Project Structure
@@ -87,7 +88,11 @@ src/
 ├── components/         # Reusable UI components
 │   ├── ui/            # Base UI components (Radix + Tailwind)
 │   ├── movie/         # Movie-specific components
+│   ├── modals/        # Modal components with lazy loading exports
 │   └── layout/        # Layout components
+├── contexts/          # React contexts (UserRoleContext, etc.)
+├── hooks/             # Custom React hooks with tests
+├── services/          # API service layer with tests
 ├── lib/               # Utility functions and configurations
 │   ├── prisma.ts      # Prisma client configuration
 │   ├── tmdb.ts        # TMDB API client
@@ -216,6 +221,20 @@ CLERK_SECRET_KEY=sk_test_...
 - Use Next.js Image component with priority loading
 - Consider virtualization for large movie lists
 - Cache TMDB API responses
+- Lazy-load modals via `src/components/modals/lazy.tsx`
+
+### Testing (Vitest + React Testing Library)
+- **372 tests** across 24 test files
+- Co-locate tests with source: `Component.tsx` → `Component.test.tsx`
+- Service tests mock `global.fetch` for API isolation
+- Component tests use `@testing-library/react` with `render`, `screen`, `userEvent`
+- Run `npm test` before commits; all tests must pass
+
+**Test Coverage:**
+- Services: `movieService`, `tagService`, `vaultService`, `watchlistService`
+- Hooks: `useDebounce`, `useCollectionFilters`, `useMovieCollection`, `useTMDBSearch`
+- Components: `MovieCard`, `MovieGrid`, `VaultCard`, `Navigation`, `TMDBSearchInput`, `MovieSearchResultCard`, `ErrorBoundary`, `TagIcon`
+- Lib: `api-client`, `api-middleware`, `api-response`, `validators`, `tmdb-helpers`
 
 ## Data Management
 

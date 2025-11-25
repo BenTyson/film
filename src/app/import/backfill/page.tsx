@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { FixMovieModal } from '@/components/movie/FixMovieModal';
+import { LazyFixMovieModal as FixMovieModal } from '@/components/modals';
 
 interface PendingMovie {
   movieId: number;

@@ -22,9 +22,11 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
-import { AddToVaultModal } from '@/components/vault/AddToVaultModal';
-import { VaultMovieModal } from '@/components/vault/VaultMovieModal';
-import { EditVaultModal } from '@/components/vault/EditVaultModal';
+import {
+  LazyAddToVaultModal as AddToVaultModal,
+  LazyVaultMovieModal as VaultMovieModal,
+  LazyEditVaultModal as EditVaultModal,
+} from '@/components/modals';
 import Image from 'next/image';
 import type { VaultWithMovies, VaultMovieWithCollectionStatus } from '@/types/vault';
 

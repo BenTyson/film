@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
-import { EditOscarMovieModal } from '@/components/oscar/EditOscarMovieModal';
+import { LazyEditOscarMovieModal as EditOscarMovieModal } from '@/components/modals';
 import OscarTableView from '@/components/oscar/OscarTableView';
 
 interface OscarOverview {

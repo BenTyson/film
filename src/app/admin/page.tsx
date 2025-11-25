@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { UserStatsCards } from '@/components/admin/UserStatsCards';
 import { UserTable } from '@/components/admin/UserTable';
-import { EditUserModal } from '@/components/admin/EditUserModal';
+import { LazyEditUserModal as EditUserModal } from '@/components/modals';
 import { ActivityFeed } from '@/components/admin/ActivityFeed';
 import { ErrorStatsCards } from '@/components/admin/ErrorStatsCards';
 import { ErrorTable } from '@/components/admin/ErrorTable';

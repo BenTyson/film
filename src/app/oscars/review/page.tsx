@@ -14,7 +14,7 @@ import {
   Calendar,
   Loader2
 } from 'lucide-react';
-import { EditOscarMovieModal } from '@/components/oscar/EditOscarMovieModal';
+import { LazyEditOscarMovieModal as EditOscarMovieModal } from '@/components/modals';
 
 interface OscarMovie {
   id: number;

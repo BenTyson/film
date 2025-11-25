@@ -7,8 +7,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
-import { WatchlistMovieModal } from '@/components/watchlist/WatchlistMovieModal';
-import { AddToWatchlistModal } from '@/components/watchlist/AddToWatchlistModal';
+import {
+  LazyWatchlistMovieModal as WatchlistMovieModal,
+  LazyAddToWatchlistModal as AddToWatchlistModal,
+} from '@/components/modals';
 import { TagIcon } from '@/components/ui/TagIcon';
 import Image from 'next/image';
 

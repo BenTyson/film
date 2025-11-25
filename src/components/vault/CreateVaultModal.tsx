@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Archive, Loader2 } from 'lucide-react';
 
@@ -19,6 +19,20 @@ export function CreateVaultModal({
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Handle Escape key to close modal
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape' && !loading) {
+      onClose();
+    }
+  }, [loading, onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, handleKeyDown]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +89,12 @@ export function CreateVaultModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-vault-title"
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -90,7 +109,7 @@ export function CreateVaultModal({
                 <Archive className="w-5 h-5 text-purple-400" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Create New Vault</h2>
+                <h2 id="create-vault-title" className="text-xl font-bold text-white">Create New Vault</h2>
                 <p className="text-sm text-gray-400">Organize your films into collections</p>
               </div>
             </div>
@@ -98,8 +117,9 @@ export function CreateVaultModal({
               onClick={handleClose}
               disabled={loading}
               className="p-2 hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
+              aria-label="Close modal"
             >
-              <X className="w-5 h-5 text-gray-400" />
+              <X className="w-5 h-5 text-gray-400" aria-hidden="true" />
             </button>
           </div>
 

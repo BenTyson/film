@@ -209,7 +209,10 @@ model user_movies {
   movies             movies    @relation(fields: [movie_id], references: [id], onDelete: Cascade)
   users              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
+  @@unique([user_id, movie_id])
   @@index([user_id])
+  @@index([movie_id])
+  @@index([date_watched])
 }
 
 model users {

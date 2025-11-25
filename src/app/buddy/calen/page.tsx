@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { Search, Grid, List, Grid3X3, LayoutGrid, Grip, ArrowUp, ArrowDown, Award, Users, Plus, Clapperboard, UserPlus, Film, Archive } from 'lucide-react';
 import { MovieGrid } from '@/components/movie/MovieGrid';
 import { MovieList } from '@/components/movie/MovieList';
-import { MovieDetailsModal } from '@/components/movie/MovieDetailsModal';
-import { AddToCalenModal } from '@/components/movie/AddToCalenModal';
+import {
+  LazyMovieDetailsModal as MovieDetailsModal,
+  LazyAddToCalenModal as AddToCalenModal,
+} from '@/components/modals';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { TMDBGenre } from './tmdb';
+
 export interface Movie {
   id: number;
   tmdb_id: number;
@@ -9,7 +10,7 @@ export interface Movie {
   poster_path: string | null;
   backdrop_path: string | null;
   runtime: number | null;
-  genres: any; // JSON field
+  genres: TMDBGenre[] | null; // JSON field
   imdb_id: string | null;
   imdb_rating: number | null;
   csv_row_number: number | null;

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, react/no-unescaped-entities, @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-unused-vars, react/no-unescaped-entities, @next/next/no-img-element */
 'use client';
 
 import { useState } from 'react';
@@ -14,6 +14,7 @@ import {
   Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TMDBEnhancedSearchResult } from '@/types/tmdb';
 
 interface FixMovieModalProps {
   isOpen: boolean;
@@ -40,7 +41,7 @@ export function FixMovieModal({
   onMovieFixed
 }: FixMovieModalProps) {
   const [tmdbSearchQuery, setTmdbSearchQuery] = useState('');
-  const [tmdbSearchResults, setTmdbSearchResults] = useState<any[]>([]);
+  const [tmdbSearchResults, setTmdbSearchResults] = useState<TMDBEnhancedSearchResult[]>([]);
   const [tmdbSearchLoading, setTmdbSearchLoading] = useState(false);
   const [fixingMovie, setFixingMovie] = useState<number | null>(null);
   const [tmdbDirectLink, setTmdbDirectLink] = useState('');
@@ -121,7 +122,7 @@ export function FixMovieModal({
     }
   };
 
-  const handleSelectMovie = async (tmdbMovie: any) => {
+  const handleSelectMovie = async (tmdbMovie: TMDBEnhancedSearchResult) => {
     console.log('Fixing movie with:', { currentMovieId: currentMovie.id, tmdbMovieId: tmdbMovie.id, tmdbMovie });
     setFixingMovie(tmdbMovie.id);
     try {

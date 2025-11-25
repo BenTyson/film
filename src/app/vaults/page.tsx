@@ -8,8 +8,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import { VaultCard } from '@/components/vault/VaultCard';
-import { CreateVaultModal } from '@/components/vault/CreateVaultModal';
-import { EditVaultModal } from '@/components/vault/EditVaultModal';
+import {
+  LazyCreateVaultModal as CreateVaultModal,
+  LazyEditVaultModal as EditVaultModal,
+} from '@/components/modals';
 import type { VaultWithCount, Vault } from '@/types/vault';
 
 const allNavItems = [

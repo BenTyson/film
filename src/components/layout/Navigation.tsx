@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Award, Users, Plus, Clapperboard, Film, ArchiveIcon } from 'lucide-react';
 import { UserButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
+import { useUserRole } from '@/contexts';
 
 const allNavItems = [
   { href: '/', label: 'Collection', icon: Clapperboard },
@@ -19,54 +19,15 @@ const allNavItems = [
 
 export function Navigation() {
   const pathname = usePathname();
-  const { isSignedIn, user } = useUser();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  // Check admin status from database
-  useEffect(() => {
-    async function checkAdminStatus() {
-      if (!isSignedIn) {
-        setIsAdmin(false);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch('/api/user/me');
-
-        console.log('Admin check response status:', response.status);
-
-        if (!response.ok) {
-          console.log('Admin check failed - not OK response');
-          setIsAdmin(false);
-          setLoading(false);
-          return;
-        }
-
-        const data = await response.json();
-        console.log('Admin check data:', data);
-
-        const adminStatus = data.success && data.data?.role === 'admin';
-        console.log('Is admin?', adminStatus);
-        setIsAdmin(adminStatus);
-      } catch (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdmin(false);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    checkAdminStatus();
-  }, [isSignedIn, user?.id]);
+  const { isSignedIn } = useUser();
+  const { isAdmin, isLoading } = useUserRole();
 
   // Filter nav items based on admin status
   // During loading, hide admin-only items to prevent flashing
   const navItems = allNavItems.filter(item => {
     // If item is admin-only, only show if user is confirmed admin
     if (item.adminOnly) {
-      return !loading && isAdmin;
+      return !isLoading && isAdmin;
     }
     return true;
   });

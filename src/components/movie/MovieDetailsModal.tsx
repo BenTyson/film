@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-unused-vars, react/no-unescaped-entities */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -164,7 +164,7 @@ export function MovieDetailsModal({ movieId, isOpen, onClose, onMovieUpdate }: M
         }
 
         // Set current tags
-        setMovieTags(data.data.movie_tags?.map((mt: any) => mt.tag.name) || []);
+        setMovieTags(data.data.movie_tags?.map((mt: { tag: { name: string } }) => mt.tag.name) || []);
       } else {
         throw new Error(data.error || 'Failed to fetch movie details');
       }
@@ -600,7 +600,7 @@ export function MovieDetailsModal({ movieId, isOpen, onClose, onMovieUpdate }: M
 
                             {movie.genres && Array.isArray(movie.genres) && (
                               <div className="flex flex-wrap gap-2">
-                                {movie.genres.map((genre: any) => (
+                                {movie.genres.map((genre) => (
                                   <span
                                     key={genre.id}
                                     className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm text-white"
@@ -741,7 +741,7 @@ export function MovieDetailsModal({ movieId, isOpen, onClose, onMovieUpdate }: M
                             <div>
                               <span className="text-white/60 block mb-2">Production Companies</span>
                               <div className="space-y-1">
-                                {movie.production_companies.slice(0, 3).map((company: any) => (
+                                {movie.production_companies.slice(0, 3).map((company: { id: number; name: string }) => (
                                   <div key={company.id} className="text-white text-sm">
                                     {company.name}
                                   </div>

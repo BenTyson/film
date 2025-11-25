@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Archive, Film } from 'lucide-react';
@@ -10,7 +11,19 @@ interface VaultCardProps {
   onClick: () => void;
 }
 
-export function VaultCard({ vault, onClick }: VaultCardProps) {
+function VaultCardComponent({ vault, onClick }: VaultCardProps) {
+  // Memoize the preview posters slice and empty cell calculation
+  const displayPosters = useMemo(() => vault.preview_posters.slice(0, 4), [vault.preview_posters]);
+  const emptyCellCount = useMemo(() => Math.max(0, 4 - vault.preview_posters.length), [vault.preview_posters.length]);
+
+  // Handle keyboard activation
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  }, [onClick]);
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -18,13 +31,17 @@ export function VaultCard({ vault, onClick }: VaultCardProps) {
       whileHover={{ scale: 1.02 }}
       className="group cursor-pointer"
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`Open ${vault.name} vault with ${vault.movie_count} ${vault.movie_count === 1 ? 'film' : 'films'}`}
     >
       <div className="relative bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-xl overflow-hidden border border-gray-700/50 hover:border-purple-500/50 transition-all shadow-lg hover:shadow-2xl">
         {/* Preview Posters Grid */}
         <div className="relative h-80 bg-gray-800">
-          {vault.preview_posters.length > 0 ? (
+          {displayPosters.length > 0 ? (
             <div className="grid grid-cols-2 grid-rows-2 gap-1 h-full p-2">
-              {vault.preview_posters.slice(0, 4).map((poster, idx) => (
+              {displayPosters.map((poster, idx) => (
                 <div key={idx} className="relative overflow-hidden rounded-lg">
                   <Image
                     src={`https://image.tmdb.org/t/p/w500${poster}`}
@@ -35,7 +52,7 @@ export function VaultCard({ vault, onClick }: VaultCardProps) {
                 </div>
               ))}
               {/* Fill remaining grid cells if less than 4 posters */}
-              {Array.from({ length: Math.max(0, 4 - vault.preview_posters.length) }).map((_, idx) => (
+              {Array.from({ length: emptyCellCount }).map((_, idx) => (
                 <div
                   key={`empty-${idx}`}
                   className="relative overflow-hidden rounded-lg bg-gray-700/50 flex items-center justify-center"
@@ -81,3 +98,6 @@ export function VaultCard({ vault, onClick }: VaultCardProps) {
     </motion.div>
   );
 }
+
+// Memoize the component to prevent unnecessary re-renders
+export const VaultCard = memo(VaultCardComponent);

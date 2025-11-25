@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -83,6 +82,20 @@ export function VaultMovieModal({
     }
   }, [movie?.tmdb_id, watchProviders, loadingProviders]);
 
+  // Handle Escape key to close modal
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape' && !isDeleting) {
+      onClose();
+    }
+  }, [isDeleting, onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, handleKeyDown]);
+
   const handleDelete = async () => {
     if (!movie) return;
 
@@ -120,12 +133,16 @@ export function VaultMovieModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="vault-movie-title"
       >
         {/* Fixed Header */}
         <div className="fixed top-0 left-0 right-0 z-60 bg-gradient-to-b from-black via-black/90 to-transparent">
           <div className="flex items-center justify-between p-4 lg:p-6">
             <div className="flex items-center gap-4">
               <motion.h1
+                id="vault-movie-title"
                 className="text-2xl lg:text-3xl font-bold text-white"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -151,24 +168,25 @@ export function VaultMovieModal({
                 <button
                   onClick={() => setShowTrailer(!showTrailer)}
                   className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
-                  title="Watch Trailer"
+                  aria-label={showTrailer ? "Hide trailer" : "Watch trailer"}
                 >
-                  <Play className="w-5 h-5 text-white" />
+                  <Play className="w-5 h-5 text-white" aria-hidden="true" />
                 </button>
               )}
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                title="Remove from Vault"
+                aria-label="Remove from vault"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-4 h-4" aria-hidden="true" />
                 <span className="hidden sm:inline">Remove</span>
               </button>
               <button
                 onClick={onClose}
                 className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                aria-label="Close modal"
               >
-                <X className="w-5 h-5 text-white" />
+                <X className="w-5 h-5 text-white" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -252,7 +270,7 @@ export function VaultMovieModal({
                 {/* Genres */}
                 {genres.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {genres.map((genre: any) => (
+                    {genres.map((genre) => (
                       <span
                         key={genre.id}
                         className="px-3 py-1 bg-white/10 rounded-full text-sm text-gray-300"

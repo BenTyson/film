@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -24,6 +24,7 @@ import {
 import { cn, formatDate, formatYear } from '@/lib/utils';
 import { TagIcon } from '@/components/ui/TagIcon';
 import type { WatchProvidersData } from '@/lib/tmdb';
+import { TMDBGenre } from '@/types/tmdb';
 
 interface WatchlistMovieModalProps {
   movieId: number | null;
@@ -42,7 +43,7 @@ interface WatchlistMovie {
   backdrop_path: string | null;
   overview: string | null;
   runtime: number | null;
-  genres: any;
+  genres: TMDBGenre[] | null;
   vote_average: number | null;
   imdb_id: string | null;
   tags: Array<{
@@ -95,7 +96,7 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
 
       if (data.success) {
         setMovie(data.data);
-        setSelectedTags(data.data.tags?.map((t: any) => t.tag.id) || []);
+        setSelectedTags(data.data.tags?.map((t: { tag: { id: number } }) => t.tag.id) || []);
 
         // Fetch trailer from TMDB if we have tmdb_id
         if (data.data.tmdb_id) {
@@ -119,7 +120,7 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
       const data = await response.json();
       if (data.success) {
         // Filter to only show watchlist mood tags
-        const watchlistTags = data.data.filter((tag: any) =>
+        const watchlistTags = data.data.filter((tag: { name: string }) =>
           ['Morgan', 'Liam', 'Epic', 'Scary', 'Indie'].includes(tag.name)
         );
         setAvailableTags(watchlistTags);
@@ -163,6 +164,20 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
       fetchWatchProviders(movie.tmdb_id);
     }
   }, [movie?.tmdb_id, isOpen, fetchWatchProviders]);
+
+  // Handle Escape key to close modal
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape' && !isDeleting && !isSaving) {
+      onClose();
+    }
+  }, [isDeleting, isSaving, onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, handleKeyDown]);
 
   const handleSave = async () => {
     if (!movie) return;
@@ -239,12 +254,16 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="watchlist-movie-title"
       >
         {/* Fixed Header */}
         <div className="fixed top-0 left-0 right-0 z-60 bg-gradient-to-b from-black via-black/90 to-transparent">
           <div className="flex items-center justify-between p-4 lg:p-6">
             <div className="flex items-center gap-4">
               <motion.h1
+                id="watchlist-movie-title"
                 className="text-2xl lg:text-3xl font-bold text-white"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -260,17 +279,17 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
                     <button
                       onClick={() => setShowTrailer(!showTrailer)}
                       className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
-                      title="Watch Trailer"
+                      aria-label={showTrailer ? "Hide trailer" : "Watch trailer"}
                     >
-                      <Play className="w-5 h-5 text-white" />
+                      <Play className="w-5 h-5 text-white" aria-hidden="true" />
                     </button>
                   )}
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                    title="Remove from Watchlist"
+                    aria-label="Remove from watchlist"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" aria-hidden="true" />
                     <span className="hidden sm:inline">Remove</span>
                   </button>
                   <button
@@ -302,8 +321,9 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
               <button
                 onClick={onClose}
                 className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                aria-label="Close modal"
               >
-                <X className="w-5 h-5 text-white" />
+                <X className="w-5 h-5 text-white" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -394,7 +414,7 @@ export function WatchlistMovieModal({ movieId, isOpen, onClose, onMovieUpdate }:
                   {/* Genres */}
                   {genres.length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {genres.map((genre: any) => (
+                      {genres.map((genre: TMDBGenre) => (
                         <span
                           key={genre.id}
                           className="px-3 py-1 bg-white/10 rounded-full text-sm text-gray-300"
